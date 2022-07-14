@@ -13,11 +13,8 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Mapping seafood supply chains in the UK
 
-<<<<<<< HEAD
-This R Markdown document outlines how the data set to map UK seafood supply chains was created and edited. 
-=======
 
->>>>>>> d6bc88d1b79d47dee5665a81fa6b73abf8b84e6d
+This R Markdown document outlines how the data set to map UK seafood supply chains was created and edited. 
 
 The overall aim of this study is to reveal how the UK’s production and supply chains could be better aligned with consumption and dietary recommendations to bolster resilience, sustainability and safety, whilst optimising their nutritional impact, in working towards our ambition for net-zero emissions of all greenhouse gases by 2045. We are interested in gathering data from the past 10 years to assess how events like Brexit and the Covid epidemic have affected these supply chains.
 
@@ -55,7 +52,7 @@ FAO_food_balance$applied_CF<-FAO_food_balance$CF*FAO_food_balance$Value
 ```
 
 Seafood availability was calculated as follows: 
-$$seafood availability = ((production - non food uses) + imports) - exports$$
+$$seafood availability = ((production - (feed + other non food uses))- exports) + imports$$
 
 ```{r}
 # Sum items per year and per element
@@ -67,8 +64,9 @@ library(tidyr)
 FAO_seafood_availability<-FAO_food_balance_year %>%
   pivot_wider(names_from = Group.2, values_from = x)
 
-FAO_seafood_availability$Available<-
-  ((FAO_seafood_availability$Production + FAO_seafood_availability$`Import Quantity`)-FAO_seafood_availability$`Other uses (non-food)`)- FAO_seafood_availability$`Export Quantity`
+#seafood availability = ((production - (feed + other non food uses))- exports) + imports
+
+FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other use(non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
 ```
 
 
@@ -78,7 +76,8 @@ Seafood availability over the past 10 years
 
 ```{r}
 # Plot seafood availability over the past 10  years. 
-plot(FAO_seafood_availability$Available~ FAO_seafood_availability$Group.1, pch=19, xlab="Year", ylab="Seafood availability (thousand tonnes)")
+plot(FAO_seafood_availability$available~ FAO_seafood_availability$Group.1,
+     pch=19, xlab="Year", ylab="Seafood availability (thousand tonnes)")
 ```
 
 Figure 1. Seafood availability in the UK between 2010 and 2019. 
