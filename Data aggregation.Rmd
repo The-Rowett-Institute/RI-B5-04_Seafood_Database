@@ -1,7 +1,7 @@
 
 ---
 title: "RI-B5-04: Data aggregation: UK seafood supply chains"
-author: "A.Lofstedt"
+author: "A.Lofstedt, BScheliga"
 date: '14/07/2022'
 output: html_document
 ---
