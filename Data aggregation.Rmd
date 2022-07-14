@@ -1,0 +1,168 @@
+
+---
+title: "RI-B5-04: Data aggregation: UK seafood supply chains"
+author: "A.Lofstedt"
+date: '14/07/2022'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Mapping seafood supply chains in the UK
+
+This R Markdown document outlines how the data set to map UK seafood supply chains was created. 
+
+The overall aim of this study is to reveal how the UK’s production and supply chains could be better aligned with consumption and dietary recommendations to bolster resilience, sustainability and safety, whilst optimising their nutritional impact, in working towards our ambition for net-zero emissions of all greenhouse gases by 2045. We are interested in gathering data from the past 10 years to assess how events like Brexit and the Covid epidemic have affected these supply chains.
+
+Note: Scottish seafood trade data is proving difficult to obtain primarily because seafood destined/ leaving Scotland may be imported/ exported via ports throughout the UK e.g. Humberside, which are then transported across the border. Moreover, the amount of seafood (traded and produced) destined for human consumption is not specified. Such non-food uses include fishmeal, pet food and ornamental purposes. Therefore, UK seafood supply chains were mapped. 
+
+## Compilation of the dataset
+
+Food balance sheets of fish and fisheries products were sourced from the Food and Agricultural Organisation (FAO). The dataset includes capture and aquaculture statistics for all finfish, crustaceans and molluscs from brackish, freshwater and marine environments. An advantage of using FAO food balance sheets is that the data is already categorised into production, imports, exports and non-food uses. 
+
+### Download FAO food balance sheets. 
+
+**Units in 1000 tonnes**
+
+Food balance sheets can be found [here](https://www.fao.org/faostat/en/#data/FBS). Commodity data (production and trade data) and aquatic products (freshwater, demersal, marine, pelagic, crustaceans, cephlapods and mollucs) were selected over the most recent 10 year period (2009 to 2019). Aquatic meat and plants were omitted from the analysis. The most recent dataset readily available is up to 2019, thus the full impacts of COVID-19 on fisheries production and trade in the UK are yet to be documented.
+
+```{r echo=TRUE}
+# read FAO dataset (.csv)
+FAO_food_balance<- read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/FAOSTAT_data.csv", header = T)
+str(FAO_food_balance)
+
+# Identify unique Item groups
+unique(FAO_food_balance$Item)
+```
+
+Food balance sheets are measured in live weight equivalent in tonnes without accounting for processing losses, over-representing the amount available for processing losses.
+
+```{r echo=TRUE}
+# Account for processing losses by applying conversion factors from HMRC
+FAO_food_balance$CF<- ifelse(FAO_food_balance$Item %in% c("Freshwater Fish", "Demersal Fish", "Pelagic Fish", "Marine Fish, Other"), 0.49,
+                     ifelse(FAO_food_balance$Item %in% c("Cephalopods", "Crustaceans", "Molluscs, Other"), 0.28,1))
+
+unique(FAO_food_balance$CF)
+FAO_food_balance$applied_CF<-FAO_food_balance$CF*FAO_food_balance$Value
+
+```
+
+Seafood availability was calculated as follows: 
+$$seafood availability = ((production - non food uses) + imports) - exports$$
+
+```{r}
+# Sum items per year and per element
+FAO_food_balance_year<-aggregate(FAO_food_balance$applied_CF,by= list(FAO_food_balance$Year, FAO_food_balance$Element), FUN=sum)
+
+# unstack dataframe
+library(tidyr)
+
+FAO_seafood_availability<-FAO_food_balance_year %>%
+  pivot_wider(names_from = Group.2, values_from = x)
+
+FAO_seafood_availability$Available<-
+  ((FAO_seafood_availability$Production + FAO_seafood_availability$`Import Quantity`)-FAO_seafood_availability$`Other uses (non-food)`)- FAO_seafood_availability$`Export Quantity`
+```
+
+
+### Data exploration
+
+Seafood availability over the past 10 years 
+
+```{r}
+# Plot seafood availability over the past 10  years. 
+plot(FAO_seafood_availability$Available~ FAO_seafood_availability$Group.1, pch=19, xlab="Year", ylab="Seafood availability (thousand tonnes)")
+```
+
+Figure 1. Seafood availability in the UK between 2010 and 2019. 
+
+## UK fish consumption and purchasing data.
+
+Three data sources were identified a) DEFRA family foods, b) National Diet and Nutrition Survey (NDNS) data and c) Kantar
+
+### A) DEFRA family food data sets. 
+
+**Units in g/person/week**
+
+DEFRA family food data sets include the average quantity of food and drink purchased per person per week for each food and drink category. It includes food purchased for UK households and food eaten out.
+
+**Note**Financial year estimates
+The latest results cover the financial year 2018/19,  which switched to financial year reporting for 2015/16 onwards. Comparisons between financial year estimates and previous calendar year ones are valid since both cover a full year of shopping activity. In the detailed datasets indicative estimates for 2015/16 as well as the previously published 2015 calendar year estimates are shown, for comparison. From 2015 on wards, data are collected for every financial year meaning data from 2015 is duplicated.
+
+**Note**: saving a excel data file as a csv removes evidence of rounded values. All raw data were rounded to 2 decimal places and then saved as a csv file.
+
+### A) Household purchases
+
+```{r echo=TRUE}
+# read DEFRA household dataset (.csv)
+DEFRA_household_data<- read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/DEFRA.UK_households_edit.csv", header = T)
+
+str(DEFRA_household_data)
+unique(DEFRA_household_data$Major.Food.Code)
+```
+```{r}
+# Major food codes according to FAO groupings
+DEFRA_household_data$FAO<- "Unknown"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "White fish, fresh, chilled or frozen"]<- "Demersal"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "White fish, dried, salted or smoked"]<- "Demersal"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Shellfish"]<- "Shellfish"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Salmon, fresh, chilled or frozen"]<- "Pelagic"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Blue fish, dried or salted or smoked"]<- "Pelagic"
+DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Salmon, tinned"]<- "Pelagic"
+```
+
+### B) Eating out
+
+Data were edited in excel prior to entering into R. EO food group "Fish and fisheries products" were selected and column information was duplicated to ensure all cells had data in. 
+
+**Note**: The amount of fish eaten out is underestimated because only products defined under "fish and fisheries" were selected. Some fisheries products were purchased as part of a different EO major code (cuisine) e.g. Indian: meat or fish based curry with sauce. However, the exact proportion of fish based curry is not defined.  
+
+```{r}
+# read DEFRA eaten out dataset (.csv)
+DEFRA_eaten_out_data<- read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/DEFRA.UK_eaten_out_edit.csv", header = T)
+
+str(DEFRA_eaten_out_data)
+unique(DEFRA_eaten_out_data$EO.Major.code)
+```
+
+Fish commodities were aggregated according to FAO classification. "White fish" are assumed to be demersal species, "Fatty fish" and "Kippers" assumed to be pelagics, "Shellfish" equivalent to shellfish with all other commodities identified as "unknown". 
+
+```{r}
+# Major food codes according to FAO groupings.
+DEFRA_eaten_out_data$FAO<- "Unknown"
+DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "White fish"]<- "Demersal"
+DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"]<- "Shellfish"
+DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "Fatty fish"] <-"Pelagic"
+DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "Kippers and other smoked fish (e.g. smoked salmon)"]<- "Pelagic"
+
+```
+
+  
+
+### B) National Diet and Nutrition Survey (NDNS) data
+
+**Units in g/ person**
+
+Data were edited in excel prior to entering into R. Arithmetic mean was selected for all age groups.  
+
+```{r}
+# Read in NDNS data
+NDNS_data<-read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/NDNS. Table 7.8_edit.csv", header = T)
+
+str(NDNS_data)
+```
+```{r}
+## Aggregate all age cohorts together
+```
+
+
+### C) Kantar
+
+```{r}
+# read Kantar dataset (.csv)
+
+```
