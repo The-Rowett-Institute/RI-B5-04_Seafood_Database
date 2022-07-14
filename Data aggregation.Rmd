@@ -13,7 +13,11 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Mapping seafood supply chains in the UK
 
+<<<<<<< HEAD
 This R Markdown document outlines how the data set to map UK seafood supply chains was created and edited. 
+=======
+
+>>>>>>> d6bc88d1b79d47dee5665a81fa6b73abf8b84e6d
 
 The overall aim of this study is to reveal how the UK’s production and supply chains could be better aligned with consumption and dietary recommendations to bolster resilience, sustainability and safety, whilst optimising their nutritional impact, in working towards our ambition for net-zero emissions of all greenhouse gases by 2045. We are interested in gathering data from the past 10 years to assess how events like Brexit and the Covid epidemic have affected these supply chains.
 
