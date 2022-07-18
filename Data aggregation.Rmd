@@ -30,20 +30,24 @@ Food balance sheets of fish and fisheries products were sourced from the Food an
 
 Food balance sheets can be found [here](https://www.fao.org/faostat/en/#data/FBS). Commodity data (production and trade data) and aquatic products (freshwater, demersal, marine, pelagic, crustaceans, cephlapods and mollucs) were selected over the most recent 10 year period (2009 to 2019). Aquatic meat and plants were omitted from the analysis. The most recent dataset readily available is up to 2019, thus the full impacts of COVID-19 on fisheries production and trade in the UK are yet to be documented.
 
-```{r Loading Libraries, include=FALSE}
+```{r, Loading Libraries, include=FALSE}
 # It is good practice to load all needed libraries in the beginning of the scripted
-library(here)
+#library(here)
+library(tidyr)
+library(vroom) #for laoding and transforming data
 
 ```
 
 
-```{r Loading Data, echo=TRUE}
-# Loading file path to the data 
-source(here(Data_filepath.R))
+```{r, Loading Data, echo=TRUE}
+# Loading file path to the data into a value 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+
 
 # read FAO dataset (.csv)
-FAO_food_balance<- read.csv(file=paste(Data,"FAOSTAT_data.csv") , header = T)
+FAO_food_balance<- vroom(file=paste(data_dir,"FAOSTAT_data.csv", sep="/"))
 str(FAO_food_balance)
+## Use vroom for above
 
 # Identify unique Item groups
 unique(FAO_food_balance$Item)
@@ -51,7 +55,7 @@ unique(FAO_food_balance$Item)
 
 Food balance sheets are measured in live weight equivalent in tonnes without accounting for processing losses, over-representing the amount available for processing losses.
 
-```{r echo=TRUE}
+```{r , Applying HMRC conversion for processing losses, echo=TRUE}
 # Account for processing losses by applying conversion factors from HMRC
 FAO_food_balance$CF<- ifelse(FAO_food_balance$Item %in% c("Freshwater Fish", "Demersal Fish", "Pelagic Fish", "Marine Fish, Other"), 0.49,
                      ifelse(FAO_food_balance$Item %in% c("Cephalopods", "Crustaceans", "Molluscs, Other"), 0.28,1))
@@ -69,14 +73,13 @@ $$seafood availability = ((production - (feed + other non food uses))- exports) 
 FAO_food_balance_year<-aggregate(FAO_food_balance$applied_CF,by= list(FAO_food_balance$Year, FAO_food_balance$Element), FUN=sum)
 
 # unstack dataframe
-library(tidyr)
 
 FAO_seafood_availability<-FAO_food_balance_year %>%
   pivot_wider(names_from = Group.2, values_from = x)
 
 #seafood availability = ((production - (feed + other non food uses))- exports) + imports
 
-FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other use(non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
+FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other uses (non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
 ```
 
 
@@ -111,7 +114,7 @@ The latest results cover the financial year 2018/19,  which switched to financia
 
 ```{r echo=TRUE}
 # read DEFRA household dataset (.csv)
-DEFRA_household_data<- read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/DEFRA.UK_households_edit.csv", header = T)
+DEFRA_household_data<- read.csv(file= paste(data_dir,"DEFRA.UK_households_edit.csv", sep="/"), header = T)
 
 str(DEFRA_household_data)
 unique(DEFRA_household_data$Major.Food.Code)
@@ -136,7 +139,7 @@ Data were edited in excel prior to entering into R. EO food group "Fish and fish
 
 ```{r}
 # read DEFRA eaten out dataset (.csv)
-DEFRA_eaten_out_data<- read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/DEFRA.UK_eaten_out_edit.csv", header = T)
+DEFRA_eaten_out_data<- read.csv(file= paste(data_dir,"DEFRA.UK_eaten_out_edit.csv", sep="/"), header = T)
 
 str(DEFRA_eaten_out_data)
 unique(DEFRA_eaten_out_data$EO.Major.code)
@@ -164,7 +167,7 @@ Data were edited in excel prior to entering into R. Arithmetic mean was selected
 
 ```{r}
 # Read in NDNS data
-NDNS_data<-read.csv(file= "C:/Users/s09al9/Documents/Research assistant/RI-B5-04. Understanding the Scottish food supply chain/UK balance sheets/Data/Raw data/csv.files/NDNS. Table 7.8_edit.csv", header = T)
+NDNS_data<-read.csv(file= paste(data_dir,"NDNS. Table 7.8_edit.csv", sep="/"), header = T)
 
 str(NDNS_data)
 ```
