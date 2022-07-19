@@ -77,9 +77,18 @@ FAO_food_balance_year<-aggregate(FAO_food_balance$applied_CF,by= list(FAO_food_b
 FAO_seafood_availability<-FAO_food_balance_year %>%
   pivot_wider(names_from = Group.2, values_from = x)
 
+<<<<<<< HEAD
 #seafood availability = ((production - (feed + other non food uses))- exports) + imports
 
 FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other uses (non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
+||||||| 577bc55
+FAO_seafood_availability$Available<-
+  ((FAO_seafood_availability$Production + FAO_seafood_availability$`Import Quantity`)-FAO_seafood_availability$`Other uses (non-food)`)- FAO_seafood_availability$`Export Quantity`
+=======
+#seafood availability = ((production - (feed + other non food uses))- exports) + imports
+
+FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other use(non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
+>>>>>>> aafe64babc54771618ddfa67e8cd86474a09bee0
 ```
 
 
