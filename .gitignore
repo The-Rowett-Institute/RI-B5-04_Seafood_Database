@@ -2,3 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
+Data_filepath.R
+Data aggregation.Rmd
