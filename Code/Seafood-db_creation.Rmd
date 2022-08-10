@@ -1,0 +1,34 @@
+---
+title: "Creation of a UK Seafood supply chain database"
+author: "B. Scheliga"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is a document describs the methods and data used to create the UK Seafood supply chain database. 
+
+**[CHECK below if correct]**
+This project was part of the RESAS - Project from the Rowett Insitute at the University of Aberdeen.
+
+## Method
+
+### Libraries
+
+```{r Libraries}
+library(tidyverse)
+library(vroom)
+#library(here)
+```
+
+### Datasets
+
+```{r loading data}
+
+```
+
