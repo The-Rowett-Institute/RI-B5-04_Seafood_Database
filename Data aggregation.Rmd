@@ -57,10 +57,13 @@ Food balance sheets are measured in live weight equivalent in tonnes without acc
 
 ```{r Applying HMRC conversion for processing losses, echo=TRUE}
 # Account for processing losses by applying conversion factors from HMRC
+# assigning HMRC cf to the respective species 
 FAO_food_balance$CF<- ifelse(FAO_food_balance$Item %in% c("Freshwater Fish", "Demersal Fish", "Pelagic Fish", "Marine Fish, Other"), 0.49,
                      ifelse(FAO_food_balance$Item %in% c("Cephalopods", "Crustaceans", "Molluscs, Other"), 0.28,1))
 
-unique(FAO_food_balance$CF)
+unique(FAO_food_balance$CF) # quick look at the assigned cf
+
+# Applying the HMRC cf to the values (weight) in the FAO food balance sheet
 FAO_food_balance$applied_CF<-FAO_food_balance$CF*FAO_food_balance$Value
 
 ```
@@ -70,12 +73,12 @@ $$seafood availability = ((production - (feed + other non food uses))- exports) 
 
 ```{r}
 # Sum items per year and per element
-FAO_food_balance_year<-aggregate(FAO_food_balance$applied_CF,by= list(FAO_food_balance$Year, FAO_food_balance$Element), FUN=sum)
+FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF), by= list(Year = FAO_food_balance$Year,  Element = FAO_food_balance$Element), FUN=sum)
 
 # unstack dataframe
 
 FAO_seafood_availability<-FAO_food_balance_year %>%
-  pivot_wider(names_from = Group.2, values_from = x)
+  pivot_wider(names_from = Element, values_from = Amount_1k_t)
 
 
 #seafood availability = ((production - (feed + other non food uses))- exports) + imports
