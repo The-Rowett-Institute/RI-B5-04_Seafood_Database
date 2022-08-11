@@ -23,13 +23,36 @@ This project was part of the RESAS - Project from the Rowett Insitute at the Uni
 ```{r Libraries}
 library(tidyverse)
 library(vroom)
+library(data.table)
 #library(here)
 ```
 
 ### Datasets
 
-```{r loading data}
-source(Data_filepath)
-setwd()
+```{r Loading data}
+# loading filepath to the project folder on the University storage
+source("Data_filepath.R")
+
+
+# Only selecting the cleaned dataset, which are annotate with the "_cleaned_sfdb". There might be other processed files in the folder, which we don't want
+filepath <- paste(data_dir,"ProcessedData/", sep="")# we are storing the file path here, because we'll need it later
+vec_filenames_sfdb <- list.files(filepath, pattern = "_cleaned_sfdb.csv", full.names = TRUE)
+
+
+
+print("The following files were loaded:")
+i = 1
+# Loading the cleaned dataset
+for(f in vec_filenames_sfdb){
+
+    temp <- fread(f) # storing the data in a temporary 
+    assign(paste("df_",substr(sub(paste(".*",filepath,sep=""),"",f),1,6),sep=""),temp) # assigning the df a name based on input dataset
+    print(paste(i,". ",sub(paste(".*",filepath,sep=""),"",f),sep="")) # print out which dataset files had been used
+    i = i+1
+    rm(temp)# removing temp object
+}
+rm(i)
+
+
 ```
 
