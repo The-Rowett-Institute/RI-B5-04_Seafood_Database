@@ -73,13 +73,7 @@ $$seafood availability = ((production - (feed + other non food uses))- exports) 
 
 ```{r}
 # Sum items per year and per element
-<<<<<<< HEAD
 FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF), by= list(Year = FAO_food_balance$Year,  Element = FAO_food_balance$Element), FUN=sum)  # Amount_1k_t = Amount/Weight in units of 1000 tonnes
-||||||| 5cbb71d
-FAO_food_balance_year<-aggregate(FAO_food_balance$applied_CF,by= list(FAO_food_balance$Year, FAO_food_balance$Element), FUN=sum)
-=======
-FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF), by= list(Year = FAO_food_balance$Year,  Element = FAO_food_balance$Element), FUN=sum)
->>>>>>> 2c1d860bc72bfd9c11e86f8496a87d0dd676c9e2
 
 # unstack dataframe
 
