@@ -1,8 +1,8 @@
 
 ---
-title: "RI-B5-04: Data aggregation: UK seafood supply chains"
+title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '14/07/2022'
+date: '26/08/2022'
 output: html_document
 ---
 
@@ -11,111 +11,119 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Mapping seafood supply chains in the UK
+## Part 1: Identifying and cleaning data to map seafood supply chains in the UK 
 
+This R Markdown document (part 1) outlines how the data complied in the final spreadsheet mapping UK seafood supply chains was cleaned. 
 
-This R Markdown document outlines how the data set to map UK seafood supply chains was created and edited. 
+The justification for the data included in this data set can be found in the supporting excel document.  
 
-The overall aim of this study is to reveal how the UK’s production and supply chains could be better aligned with consumption and dietary recommendations to bolster resilience, sustainability and safety, whilst optimising their nutritional impact, in working towards our ambition for net-zero emissions of all greenhouse gases by 2045. We are interested in gathering data from the past 10 years to assess how events like Brexit and the Covid epidemic have affected these supply chains.
+## Preparation
 
-Note: Scottish seafood trade data is proving difficult to obtain primarily because seafood destined/ leaving Scotland may be imported/ exported via ports throughout the UK e.g. Humberside, which are then transported across the border. Moreover, the amount of seafood (traded and produced) destined for human consumption is not specified. Such non-food uses include fishmeal, pet food and ornamental purposes. Therefore, UK seafood supply chains were mapped. 
-
-## Compilation of the dataset
-
-Food balance sheets of fish and fisheries products were sourced from the Food and Agricultural Organisation (FAO). The dataset includes capture and aquaculture statistics for all finfish, crustaceans and molluscs from brackish, freshwater and marine environments. An advantage of using FAO food balance sheets is that the data is already categorised into production, imports, exports and non-food uses. 
-
-### Download FAO food balance sheets. 
-
-**Units in 1000 tonnes**
-
-Food balance sheets can be found [here](https://www.fao.org/faostat/en/#data/FBS). Commodity data (production and trade data) and aquatic products (freshwater, demersal, marine, pelagic, crustaceans, cephlapods and mollucs) were selected over the most recent 10 year period (2009 to 2019). Aquatic meat and plants were omitted from the analysis. The most recent dataset readily available is up to 2019, thus the full impacts of COVID-19 on fisheries production and trade in the UK are yet to be documented.
-
-```{r Loading Libraries, include=FALSE}
-# It is good practice to load all needed libraries in the beginning of the scripted
-#library(here)
+```{r Load libraries, include=FALSE}
 library(tidyr)
-library(vroom) #for laoding and transforming data
+library(vroom) # for loading and transforming data
 
 ```
 
-
-```{r Loading Data, echo=TRUE}
+```{r Load data, echo=TRUE}
 # Loading file path to the data into a value 
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
-
-
-# read FAO dataset (.csv)
-FAO_food_balance<- vroom(file=paste(data_dir,"FAOSTAT_data.csv", sep="/"))
-str(FAO_food_balance)
-## Use vroom for above
-
-# Identify unique Item groups
-unique(FAO_food_balance$Item)
 ```
 
-Food balance sheets are measured in live weight equivalent in tonnes without accounting for processing losses, over-representing the amount available for processing losses.
-
-```{r Applying HMRC conversion for processing losses, echo=TRUE}
-# Account for processing losses by applying conversion factors from HMRC
-# assigning HMRC cf to the respective species 
-FAO_food_balance$CF<- ifelse(FAO_food_balance$Item %in% c("Freshwater Fish", "Demersal Fish", "Pelagic Fish", "Marine Fish, Other"), 0.49,
-                     ifelse(FAO_food_balance$Item %in% c("Cephalopods", "Crustaceans", "Molluscs, Other"), 0.28,1))
-
-unique(FAO_food_balance$CF) # quick look at the assigned cf
-
-# Applying the HMRC cf to the values (weight) in the FAO food balance sheet
-FAO_food_balance$applied_CF<-FAO_food_balance$CF*FAO_food_balance$Value
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"RawData/csv-files", sep="") 
+# note we are able to change this to another file e.g. saving the output
 
 ```
 
-Seafood availability was calculated as follows: 
-$$seafood availability = ((production - (feed + other non food uses))- exports) + imports$$
+## Production
+
+UK fish production data includes capture fisheries and aquaculture production 
+
+### A) Capture fisheries (Office of National Statistics)
+
+```{r Load data (2011 to 2020)}
+# UK sea fisheries statistics
+# Data source: Office of National Statistics
+
+# i) Landings into the UK by UK vessels: 2011 to 2020 (a)
+# extract UK landings data between 2011 and 2020 
+
+# Read in landing data. Change file for each chunk 
+df_UK_landings_11_20_data<- vroom(file=paste(filepath,"NS_UK-landings-11-20-edit.csv", sep="/"))
+
+```
+
+```{r Add units and data source (2011 to 2020) }
+# Add in column expressing units and data source
+df_UK_landings_11_20_data$Units<- "000 tonnes"
+df_UK_landings_11_20_data$Data_source<- "National-statistics"
+```
+
+```{r Load data (2009 to 2010)}
+
+# ii) Landings into the UK by UK vessels: 2008 to 2012 (b)
+# Extract UK landings data between 2009 and 2010. 
+
+# Read in landing data. 
+
+df_UK_landings_08_12_data<- vroom(file=paste(filepath,"NS_UK-landings-08-12-edit.csv", sep="/"))
+str(df_UK_landings_08_12_data)
+colnames(df_UK_landings_08_12_data)
+
+# Select only years 2009 and 2010
+df_UK_landings_09_10<- subset(df_UK_landings_08_12_data, 
+                           select = c(Species_type,Species,2009,2010))
+
+```
+
+```{r Add units and data source (2009 to 2010)}
+# Add in column expressing units
+df_UK_landings_09_10$Units<- "000 tonnes"
+df_UK_landings_09_10$Data_source<- "National-statistics"
+```
+
+### B) Aquaculture production (Marine Scotland and DEFRA)
+
+```{r Load data}
+# Aquaculture production 
+# Data source: Marine Scotland and DEFRA
+
+```
+
+```{r Add units and data source}
+
+```
+
+
+## Imports (HMRC)
+
+## Exports (HMRC)
+
+## UK fish consumption (NDNS)
+
+```{r Load data}
+# Read in NDNS data
+NDNS_data<- vroom(file=paste(filepath,"NDNS_edit.csv", sep="/"))
+
+str(NDNS_data)
+```
+
 
 ```{r}
-# Sum items per year and per element
-FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF), by= list(Year = FAO_food_balance$Year,  Element = FAO_food_balance$Element), FUN=sum)  # Amount_1k_t = Amount/Weight in units of 1000 tonnes
+## Aggregate all age cohorts together
+```
 
-# unstack dataframe
-
-FAO_seafood_availability<-FAO_food_balance_year %>%
-  pivot_wider(names_from = Element, values_from = Amount_1k_t)
-
-
-#seafood availability = ((production - (feed + other non food uses))- exports) + imports
-
-FAO_seafood_availability$available<- ((FAO_seafood_availability$Production - (FAO_seafood_availability$`Other uses (non-food)`+FAO_seafood_availability$Feed)) - FAO_seafood_availability$`Export Quantity`)+FAO_seafood_availability$`Import Quantity`
-
+```{r Add units and data source}
+# Units in g/person
 ```
 
 
-### Data exploration
+## UK fish purchasing data (DEFRA and Kantar)
 
-Seafood availability over the past 10 years 
+### A) DEFRA family food data sets
 
-```{r}
-# Plot seafood availability over the past 10  years. 
-plot(FAO_seafood_availability$available~ FAO_seafood_availability$Group.1,
-     pch=19, xlab="Year", ylab="Seafood availability (thousand tonnes)")
-```
-
-Figure 1. Seafood availability in the UK between 2010 and 2019. 
-
-## UK fish consumption and purchasing data.
-
-Three data sources were identified a) DEFRA family foods, b) National Diet and Nutrition Survey (NDNS) data and c) Kantar
-
-### A) DEFRA family food data sets. 
-
-**Units in g/person/week**
-
-DEFRA family food data sets include the average quantity of food and drink purchased per person per week for each food and drink category. It includes food purchased for UK households and food eaten out.
-
-**Note**Financial year estimates
-The latest results cover the financial year 2018/19,  which switched to financial year reporting for 2015/16 onwards. Comparisons between financial year estimates and previous calendar year ones are valid since both cover a full year of shopping activity. In the detailed datasets indicative estimates for 2015/16 as well as the previously published 2015 calendar year estimates are shown, for comparison. From 2015 on wards, data are collected for every financial year meaning data from 2015 is duplicated.
-
-**Note**: saving a excel data file as a csv removes evidence of rounded values. All raw data were rounded to 2 decimal places and then saved as a csv file.
-
-### A) Household purchases
+#### i) Household purchases
 
 ```{r echo=TRUE}
 # read DEFRA household dataset (.csv)
@@ -124,7 +132,9 @@ DEFRA_household_data<- read.csv(file= paste(data_dir,"DEFRA.UK_households_edit.c
 str(DEFRA_household_data)
 unique(DEFRA_household_data$Major.Food.Code)
 ```
-```{r}
+
+
+```{r Aggregate food groups}
 # Major food codes according to FAO groupings
 DEFRA_household_data$FAO<- "Unknown"
 DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "White fish, fresh, chilled or frozen"]<- "Demersal"
@@ -136,13 +146,15 @@ DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Blue fish, dri
 DEFRA_household_data$FAO[DEFRA_household_data$Major.Food.Code == "Salmon, tinned"]<- "Pelagic"
 ```
 
-### B) Eating out
 
-Data were edited in excel prior to entering into R. EO food group "Fish and fisheries products" were selected and column information was duplicated to ensure all cells had data in. 
+```{r Add units and data source}
+# Units in g/person/week**
 
-**Note**: The amount of fish eaten out is underestimated because only products defined under "fish and fisheries" were selected. Some fisheries products were purchased as part of a different EO major code (cuisine) e.g. Indian: meat or fish based curry with sauce. However, the exact proportion of fish based curry is not defined.  
+```
 
-```{r}
+#### ii) Eating out
+
+```{r Load data}
 # read DEFRA eaten out dataset (.csv)
 DEFRA_eaten_out_data<- read.csv(file= paste(data_dir,"DEFRA.UK_eaten_out_edit.csv", sep="/"), header = T)
 
@@ -150,9 +162,8 @@ str(DEFRA_eaten_out_data)
 unique(DEFRA_eaten_out_data$EO.Major.code)
 ```
 
-Fish commodities were aggregated according to FAO classification. "White fish" are assumed to be demersal species, "Fatty fish" and "Kippers" assumed to be pelagics, "Shellfish" equivalent to shellfish with all other commodities identified as "unknown". 
 
-```{r}
+```{r Aggregate food groups}
 # Major food codes according to FAO groupings.
 DEFRA_eaten_out_data$FAO<- "Unknown"
 DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "White fish"]<- "Demersal"
@@ -162,28 +173,34 @@ DEFRA_eaten_out_data$FAO[DEFRA_eaten_out_data$EO.Major.code == "Kippers and othe
 
 ```
 
+
+```{r Add units and data source}
+# Units in g/person/week
+
+```
+
   
+### B)  Kantar
 
-### B) National Diet and Nutrition Survey (NDNS) data
+## UK population data
 
-**Units in g/ person**
+Load UK population data- need to convert per g/ capita data to g/ UK total population.
 
-Data were edited in excel prior to entering into R. Arithmetic mean was selected for all age groups.  
+```{r Load data}
 
-```{r}
-# Read in NDNS data
-NDNS_data<-read.csv(file= paste(data_dir,"NDNS. Table 7.8_edit.csv", sep="/"), header = T)
+# A) UK population data
+# Data source: Office of National Statistics 
 
-str(NDNS_data)
-```
-```{r}
-## Aggregate all age cohorts together
-```
+# Extract UK population data between 2009 and 2022. 
 
+# Read in population data. 
+UK_population_data<- read.csv("NationalStatistics.UK_population_edit.csv")
+str(UK_population_data)
 
-### C) Kantar
-
-```{r}
-# read Kantar dataset (.csv)
+# Subset UK population data from 2009 onwards
+UK_population<-subset(UK_population_data, 
+                      CDID > 2008, select= c(CDID, UKPOP))
 
 ```
+
+
