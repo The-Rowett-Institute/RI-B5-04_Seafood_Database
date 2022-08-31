@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '29/08/2022'
+date: '31/08/2022'
 output: html_document
 ---
 
@@ -22,6 +22,7 @@ The justification for the data included in this data set can be found in the sup
 ```{r Load libraries, include=FALSE}
 library(tidyr)
 library(vroom) # for loading and transforming data
+library(tidyverse)
 
 ```
 
@@ -43,57 +44,108 @@ UK fish production data includes capture fisheries and aquaculture production
 ### A) Capture fisheries (Office of National Statistics)
 
 ```{r Load data (2011 to 2020)}
-
 # i) Landings into the UK by UK vessels: 2011 to 2020 (a)
-# extract UK landings data between 2011 and 2020. UK sea fisheries statistics  
+# extract UK landings data between 2011 and 2020.
 
-# Read in landing data. Change file for each chunk 
-df_UK_landings_11_20_data<- vroom(file=paste(filepath,"NS_UK-landings-11-20-edit.csv", sep="/"))
-str(df_UK_landings_11_20_data)
-colnames(df_UK_landings_11_20_data)
+# Read in landing data
+df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK-landings-11-20-edit.csv", sep="/"), na = c(".."))
 
 ```
 
 ```{r Add units and data source (2011 to 2020) }
 # Create "cleaned" data frame, defining units and data source 
-df_UK_landings_11_20_data$Units<- "000-tonnes"
-df_UK_landings_11_20_data$Data_source<- "National-statistics"
+df_UK_landings_11_20_data$Units <- "000-tonnes"
+df_UK_landings_11_20_data$Data_source <- "National-statistics"
 ```
 
 ```{r Load data (2009 to 2010)}
-
 # ii) Landings into the UK by UK vessels: 2008 to 2012 (b)
 # Extract UK landings data between 2009 and 2010. 
 
-# Read in landing data. 
-
-df_UK_landings_08_12_data<- vroom(file=paste(filepath,"NS_UK-landings-08-12-edit.csv", sep="/"))
-str(df_UK_landings_08_12_data)
-colnames(df_UK_landings_08_12_data)
+# Read in landing data
+df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK-landings-08-12-edit.csv", sep="/"),na = c(".."))
 
 # Select only years 2009 and 2010
-df_UK_landings_09_10<- subset(df_UK_landings_08_12_data, 
-                           select = c(Species_type,Species, '2009', '2010'))
+df_UK_landings_09_10 <- subset(df_UK_landings_08_12_data, 
+                           select = c('Species_type', 'Species', '2009', '2010'))
 
 ```
 
 ```{r Add units and data source (2009 to 2010)}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_landings_09_10$Units<- "000-tonnes"
-df_UK_landings_09_10$Data_source<- "National-statistics"
+df_UK_landings_09_10$Units <- "000-tonnes"
+df_UK_landings_09_10$Data_source <- "National-statistics"
+```
+
+```{r Combine datasets (2009 to 2010 and 2011 to 2020)}
+# Combine capture production data sets (2009 to 2010 and 2011 to 2020)
+df_clean_UK_landings_09_20 <- merge(df_UK_landings_11_20_data, df_UK_landings_09_10)
+
+```
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+#filepath <- paste(data_dir,"ProcessedData/csv-files", sep="") 
+#NS_UK_capture_cleaned <- write.csv(df_clean_UK_landings_09_20)
+
 ```
 
 ### B) Aquaculture production (Marine Scotland and DEFRA)
 
-```{r Load data}
-# Aquaculture production 
-# Data source: Marine Scotland and DEFRA
+```{r Load data (Scotland: Marine Scotland Science)}
+# a) Aquaculture production in Scotland
+# i) salmon, ii) rainbow trout, iii) shellfish
+df_MSS_salmon_data <- vroom(file=paste(filepath,"MSS_aquaculture-salmon.csv", sep="/"), na = c(".."))
+
+df_MSS_rainbowTrout_data <- vroom(file=paste(filepath,"MSS_aquaculture-rainbow-trout.csv", sep="/"), na = c(".."))
+
+df_MSS_shellfish_data <- vroom(file=paste(filepath,"MSS_aquaculture-shellfish.csv", sep="/"), na = c(".."))
 
 ```
 
-```{r Add units and data source}
+```{r Subset data (Scotland: Marine Scotland Science)}
+# Determine products are for human consumption 
+df_MSS_shellfish_HC <- subset(df_MSS_shellfish_data, Production == "For the table")
+
+# Subset data between 2009 and 2021 
+df_MSS_salmon <- subset(df_MSS_salmon_data, Year > 2008, 
+                        select= c(Year, Tonnes)) 
+
+df_MSS_rainbowTrout <- subset(df_MSS_rainbowTrout_data, Year > 2008, 
+                        select= c("Year", "Total Tonnes"))
+
+df_MSS_shellfish <- subset(df_MSS_shellfish_HC, Year > 2008)
+
+# State species, unit and data source
+df_MSS_salmon$Units <- "Tonnes"
+df_MSS_salmon$Data_source <- "MSS"
+df_MSS_salmon$Species <- "Salmon"
+
+df_MSS_rainbowTrout$Units <- "Tonnes"
+df_MSS_rainbowTrout$Data_source <- "MSS"
+df_MSS_rainbowTrout$Species <- "RainbowTrout"
+
+df_MSS_shellfish$Units <- "Varied"
+df_MSS_shellfish$Data_source <- "MSS"
+df_MSS_shellfish$Species <- "Salmon"
+
+```
+
+```{r Combine Scottish aqacualture production data}
+
+#df_MMS_production<- merge(df_MSS_salmon, df_MSS_rainbowTrout)
+
+```
+
+
+```{r Add units and data source (Scotland: Marine Scotland Science)}
 # Create "cleaned" data frame, defining units and data source 
 ```
+
+```{r Save cleaned data (Scotland: Marine Scotland Science)}
+
+```
+
 
 ## Trade (HMRC)
 
@@ -138,8 +190,8 @@ df_UK_landings_09_10$Data_source<- "National-statistics"
 
 ```{r Load data}
 # Read in NDNS data
-df_NDNS_data<- vroom(file=paste(filepath,"NDNS_edit.csv", sep="/"))
-str(df_NDNS_data)
+df_NDNS_data <- vroom(file=paste(filepath,"NDNS_edit.csv", sep="/"))
+
 ```
 
 ```{r Aggregate cohort information}
@@ -147,17 +199,22 @@ str(df_NDNS_data)
 unique(df_NDNS_data$`Age category`)
 
 # Create a pipe aggregating sub age cohort totals, irrespective of gender 
-all_genders<-NDNS_data[df_NDNS_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
+all_genders <-NDNS_data[df_NDNS_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
 
 # Sum all subsetted cohorts 
-df_clean_NDNS<-as.data.frame(colSums(all_genders[3:7]))
+df_clean_NDNS <-as.data.frame(colSums(all_genders[3:7]))
 
 ```
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_NDNS$Units<-"g/capita/day"
-df_clean_NDNS$Data_source<-"NDNS"
+df_clean_NDNS$Units <- "g/capita/day"
+df_clean_NDNS$Data_source <- "NDNS"
+
+```
+
+
+```{r Save cleaned data}
 
 ```
 
@@ -170,40 +227,45 @@ df_clean_NDNS$Data_source<-"NDNS"
 
 ```{r Load data}
 # read DEFRA household dataset (.csv)
-df_DEFRA_household_data<-vroom(file=paste(filepath,"DEFRA_UK-households-edit.csv", sep="/"))
+df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK-households-edit.csv", sep="/"))
 
 ```
 
 
 ```{r Aggregate food groups}
-
 # Identify unique major food groups
 unique(df_DEFRA_household_data$`Major Food Code`)
 
 # Major food codes according to FAO groupings
-df_DEFRA_household_data$FAO<- "Unknown"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, fresh, chilled or frozen"]<- "Demersal"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, dried, salted or smoked"]<- "Demersal"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Shellfish"]<- "Shellfish"
+df_DEFRA_household_data$FAO <- "Unknown"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, fresh, chilled or frozen"] <- "Demersal"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, dried, salted or smoked"] <- "Demersal"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Shellfish"] <- "Shellfish"
 df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, fresh, chilled or frozen"]<- "Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Blue fish, dried or salted or smoked"]<- "Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, tinned"]<- "Pelagic"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, fresh, chilled or frozen"] <- "Pelagic"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Blue fish, dried or salted or smoked"] <- "Pelagic"
+df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, tinned"] <- "Pelagic"
 ```
 
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-df_DEFRA_household_data$Units<-"g/capita/week"
-df_DEFRA_household_data$Data_source<-"DEFRA-FF"
+df_DEFRA_household_data$Units <- "g/capita/week"
+df_DEFRA_household_data$Data_source <- "DEFRA-FF"
 
 ```
+
+
+```{r Save cleaned data}
+
+```
+
 
 #### ii) Eating out (DEFRA)
 
 ```{r Load data}
 # read DEFRA eaten out data set
-df_DEFRA_eaten_out_data<-vroom(file=paste(filepath,"DEFRA_UK-eaten-out-edit.csv", sep="/"))
+df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK-eaten-out-edit.csv", sep="/"))
 
 ```
 
@@ -214,22 +276,27 @@ df_DEFRA_eaten_out_data<-vroom(file=paste(filepath,"DEFRA_UK-eaten-out-edit.csv"
 unique(df_DEFRA_eaten_out_data$`EO Major code`)
 
 # Major food codes according to FAO groupings.
-df_DEFRA_eaten_out_data$FAO<- "Unknown"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "White fish"]<- "Demersal"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"]<- "Shellfish"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Fatty fish"] <-"Pelagic"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Kippers and other smoked fish (e.g. smoked salmon)"]<- "Pelagic"
+df_DEFRA_eaten_out_data$FAO <- "Unknown"
+df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "White fish"] <- "Demersal"
+df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"] <- "Shellfish"
+df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Fatty fish"] <- "Pelagic"
+df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Kippers and other smoked fish (e.g. smoked salmon)"] <- "Pelagic"
 
 ```
 
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source
-df_clean_DEFRA_eaten_out<- df_DEFRA_eaten_out_data
-df_clean_DEFRA_eaten_out$Units<- "g/capita/week"
-df_clean_DEFRA_eaten_out$Data_source<-"DEFRA-FF"
+df_clean_DEFRA_eaten_out <- df_DEFRA_eaten_out_data
+df_clean_DEFRA_eaten_out$Units <- "g/capita/week"
+df_clean_DEFRA_eaten_out$Data_source <- "DEFRA-FF"
 
 ```
+
+```{r Save cleaned data}
+
+```
+
 
 ### B) Kantar 
 
@@ -240,21 +307,24 @@ Download UK population data- need to convert per g/capita data to g/total UK tot
 
 ```{r Load data}
 # Read in UK population data 
-df_NS_UK_pop_data<-vroom(file=paste(filepath,"NS_UK-population-edit.csv", sep="/"))
+df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK-population-edit.csv", sep="/"))
 ```
 
 ```{r Subset data}
 # Extract UK population data between 2009 onwards
-df_UK_pop<-subset(df_NS_UK_pop_data, 
+df_UK_pop <- subset(df_NS_UK_pop_data, 
                       CDID > 2008, select= c(CDID, UKPOP))
 
 ```
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_UK_pop<-df_UK_pop
-df_clean_UK_pop$Units<- "UK-total-pop"
-df_clean_UK_pop$Data_source<- "National-statistics"
+df_clean_UK_pop <- df_UK_pop
+df_clean_UK_pop$Units <- "UK-total-pop"
+df_clean_UK_pop$Data_source <- "National-statistics"
 ```
 
+```{r Save cleaned data}
+
+```
 
