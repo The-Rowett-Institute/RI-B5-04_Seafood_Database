@@ -1,0 +1,66 @@
+---
+title: "Laoding_HMRC-data-trial_DELETE-LATER"
+author: "B. Scheliga"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r Loading Libraries, include=FALSE}
+# It is good practice to load all needed libraries in the beginning of the scripted
+#library(here)
+library(tidyr)
+library(tidyverse)
+library(vroom) #for laoding and transforming data
+
+```
+
+```{r Loading filepath to Raw data}
+#Loading file path to project folder
+source("Code/Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+
+
+
+```
+
+```{r Loading HMRC data}
+
+# Filepath to RawData 
+filepath <- paste(data_dir,"RawData/csv-files", sep="") 
+# reading the HRMC trade data dataset (.csv)
+df_HRMC_2009 <- vroom(file=paste(filepath,"HMRC-tradedata-2009.csv", sep="/"))
+
+#The EUMOFA-file with the commodity groups (CN8 code) will help us to easily identify fish for in "Non-Food use" and "Human consumption" in the HMRC-Trade data dataset.
+
+# Filepath to EUMOFA-file with complete CN-8 codes
+filepath <- paste(data_dir,"Methods/TradeData", sep="")
+# reading the EUMOFA-file
+df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
+## Note: the CN8 codes are related to the respective year, and have change over time.
+
+
+```
+
+
+```{r preparing EUOFA CN8 data.frame}
+
+# need to remove the space from the 'CN-8'-column. But leave it as charachter, so we don't loose the "0" at the beginning of the CN8 code
+# https://stackoverflow.com/questions/20309876/r-how-to-replace-in-a-string
+
+df_EUMOFA_CN8$`CN-8` <- gsub("\\ ","", df_EUMOFA_CN8$`CN-8`)
+
+```
+
+```{r preparing HRMC trade data data.frame}
+
+# Need to separate the CN8 code from the description in the CN8-column of the HMRC data
+
+
+
+
+```
+
