@@ -48,7 +48,7 @@ df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 
 ```{r preparing EUOFA CN8 data.frame}
 
-# need to remove the space from the 'CN-8'-column. But leave it as charachter, so we don't loose the "0" at the beginning of the CN8 code
+# need to remove the space from the 'CN-8'-column. But leave it as character, so we don't loose the "0" at the beginning of the CN8 code
 # https://stackoverflow.com/questions/20309876/r-how-to-replace-in-a-string
 
 df_EUMOFA_CN8$`CN-8` <- gsub("\\ ","", df_EUMOFA_CN8$`CN-8`)
@@ -74,14 +74,49 @@ unique(df_HMRC_2009_anti$CN8)
 
 ```{r Calculating annual sum based on CN8 code / Species}
 # calculating annual sum, selecting needed columns and converting to Net Mass from kg to 1000 tonnes
-df_HRMC_2009.sum <- df_HMRC_2009_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year.x,`Flow Type`, CF) %>% summarise(`Net Mass (1000 t)`= sum(`Net Mass (Kg)`)/1000000,`Net Mass (kg)`= sum(`Net Mass (Kg)`))
+df_HRMC_2009.sum <- df_HMRC_2009_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year.x, Commodity =`Flow Type`, CF) %>% summarise(`Net Mass (1000 t)`= sum(`Net Mass (Kg)`)/1000000,`Net Mass (kg)`= sum(`Net Mass (Kg)`))
+
+rm(df_HRMC_2009,df_HMRC_2009_inner)
+
+df_HMRC_4DB <-df_HRMC_2009.sum
+
+```
+
+```{r Aggregating EU and Non-EU values}
+
+```
+
+```{r Defining FishType & Species from Product Name}
+
+df_HMRC_4DB$FishType <- NA
+df_HMRC_4DB$Species  <- NA
+
+```
 
 
 
-rm(df_HRMC_2009.sum,df_HMRC_2009_inner)
+```{r Adding column needed for data base}
 
+# Adding DataSupplier information
+df_HMRC_4DB$DataSupplier <- "HMRC"
+df_HMRC_4DB$DataSet <- NA
+#determining if the Fish is for Human consumption or not based on the CF from the EUMOFA-file
+df_HMRC_4DB$Intention <- ifelse(df_HMRC_4DB$CF == 0, "Non food uses", "Human consumption") 
+df_HMRC_4DB <- rename(df_HMRC_4DB, Value =`Net Mass (1000 t)`)
+df_HMRC_4DB$Units <- "1000 tonnes"
+df_HMRC_4DB$TemporalResolution <- "Annual"
+df_HMRC_4DB$Flag <- ifelse(df_HMRC_4DB$CF <= 1, "UC, FiTyAlig", "UC, FiTyAlig, ?????")
+df_HMRC_4DB$FlagDescription <- ifelse(df_HMRC_4DB$CF <= 1, "Units changed, Fish type aligned ", "Units changed, Fish type aligned, weight values converted using ?????")
 
 
 ```
 
+
+```{r Selecting Columns and Saving to .csv}
+df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Intention, FishType, Species, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
+
+
+
+
+```
 
