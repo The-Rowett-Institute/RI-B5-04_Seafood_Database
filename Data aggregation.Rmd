@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '15/09/2022'
+date: '16/09/2022'
 output: html_document
 ---
 
@@ -48,12 +48,14 @@ UK fish production data includes capture fisheries and aquaculture production
 # extract UK landings data between 2011 and 2020.
 
 # Read in landing data
-df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-11-20-edit.csv", sep="/"), na = c(".."))
+df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-edit.csv", sep="/"), na = c(".."))
 
 ```
 
 ```{r Transform and clean dataset (2011 to 2020)}
 # Change structure of the dataset 
+# Reshape2
+
 
 ```
 
@@ -63,7 +65,7 @@ df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-11-20-edi
 # Extract UK landings data between 2009 and 2010. 
 
 # Read in landing data
-df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-08-12-edit.csv", sep="/"),na = c(".."))
+df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812-edit.csv", sep="/"),na = c(".."))
 
 # Select only years 2009 and 2010
 df_UK_landings_09_10 <- subset(df_UK_landings_08_12_data, 
@@ -74,7 +76,7 @@ df_UK_landings_09_10 <- subset(df_UK_landings_08_12_data,
 
 ```{r Transform and clean dataset (2009 to 2010)}
 # Change structure of the dataset 
-
+#reshape2
 ```
 
 
@@ -185,11 +187,13 @@ df_NDNS_UK_data <- vroom(file=paste
 # Identify unique age cohorts
 unique(df_NDNS_UK_data$`Age category`)
 
-# Create a pipe aggregating sub age cohort totals, irrespective of gender 
-all_genders <- df_NDNS_UK_data[df_NDNS_UK_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
+# Create a pipe aggregating sub age cohort totals, irrespective of sex 
+all_sex <- df_NDNS_UK_data[df_NDNS_UK_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
 
 # Sum all subsetted cohorts 
-df_clean_NDNS <- as.data.frame(colSums(all_genders[3:7]))
+df_clean_NDNS <- as.data.frame(colSums(all_sex[3:7])) 
+
+# Rename first column  
 
 ```
 
@@ -215,11 +219,21 @@ df_clean_NDNS$FishSpecies <- "Unknown"
 
 ### A) DEFRA family food data sets
 
+#### i) DEFRA UK purchases (both household and eating out)
+
+```{r Load data 2015 to 2020} 
+# Data not separated for household and eating out purposes from 2015 onwards
+
+# Separate location of fish consumption: i.e. household/ eating out
+
+```
+
+
 #### i) Household purchases (DEFRA)
 
-```{r Load data}
+```{r Load data (2009 to 2014)}
 # read DEFRA household dataset (.csv)
-df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK-households-edit.csv", sep="/"))
+df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200914-edit.csv", sep="/"))
 
 ```
 
@@ -248,6 +262,12 @@ df_DEFRA_household_data$Data_source <- "DEFRA-FF"
 ```
 
 
+```{r Reshape cleaned data}
+
+# reshape
+```
+
+
 ```{r Save cleaned data}
 
 ```
@@ -255,9 +275,9 @@ df_DEFRA_household_data$Data_source <- "DEFRA-FF"
 
 #### ii) Eating out (DEFRA)
 
-```{r Load data}
+```{r Load data (2009 to 2014)}
 # read DEFRA eaten out data set
-df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK-eaten-out-edit.csv", sep="/"))
+df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200914-edit.csv", sep="/"))
 
 ```
 
