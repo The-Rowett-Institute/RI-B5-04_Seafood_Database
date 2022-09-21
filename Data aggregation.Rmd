@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '16/09/2022'
+date: '21/09/2022'
 output: html_document
 ---
 
@@ -20,9 +20,15 @@ The justification for the data included in this data set can be found in the sup
 ## Preparation
 
 ```{r Load libraries, include=FALSE}
+#install.packages("rlang")
+#update.packages("rlang")
+#library(rlang)
+#install.packages(reshape2)
 library(tidyr)
+library(dplyr)
 library(vroom) # for loading and transforming data
 library(tidyverse)
+library(reshape2)
 
 ```
 
@@ -50,12 +56,14 @@ UK fish production data includes capture fisheries and aquaculture production
 # Read in landing data
 df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-edit.csv", sep="/"), na = c(".."))
 
+# Rename column
+names(df_UK_landings_11_20_data)[names(df_UK_landings_11_20_data)=="Species_type"] <- "SpeciesType"
+
 ```
 
 ```{r Transform and clean dataset (2011 to 2020)}
 # Change structure of the dataset 
-# Reshape2
-
+df_UK_landings_201120_long<-melt(df_UK_landings_11_20_data, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
 
 ```
 
@@ -67,23 +75,24 @@ df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-ed
 # Read in landing data
 df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812-edit.csv", sep="/"),na = c(".."))
 
+# Rename column
+names(df_UK_landings_08_12_data)[names(df_UK_landings_08_12_data)=="Species_type"] <- "SpeciesType"
+
 # Select only years 2009 and 2010
 df_UK_landings_09_10 <- subset(df_UK_landings_08_12_data, 
-                           select = c('Species_type', 'Species', '2009', '2010'))
+                           select = c('SpeciesType', 'Species', '2009', '2010'))
 
 ```
 
 
 ```{r Transform and clean dataset (2009 to 2010)}
 # Change structure of the dataset 
-#reshape2
+df_UK_landings_200910_long<-melt(df_UK_landings_09_10, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
 ```
-
 
 ```{r Combine datasets (2009 to 2010 and 2011 to 2020)}
 # Combine capture production data sets (2009 to 2010 and 2011 to 2020)
-df_clean_UK_landings_09_20 <- merge(df_UK_landings_11_20_data, df_UK_landings_09_10)
-
+df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_200910_long)
 ```
 
 ```{r Add additional variables to combined data}
@@ -103,69 +112,58 @@ df_clean_UK_landings_09_20$TempRes <- "Annual"
 
 ```
 
-### B) Aquaculture production (Marine Scotland and DEFRA)
+### B) Aquaculture production (CEFAS)
 
-```{r Load data (Scotland: Marine Scotland Science)}
-# a) Aquaculture production in Scotland
-# i) salmon, ii) rainbow trout, iii) shellfish
-df_MSS_salmon_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureSalmon.csv", sep="/"), na = c(".."))
+```{r Load data (2013 to 2020)}
+# UK aquaculture production 
+df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
 
-df_MSS_rainbowTrout_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureRainbowTrout.csv", sep="/"), na = c(".."))
+# Rename column
+names(df_CEFAS_UK_aqaculture_data)[names(df_CEFAS_UK_aqaculture_data)=="Tonnes"] <- "Units"
+```
 
-df_MSS_shellfish_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureShellfish.csv", sep="/"), na = c(".."))
+```{r Transform and clean dataset (2013 to 2010)}
+# Change structure of the dataset 
+df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
 
 ```
 
-```{r Subset data (Scotland: Marine Scotland Science)}
-# Determine products are for human consumption 
-df_MSS_shellfish_HC <- subset(df_MSS_shellfish_data, Production == "For the table")
-
-# Subset data between 2009 and 2021 
-df_MSS_salmon <- subset(df_MSS_salmon_data, Year > 2008, 
-                        select= c(Year, Tonnes)) 
-
-df_MSS_rainbowTrout <- subset(df_MSS_rainbowTrout_data, Year > 2008, 
-                        select= c("Year", "Total Tonnes"))
-
-df_MSS_shellfish <- subset(df_MSS_shellfish_HC, Year > 2008)
-
-# State species, unit and data source
-df_MSS_salmon$Units <- "tonnes"
-df_MSS_salmon$Species <- "Salmon"
-df_MSS_salmon$SpeciesType <- "Diadromous"
-
-df_MSS_rainbowTrout$Units <- "tonnes"
-df_MSS_rainbowTrout$Species <- "RainbowTrout"
-df_MSS_rainbowTrout$SpeciesType <- "Freshwater"
-
-df_MSS_shellfish$Units <- "Varied"
-df_MSS_shellfish$Species <- "Varied"
-df_MSS_rainbowTrout$SpeciesType <- "Shellfish"
+```{r Allocating fish species corresonding species type (2013 to 2010)}
+# Allocate fish species group type 
 
 ```
 
-```{r Combine Scottish aqacualture production data}
-
-#df_MMS_production<- merge(df_MSS_salmon, df_MSS_rainbowTrout)
+```{r Load data (2009 to 2012)}
+# UK aquaculture production 
+df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
 
 ```
 
 
-```{r Add units and data source (Scotland: Marine Scotland Science)}
+```{r Transform and clean dataset (2009 to 2012)}
+# Change structure of the dataset 
+df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
+
+```
+
+```{r Allocating fish species corresonding species type (2009 to 2012)}
+# Allocate fish species group type 
+
+```
+
+
+```{r Add units and data source (2013 to 2020)}
 # Create "cleaned" data frame, defining units and data source 
-
-#df_clean_UK_landings_09_20$Units <- "tonnes or numbers"
-df_MMS_production$DataSource <- "Marine_Scotland"
-df_MMS_production$Dataset <- "Scottish-aquaculture"
-df_MMS_production$Commodity <- "Production"
-df_MMS_production$TempRes <- "Annual"
+df_UK_aquaculture_201320_long$DataSource <- "CEFAS"
+df_UK_aquaculture_201320_long$Dataset <- "Aquaculture"
+df_UK_aquaculture_201320_long$Commodity <- "Production"
+df_UK_aquaculture_201320_long$TempRes <- "Annual"
 ```
 
-```{r Save cleaned data (Scotland: Marine Scotland Science)}
+```{r Save cleaned data (CEFAS 2013 to 2020)}
 
 ```
 
-## Note: include EU data? Been in contact with CEFAS
 
 ## Trade (HMRC)
 
@@ -192,6 +190,15 @@ all_sex <- df_NDNS_UK_data[df_NDNS_UK_data$`Age category` %in% c("Children 1.5-3
 
 # Sum all subsetted cohorts 
 df_clean_NDNS <- as.data.frame(colSums(all_sex[3:7])) 
+
+colnames(all_sex)
+df_clean_NDNS <- as.data.frame(colSums(all_sex[c("(2008/09 - 2009/10)", 
+"(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
+"(2016/17-2018/19)"])))
+
+df_clean_NDNS <- colSums(all_sex, c("(2008/09 - 2009/10)", 
+"(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
+"(2016/17-2018/19)"), na.rm=TRUE)))
 
 # Rename first column  
 
@@ -233,38 +240,55 @@ df_clean_NDNS$FishSpecies <- "Unknown"
 
 ```{r Load data (2009 to 2014)}
 # read DEFRA household dataset (.csv)
-df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200914-edit.csv", sep="/"))
+df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200914-edited.csv", sep="/"))
+
+# Select only years 2009 to 2014
+df_DEFRA_household_200914 <- subset(df_DEFRA_household_data, 
+                           select = c("Code", "Food Category", "Food Group",
+                                      "Major Food Code", "Minor Food Code",
+                                      "Units", "2009", "2010", "2011",
+                                      "2012", "2013", "2014"))
 
 ```
 
 
 ```{r Aggregate food groups}
 # Identify unique major food groups
-unique(df_DEFRA_household_data$`Major Food Code`)
+unique(df_DEFRA_household_200914$`Major Food Code`)
 
 # Major food codes according to FAO groupings
-df_DEFRA_household_data$FAO <- "Unknown"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, fresh, chilled or frozen"] <- "Demersal"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "White fish, dried, salted or smoked"] <- "Demersal"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Shellfish"] <- "Shellfish"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, fresh, chilled or frozen"] <- "Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Blue fish, dried or salted or smoked"] <- "Pelagic"
-df_DEFRA_household_data$FAO[df_DEFRA_household_data$`Major Food Code` == "Salmon, tinned"] <- "Pelagic"
+df_DEFRA_household_200914$SpeciesType <- "Unknown"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "White fish, fresh, chilled or frozen"] <- "Demersal"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "White fish, dried, salted or smoked"] <- "Demersal"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Shellfish"] <- "Shellfish"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Salmon, fresh, chilled or frozen"] <- "Pelagic"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Blue fish, dried or salted or smoked"] <- "Pelagic"
+df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Salmon, tinned"] <- "Pelagic"
+
+# Remove rows where sum is provided 
+df_DEFRA_household_200914_clean<-df_DEFRA_household_200914[!grepl("Sum", 
+                                         df_DEFRA_household_200914$`Minor Food Code`),]
+
+```
+
+```{r Transform and clean dataset}
+# Subset dataframe to include variables we want 
+df_DEFRA_household_200914_main<-subset(df_DEFRA_household_200914_clean, select= c("Minor Food Code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType"))
+
+# Change structure of the dataset 
+df_DEFRA_household_long<-melt(df_DEFRA_household_200914_main, id.vars = c("Minor Food Code", "Units", "SpeciesType"), variable.name="Year", value.name="Value")
 ```
 
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-df_DEFRA_household_data$Units <- "g/capita/week"
-df_DEFRA_household_data$Data_source <- "DEFRA-FF"
+df_DEFRA_household_long$Units <- "g/capita/week"
+df_DEFRA_household_long$DataSource <- "DEFRA"
+df_DEFRA_household_long$Dataset <- "Family-Foods"
+df_DEFRA_household_long$Commodity <- "Purchasing"
+df_DEFRA_household_long$TempRes <- "Annual"
 
-```
-
-
-```{r Reshape cleaned data}
-
-# reshape
 ```
 
 
@@ -340,3 +364,62 @@ df_clean_UK_pop$Data_source <- "National-statistics"
 
 ```
 
+######## Code not needed 
+
+### B) Aquaculture production (Marine Scotland and DEFRA)
+
+```{r Load data (Scotland: Marine Scotland Science)}
+# a) Aquaculture production in Scotland
+# i) salmon, ii) rainbow trout, iii) shellfish
+df_MSS_salmon_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureSalmon.csv", sep="/"), na = c(".."))
+
+df_MSS_rainbowTrout_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureRainbowTrout.csv", sep="/"), na = c(".."))
+
+df_MSS_shellfish_data <- vroom(file=paste(filepath,"MSS_Scotland_aquacultureShellfish.csv", sep="/"), na = c(".."))
+
+```
+
+```{r Subset data (Scotland: Marine Scotland Science)}
+# Determine products are for human consumption 
+df_MSS_shellfish_HC <- subset(df_MSS_shellfish_data, Production == "For the table")
+
+# Subset data between 2009 and 2021 
+df_MSS_salmon <- subset(df_MSS_salmon_data, Year > 2008, 
+                        select= c(Year, Tonnes)) 
+
+df_MSS_rainbowTrout <- subset(df_MSS_rainbowTrout_data, Year > 2008, 
+                        select= c("Year", "Total Tonnes"))
+
+df_MSS_shellfish <- subset(df_MSS_shellfish_HC, Year > 2008)
+
+# State species, unit and data source
+df_MSS_salmon$Units <- "tonnes"
+df_MSS_salmon$Species <- "Salmon"
+df_MSS_salmon$SpeciesType <- "Diadromous"
+
+df_MSS_rainbowTrout$Units <- "tonnes"
+df_MSS_rainbowTrout$Species <- "RainbowTrout"
+df_MSS_rainbowTrout$SpeciesType <- "Freshwater"
+
+df_MSS_shellfish$Units <- "Varied"
+df_MSS_shellfish$Species <- "Varied"
+df_MSS_rainbowTrout$SpeciesType <- "Shellfish"
+
+```
+
+```{r Combine Scottish aqacualture production data}
+
+#df_MMS_production<- merge(df_MSS_salmon, df_MSS_rainbowTrout)
+
+```
+
+
+```{r Add units and data source (Scotland: Marine Scotland Science)}
+# Create "cleaned" data frame, defining units and data source 
+
+#df_clean_UK_landings_09_20$Units <- "tonnes or numbers"
+df_MMS_production$DataSource <- "Marine_Scotland"
+df_MMS_production$Dataset <- "Scottish-aquaculture"
+df_MMS_production$Commodity <- "Production"
+df_MMS_production$TempRes <- "Annual"
+```
