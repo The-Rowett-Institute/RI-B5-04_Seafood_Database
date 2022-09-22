@@ -64,6 +64,7 @@ df_EUMOFA_CN8_2009 <- df_EUMOFA_CN8 %>% filter(Year %in% "2009" )
 df_HRMC_2009$Subset_aid_CN8 <- gsub(" .*$", "", df_HRMC_2009$CN8) # subset string before white space
 
 # Thanks to our psychic abilities, we know that one of the CN8-codes in the HRMC Uk trade is missing its lead 0. And we need to deal with that.  
+
 # Check what will not be joined
 df_HMRC_2009_anti <- df_HRMC_2009 %>% select('Net Mass (Kg)', 'Flow Type', 'Year','Month', 'Subset_aid_CN8', 'CN8') %>%  anti_join(.,df_EUMOFA_CN8_2009, by = c('Subset_aid_CN8' = 'CN-8'))
 #The following CN8 code items were not joined
@@ -71,12 +72,18 @@ unique(df_HMRC_2009_anti$CN8)
 
 
 ```
-It is item 2 "3074959". 
+It is item 2 "3074959", were we need to add a lead zero. 
 
 ```{r  preparing HRMC trade data data.frame}
 # adding the lead 0 to "3074959" in the HRMC UK trade data
+df_HRMC_2009$Subset_aid_CN8 <- str_replace(df_HRMC_2009$Subset_aid_CN8,"3074959","03074959")
+
+# the "Flow Type" is also separate into "EU" and "Non-EU" Imports and Exports
+df_HRMC_2009$`Flow Type` <- str_replace(df_HRMC_2009$`Flow Type`,"Non EU - ","") # needs to be first. Or else line 83 will remove "EU" from "Non EU -"
+df_HRMC_2009$`Flow Type` <- str_replace(df_HRMC_2009$`Flow Type`,"EU - ","")
 
 
+# Now, we can join the HMRC trade data and the EUMOFA data
 df_HMRC_2009_inner <- df_HRMC_2009 %>% select('Net Mass (Kg)', 'Flow Type', 'Year','Month', 'Subset_aid_CN8') %>%  inner_join(.,df_EUMOFA_CN8_2009, by = c('Subset_aid_CN8' = 'CN-8'))
 
 ```
@@ -85,13 +92,9 @@ df_HMRC_2009_inner <- df_HRMC_2009 %>% select('Net Mass (Kg)', 'Flow Type', 'Yea
 # calculating annual sum, selecting needed columns and converting to Net Mass from kg to 1000 tonnes
 df_HRMC_2009.sum <- df_HMRC_2009_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year.x, Commodity =`Flow Type`, CF) %>% summarise(`Net Mass (1000 t)`= sum(`Net Mass (Kg)`)/1000000,`Net Mass (kg)`= sum(`Net Mass (Kg)`))
 
-mrm(df_HRMC_2009,df_HMRC_2009_inner)
+rm(df_HRMC_2009,df_HMRC_2009_inner)
 
 df_HMRC_4DB <-df_HRMC_2009.sum
-
-```
-
-```{r Aggregating EU and Non-EU values}
 
 ```
 
