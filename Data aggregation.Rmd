@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '21/09/2022'
+date: '22/09/2022'
 output: html_document
 ---
 
@@ -20,10 +20,7 @@ The justification for the data included in this data set can be found in the sup
 ## Preparation
 
 ```{r Load libraries, include=FALSE}
-#install.packages("rlang")
-#update.packages("rlang")
-#library(rlang)
-#install.packages(reshape2)
+# Load packages
 library(tidyr)
 library(dplyr)
 library(vroom) # for loading and transforming data
@@ -135,7 +132,7 @@ df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Ty
 
 ```{r Load data (2009 to 2012)}
 # UK aquaculture production 
-df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
+df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,".csv", sep="/"))
 
 ```
 
@@ -236,7 +233,7 @@ df_clean_NDNS$FishSpecies <- "Unknown"
 ```
 
 
-#### i) Household purchases (DEFRA)
+#### i) Household purchases (DEFRA 2009 to 2014)
 
 ```{r Load data (2009 to 2014)}
 # read DEFRA household dataset (.csv)
@@ -297,37 +294,58 @@ df_DEFRA_household_long$TempRes <- "Annual"
 ```
 
 
-#### ii) Eating out (DEFRA)
+#### ii) Eating out (DEFRA 2009 to 2014)
 
 ```{r Load data (2009 to 2014)}
 # read DEFRA eaten out data set
-df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200914-edit.csv", sep="/"))
+df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200914-edited.csv", sep="/"))
 
+# Select only years 2009 to 2014
+df_DEFRA_EO_200914 <- subset(df_DEFRA_eaten_out_data, 
+                           select = c("Code", "EO Food Group", 
+                                      "EO Major code", "EO Minor code",
+                                      "Units", "2009", "2010", "2011",
+                                      "2012", "2013", "2014"))
 ```
 
 
 ```{r Aggregate food groups}
 
 # Identify unique major food groups
-unique(df_DEFRA_eaten_out_data$`EO Major code`)
+unique(df_DEFRA_EO_200914$`EO Major code`)
 
 # Major food codes according to FAO groupings.
-df_DEFRA_eaten_out_data$FAO <- "Unknown"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "White fish"] <- "Demersal"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"] <- "Shellfish"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Fatty fish"] <- "Pelagic"
-df_DEFRA_eaten_out_data$FAO[df_DEFRA_eaten_out_data$EO.Major.code == "Kippers and other smoked fish (e.g. smoked salmon)"] <- "Pelagic"
+df_DEFRA_EO_200914$SpeciesType <- "Unknown"
+df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "White fish"] <- "Demersal"
+df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"] <- "Shellfish"
+df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Fatty fish"] <- "Pelagic"
+df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Kippers and other smoked fish (e.g. smoked salmon)"] <- "Pelagic"
 
+# Remove rows where sum is provided 
+df_DEFRA_EO_200914_clean<-df_DEFRA_EO_200914[!grepl("Sum", 
+                                         df_DEFRA_EO_200914$`EO Minor code`),]
+
+```
+
+```{r Transform and clean dataset}
+# Subset dataframe to include variables we want 
+df_DEFRA_EO_200914_main<-subset(df_DEFRA_EO_200914_clean, select= c("EO Minor code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType"))
+
+# Change structure of the dataset 
+df_DEFRA_EO_long<-melt(df_DEFRA_EO_200914_main, id.vars = c("EO Minor code", "Units", "SpeciesType"), variable.name="Year", value.name="Value")
 ```
 
 
 ```{r Add units and data source}
-# Create "cleaned" data frame, defining units and data source
-df_clean_DEFRA_eaten_out <- df_DEFRA_eaten_out_data
-df_clean_DEFRA_eaten_out$Units <- "g/capita/week"
-df_clean_DEFRA_eaten_out$Data_source <- "DEFRA-FF"
+# Create "cleaned" data frame, defining units and data source 
+df_DEFRA_EO_long$Units <- "g/capita/week"
+df_DEFRA_EO_long$DataSource <- "DEFRA"
+df_DEFRA_EO_long$Dataset <- "Family-Foods"
+df_DEFRA_EO_long$Commodity <- "Purchasing"
+df_DEFRA_EO_long$TempRes <- "Annual"
 
 ```
+
 
 ```{r Save cleaned data}
 
