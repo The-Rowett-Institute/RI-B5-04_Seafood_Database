@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '22/09/2022'
+date: '23/09/2022'
 output: html_document
 ---
 
@@ -113,15 +113,15 @@ df_clean_UK_landings_09_20$TempRes <- "Annual"
 
 ```{r Load data (2013 to 2020)}
 # UK aquaculture production 
-df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
+df_CEFAS_UK_aquaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
 
 # Rename column
-names(df_CEFAS_UK_aqaculture_data)[names(df_CEFAS_UK_aqaculture_data)=="Tonnes"] <- "Units"
+names(df_CEFAS_UK_aquaculture_data)[names(df_CEFAS_UK_aquaculture_data)=="Tonnes"] <- "Units"
 ```
 
 ```{r Transform and clean dataset (2013 to 2010)}
 # Change structure of the dataset 
-df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
+df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aquaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
 
 ```
 
@@ -160,6 +160,41 @@ df_UK_aquaculture_201320_long$TempRes <- "Annual"
 ```{r Save cleaned data (CEFAS 2013 to 2020)}
 
 ```
+
+
+### B) Aquaculture production (EUROSTAT)
+
+```{r Load data (2009 to 2020)}
+# UK aquaculture production 
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920-edit.csv", sep="/"),na = c(".."))
+
+```
+
+```{r Allocating fish species corresonding species type (2009 to 2020)}
+# Allocate fish species group type 
+
+```
+
+
+```{r Transform and clean dataset (2009 to 2020)}
+# Change structure of the dataset 
+df_EUROSTAT_UK_aquaculture_200920_long<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name="Year", value.name="Value")
+
+```
+
+
+```{r Add units and data source (Eurostat 2009 to 2020)}
+# Create "cleaned" data frame, defining units and data source 
+df_EUROSTAT_UK_aquaculture_200920_long$DataSource <- "Eurostat"
+df_EUROSTAT_UK_aquaculture_200920_long$Dataset <- "Aquaculture"
+df_EUROSTAT_UK_aquaculture_200920_long$Commodity <- "Production"
+df_EUROSTAT_UK_aquaculture_200920_long$TempRes <- "Annual"
+```
+
+```{r Save cleaned data (Eurostat 2009 to 2020)}
+
+```
+
 
 
 ## Trade (HMRC)
@@ -226,11 +261,30 @@ df_clean_NDNS$FishSpecies <- "Unknown"
 #### i) DEFRA UK purchases (both household and eating out)
 
 ```{r Load data 2015 to 2020} 
-# Data not separated for household and eating out purposes from 2015 onwards
+# read DEFRA purchasing (household and eating out) data (.csv)
+df_DEFRA_purchase_201520_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201520.csv", sep="/"))
 
-# Separate location of fish consumption: i.e. household/ eating out
+# Separate purchasing data for household and eating out purposes based on code. Create a pipe aggregating fish products consumed within the household and eaten out
+df_DEFRA_eaten_out_201520 <- df_DEFRA_purchase_201520_data[df_DEFRA_purchase_201520_data$codecat %in% c( "eo120101", "eo120102", "eo120201", "eo120202", "eo1203", "eo1204", "eo1205", "eo120601", "eo120602", "eo120603"), ]
+
+df_DEFRA_household_201520 <- df_DEFRA_purchase_201520_data[df_DEFRA_purchase_201520_data$codecat %in% c( "10201", "10202", "10601", "10602", "10701", "10702", "10801", "11401", "11702", "11702", "118", "119", "120", "121", "12304", "12305"), ]
 
 ```
+
+```{r Aggregate food groups}
+# Identify unique major food groups
+unique(df_DEFRA_household_201520$`Major Food Code`)
+
+# Major food codes according to FAO groupings
+df_DEFRA_household_201520$SpeciesType <- "Unknown"
+
+#to fix
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10201", "10202", "11401"),] <- "Demersal"
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("11702", "11703"),] <- "Shellfish"
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10601", "10602", "10701", "10702", "10801", "119"),]<-"Pelagic"
+
+```
+
 
 
 #### i) Household purchases (DEFRA 2009 to 2014)
@@ -274,7 +328,10 @@ df_DEFRA_household_200914_clean<-df_DEFRA_household_200914[!grepl("Sum",
 df_DEFRA_household_200914_main<-subset(df_DEFRA_household_200914_clean, select= c("Minor Food Code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType"))
 
 # Change structure of the dataset 
-df_DEFRA_household_long<-melt(df_DEFRA_household_200914_main, id.vars = c("Minor Food Code", "Units", "SpeciesType"), variable.name="Year", value.name="Value")
+df_DEFRA_household_200914_long<-melt(df_DEFRA_household_200914_main, id.vars = c("Minor Food Code", "Units", "SpeciesType"), variable.name="Year", value.name="Value")
+
+# Combine household data (2009 to 2014 and 2015 to 2020)
+df_DEFRA_household_long<-rbind(df_DEFRA_household_200914_long, )
 ```
 
 
