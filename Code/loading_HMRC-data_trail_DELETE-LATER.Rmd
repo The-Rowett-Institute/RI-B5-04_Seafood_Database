@@ -133,9 +133,51 @@ df_HMRC_4DB <-df_HRMC.sum
 ```
 
 ```{r Defining FishType & Species from Product Name}
+# Load FishTYpe and species
+# use the grepl () function in a loop to add Fish type and Species 
 
+# Filepath to EUMOFA-file with complete CN-8 codes
+filepath <- paste(data_dir,"Methods", sep="")
+# reading the EUMOFA-file
+df_FishType_Species <- vroom(file=paste(filepath,"Species_and_FishTypes.csv", sep="/"))
+## Note: the CN8 codes are related to the respective year, and have change over time.
 df_HMRC_4DB$FishType <- NA
 df_HMRC_4DB$Species  <- NA
+
+df_test <- df_HMRC_4DB
+
+
+
+
+#i=1
+#f=141
+
+
+#f=1
+#for(i in length(df_FishType_Species$Species)){
+#  for(f in length(df_test$CN8)){
+#  if(grepl(df_FishType_Species$Species[i],ignore.case = TRUE, 
+#df_HMRC_4DB$`Product name`[f])){
+#    df_test$Species[f] <- df_FishType_Species$Species[i] 
+#    df_test$FishType[f] <-  df_FishType_Species$FishType[i]
+#    }else{
+#     df_test$Species[f] <- "Not in list" 
+#    df_test$FishType[f] <-"Not in list"
+#        }
+#    }
+#  }
+
+
+
+#ifelse(grepl(df_FishType_Species$Species,ignore.case = TRUE, 
+#df_HMRC_4DB$`Product name`), df_test$FishType  , NA)
+  
+ # apply(data, 1, function(x) {ifelse(any(x == 0), NA, length(unique(x)))})
+
+
+
+#df_HMRC_4DB$FishType <- NA
+#df_HMRC_4DB$Species  <- NA
 
 ```
 
@@ -145,14 +187,14 @@ df_HMRC_4DB$Species  <- NA
 
 # Adding DataSupplier information
 df_HMRC_4DB$DataSupplier <- "HMRC"
-df_HMRC_4DB$DataSet <- NA
+df_HMRC_4DB$DataSet <- "HMRC Overseas Trade data table - UK Trade Info"
 #determining if the Fish is for Human consumption or not based on the CF from the EUMOFA-file
 df_HMRC_4DB$Intention <- ifelse(df_HMRC_4DB$CF == 0, "Non food uses", "Human consumption") 
 df_HMRC_4DB <- rename(df_HMRC_4DB, Value =`Net Mass (1000 t)`)
 df_HMRC_4DB$Units <- "1000 tonnes"
 df_HMRC_4DB$TemporalResolution <- "Annual"
-df_HMRC_4DB$Flag <- ifelse(df_HMRC_4DB$CF <= 1, "UC, FiTyAlig", "UC, FiTyAlig, ?????")
-df_HMRC_4DB$FlagDescription <- ifelse(df_HMRC_4DB$CF <= 1, "Units changed, Fish type aligned ", "Units changed, Fish type aligned, weight values converted using ?????")
+df_HMRC_4DB$Flag <- ifelse(df_HMRC_4DB$CF <= 1, "EXAMPLES: UC, FiTyAlig", "UC, FiTyAlig, ?????")
+df_HMRC_4DB$FlagDescription <- ifelse(df_HMRC_4DB$CF <= 1, "EXAMPLES:Units changed, Fish type aligned ", "Units changed, Fish type aligned, weight values converted using ?????")
 
 
 ```
