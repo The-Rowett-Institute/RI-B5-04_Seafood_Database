@@ -136,104 +136,39 @@ df_HMRC_4DB <-df_HRMC.sum
 # Load FishTYpe and species
 # use the grepl () function in a loop to add Fish type and Species 
 
-<<<<<<< HEAD
-# Filepath to EUMOFA-file with complete CN-8 codes
-filepath <- paste(data_dir,"Methods", sep="")
-# reading the EUMOFA-file
-df_FishType_Species <- vroom(file=paste(filepath,"Species-and-Fish-Types.csv", sep="/"))
-## Note: the CN8 codes are related to the respective year, and have change over time.
-||||||| f818b58
-=======
 # Filepath to EUMOFA-file with complete CN-8 codes
 filepath <- paste(data_dir,"Methods", sep="")
 # reading the EUMOFA-file
 df_FishType_Species <- vroom(file=paste(filepath,"Species_and_FishTypes.csv", sep="/"))
 ## Note: the CN8 codes are related to the respective year, and have change over time.
->>>>>>> b04769c3ede2856bb3d49d265ae1c5b7d6f9a074
-df_HMRC_4DB$FishType <- NA
-df_HMRC_4DB$Species  <- NA
 
-<<<<<<< HEAD
-df_test <- unique(df_EUMOFA_CN8[,c('CN-8','CN-8 product name')])
+df_test <- unique(df_EUMOFA_CN8[,c('CN-8','CN-8 product name',"CF")])
+df_test$Loop_Help <- gsub(r"{\s*\(excl.[^\)]+\)}","",as.character(df_test$`CN-8 product name`)) # removing the "excluding"-comment in the EUMOFA Product name to prevent finding our fish types in them and wrongfully assigning them to the CN-8
 df_test$FishType <- NA
 df_test$Species  <- NA
+df_test$Hits <- 0 # to check whether a row had been assign a fish type / species more then once. If the number > 1. It will need to be double checked   
 
-
-
-
-i=3
-f=50
-df_FishType_Species$Species[i]
-df_test$`CN-8 product name`[f]
-
-
-f=1
-for(i in 1:length(df_FishType_Species$Species)){
-  #print(paste("i =",i, sep = " "))
-  for(f in 1:length(df_test$`CN-8`)){
-    #print(paste("f =",f, sep = " "))
-  if(grepl(df_FishType_Species$Species[i], 
-        df_test$`CN-8 product name`[f],ignore.case = TRUE)){
-    #print(paste(i, df_FishType_Species$Species[i], f,df_test$`CN-8 product name`[f], sep=" " ))
-        df_test$Species[f] <- df_FishType_Species$Species[i] 
-        df_test$FishType[f] <-  df_FishType_Species$FishType[i]
-    }else{
-     df_test$Species[f] <- "Not in list" 
-    df_test$FishType[f] <-"Not in list"
-        }
+# this loop looks through searches for our fish species in the CN-8 product names and assign the found fish species and the corresponding type. 
+# Current problem is. That is will also find fish species that are "excluded" 
+for(i in 1:length(df_test$`CN-8 product name`)){
+  for(f in 1:length(df_FishType_Species$Species)){
+    if(grepl(df_FishType_Species$Species[f],df_test$Loop_Help[i],ignore.case = TRUE)){
+      df_test$Species[i] <- df_FishType_Species$Species[f]
+      df_test$FishType[i] <-  df_FishType_Species$FishType[f]
+      df_test$Hits[i] <- df_test$Hits[i] + 1 # this will count up
+      }else{
+        if(is.na(df_test$Species[i])){
+          df_test$Species[i] <- "Not in list"
+          df_test$FishType[i] <-"Not in list"
+          }
+      }
     }
   }
 
+print(paste(sum(df_test$Hits>1 & df_test$CF>=1), "rows need to be double checked. As they had more than 1 fish species assign and are for human consumpation (EUMOFA CF > 0"))
 
+print(paste(sum(grepl("Not in list",df_test$Species) & df_test$CF>0), "rows need to be double checked. As they are for human consumpation (EUMOFA CF > 0), but not on our list for fish species"))
 
-#ifelse(grepl(df_FishType_Species$Species,ignore.case = TRUE, 
-#df_HMRC_4DB$`Product name`), df_test$FishType  , NA)
-  
- # apply(data, 1, function(x) {ifelse(any(x == 0), NA, length(unique(x)))})
-
-
-
-#df_HMRC_4DB$FishType <- NA
-#df_HMRC_4DB$Species  <- NA
-
-||||||| f818b58
-=======
-df_test <- df_HMRC_4DB
-
-
-
-
-#i=1
-#f=141
-
-
-#f=1
-#for(i in length(df_FishType_Species$Species)){
-#  for(f in length(df_test$CN8)){
-#  if(grepl(df_FishType_Species$Species[i],ignore.case = TRUE, 
-#df_HMRC_4DB$`Product name`[f])){
-#    df_test$Species[f] <- df_FishType_Species$Species[i] 
-#    df_test$FishType[f] <-  df_FishType_Species$FishType[i]
-#    }else{
-#     df_test$Species[f] <- "Not in list" 
-#    df_test$FishType[f] <-"Not in list"
-#        }
-#    }
-#  }
-
-
-
-#ifelse(grepl(df_FishType_Species$Species,ignore.case = TRUE, 
-#df_HMRC_4DB$`Product name`), df_test$FishType  , NA)
-  
- # apply(data, 1, function(x) {ifelse(any(x == 0), NA, length(unique(x)))})
-
-
-
-#df_HMRC_4DB$FishType <- NA
-#df_HMRC_4DB$Species  <- NA
-
->>>>>>> b04769c3ede2856bb3d49d265ae1c5b7d6f9a074
 ```
 
 
