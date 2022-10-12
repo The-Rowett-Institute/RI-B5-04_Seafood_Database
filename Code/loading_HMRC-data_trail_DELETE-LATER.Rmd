@@ -142,6 +142,7 @@ filepath <- paste(data_dir,"Methods", sep="")
 df_FishType_Species <- vroom(file=paste(filepath,"Species_and_FishTypes.csv", sep="/"))
 ## Note: the CN8 codes are related to the respective year, and have change over time.
 
+
 df_test <- unique(df_EUMOFA_CN8[,c('CN-8','CN-8 product name',"CF")])
 df_test$Loop_Help <- gsub(r"{\s*\(excl.[^\)]+\)}","",as.character(df_test$`CN-8 product name`)) # removing the "excluding"-comment in the EUMOFA Product name to prevent finding our fish types in them and wrongfully assigning them to the CN-8
 df_test$FishType <- NA
