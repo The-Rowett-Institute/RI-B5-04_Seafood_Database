@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '23/09/2022'
+date: '13/10/2022'
 output: html_document
 ---
 
@@ -39,6 +39,34 @@ filepath <- paste(data_dir,"RawData/csv-files", sep="")
 # note we are able to change this to another file e.g. saving the output
 
 ```
+
+## UK population data (Office of National Statistics)
+
+Download UK population data- need to convert per g/capita data to g/total UK total population.
+
+```{r Load data}
+# Read in UK population data 
+df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK_population-edit.csv", sep="/"))
+```
+
+```{r Subset data}
+# Extract UK population data between 2009 onwards
+df_UK_pop <- subset(df_NS_UK_pop_data, 
+                      CDID > 2008, select= c(CDID, UKPOP))
+
+```
+
+```{r Add units and data source}
+# Create "cleaned" data frame, defining units and data source 
+df_clean_UK_pop <- df_UK_pop
+df_clean_UK_pop$Units <- "UK-total-pop"
+df_clean_UK_pop$Data_source <- "National-statistics"
+```
+
+```{r Save cleaned data}
+
+```
+
 
 ## Production
 
@@ -92,6 +120,12 @@ df_UK_landings_200910_long<-melt(df_UK_landings_09_10, id.vars = c("SpeciesType"
 df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_200910_long)
 ```
 
+```{r Allocate species type with nutrient type i.e. lean or oily}
+# State whether fish is lean or oily
+
+```
+
+
 ```{r Add additional variables to combined data}
 # Create "cleaned" data frame, defining units and data source 
 df_clean_UK_landings_09_20$Units <- "000-tonnes"
@@ -101,11 +135,33 @@ df_clean_UK_landings_09_20$Commodity <- "Production"
 df_clean_UK_landings_09_20$TempRes <- "Annual"
 ```
 
+```{r Apply conversion factor}
+# Apply conversion factors i.e whole fish weight to edible weight
+# Average CF finfish: 0.49; shellfish: 0.28 
+
+
+```
+
+
+```{r Calculate grams consumed per capita}
+# Convert value from 000's tonnes to grams 
+df_clean_UK_landings_09_20$ValueGrams<- (df_clean_UK_landings_09_20$Value*1000)*1000000
+
+# Convert grams/year to g/capita/year. 
+# subset data
+df_clean_UK_landings_09_20$ValueGramsPerCapita<- df_clean_UK_landings_09_20$Value_grams/df_clean_UK_pop
+
+# see apply()?. or before melt, join based on year. then multiply tog
+  
+```
+
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 #filepath <- paste(data_dir,"ProcessedData/csv-files", sep="") 
-#NS_UK_capture_cleaned <- write.csv(df_clean_UK_landings_09_20)
+#NS_UK_capture_cleaned <- write.csv(df_clean_UK_landings_09_20,file = paste(filepath,"namefile.csv", sep=""))
+
+# can also use setwd()
 
 ```
 
@@ -412,32 +468,6 @@ df_DEFRA_EO_long$TempRes <- "Annual"
 ### B) Kantar 
 
 
-## UK population data (Office of National Statistics)
-
-Download UK population data- need to convert per g/capita data to g/total UK total population.
-
-```{r Load data}
-# Read in UK population data 
-df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK_population-edit.csv", sep="/"))
-```
-
-```{r Subset data}
-# Extract UK population data between 2009 onwards
-df_UK_pop <- subset(df_NS_UK_pop_data, 
-                      CDID > 2008, select= c(CDID, UKPOP))
-
-```
-
-```{r Add units and data source}
-# Create "cleaned" data frame, defining units and data source 
-df_clean_UK_pop <- df_UK_pop
-df_clean_UK_pop$Units <- "UK-total-pop"
-df_clean_UK_pop$Data_source <- "National-statistics"
-```
-
-```{r Save cleaned data}
-
-```
 
 ######## Code not needed 
 
