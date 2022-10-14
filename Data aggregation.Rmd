@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '13/10/2022'
+date: '14/10/2022'
 output: html_document
 ---
 
@@ -11,7 +11,7 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Part 1: Identifying and cleaning data to map seafood supply chains in the UK 
+## Part 1: Cleaning data to map UK seafood supply chains 
 
 This R Markdown document (part 1) outlines how the data complied in the final spreadsheet mapping UK seafood supply chains was cleaned. 
 
@@ -64,7 +64,8 @@ df_clean_UK_pop$Data_source <- "National-statistics"
 ```
 
 ```{r Save cleaned data}
-
+#filepath <- paste(data_dir,"ProcessedData/csv-files", sep="") 
+#NS_UK_capture_cleaned <- write.csv(df_clean_UK_landings_09_20,file = paste(filepath,"namefile.csv", sep=""))
 ```
 
 
@@ -120,11 +121,11 @@ df_UK_landings_200910_long<-melt(df_UK_landings_09_10, id.vars = c("SpeciesType"
 df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_200910_long)
 ```
 
-```{r Allocate species type with nutrient type i.e. lean or oily}
-# State whether fish is lean or oily
+```{r Add in population data column}
+# Duplicate population data for each year the number of rows in the short and narrow dataset
+df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_11_20_data))
 
 ```
-
 
 ```{r Add additional variables to combined data}
 # Create "cleaned" data frame, defining units and data source 
@@ -138,7 +139,9 @@ df_clean_UK_landings_09_20$TempRes <- "Annual"
 ```{r Apply conversion factor}
 # Apply conversion factors i.e whole fish weight to edible weight
 # Average CF finfish: 0.49; shellfish: 0.28 
+unique(df_clean_UK_landings_09_20$SpeciesType)
 
+df_clean_UK_landings_09_20$CF<- if(df_clean_UK_landings_09_20$SpeciesType)
 
 ```
 
