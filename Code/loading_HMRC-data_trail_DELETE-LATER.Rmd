@@ -138,6 +138,7 @@ df_HMRC_4DB <-df_HRMC.sum
 
 ```
 
+<<<<<<< HEAD
 ```{r Assigning main Commercial Species (MCS) and Commodity Group (CG)}
 
 
@@ -153,6 +154,13 @@ df_test <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'C
 ```{r Defining FishType & Species from Product Name - exact matches}
 # In this chunk, we are only assigning our fish species and types to "exact matches" of the fish species name in the EUMOFA dataset.
 
+||||||| b0909f7
+```{r Defining FishType & Species from Product Name}
+=======
+```{r Defining FishType & Species from Product Name - exact matches}
+# In this chunk, we are only assigning our fish species and types to "exact matches" of the fish species name in the EUMOFA dataset.
+
+>>>>>>> f3f01344d0ab28d11b0054b2aee2957b1e0b81a8
 # Load FishTYpe and species
 # use the grepl () function in a loop to add Fish type and Species 
 
