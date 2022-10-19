@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '14/10/2022'
+date: '19/10/2022'
 output: html_document
 ---
 
@@ -121,41 +121,42 @@ df_UK_landings_200910_long<-melt(df_UK_landings_09_10, id.vars = c("SpeciesType"
 df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_200910_long)
 ```
 
-```{r Add in population data column}
-# Duplicate population data for each year the number of rows in the short and narrow dataset
-df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_11_20_data))
+
+```{r Apply conversion factor to calculate edible portion of the fish}
+# Conversion factors used to convert whole fish weight to edible weight
+
+# State average CF finfish: 0.49; shellfish: 0.28 
+df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Shellfish"] <- 0.28
+df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- 0.49
+df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- 0.49 
+
+# Create new column and apply conversion factors values
+df_clean_UK_landings_09_20$CFValue<-df_clean_UK_landings_09_20$Value*
+  df_clean_UK_landings_09_20$CF
 
 ```
 
-```{r Add additional variables to combined data}
+
+```{r Calculate grams available per capita}
+# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
+df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_11_20_data))
+
+# Convert raw value from 000's tonnes to grams 
+df_clean_UK_landings_09_20$ValueGrams<- (df_clean_UK_landings_09_20$CFValue*1000)*1000000
+
+# Convert grams/year to g/capita/year
+df_clean_UK_landings_09_20$ValueGramsPerCapita<- df_clean_UK_landings_09_20$ValueGrams/df_clean_UK_landings_09_20$PopSize
+
+# see apply()?. or before melt, join based on year. then multiply tog
+```
+
+```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_UK_landings_09_20$Units <- "000-tonnes"
+df_clean_UK_landings_09_20$ValueUnits <- "000-tonnes"
 df_clean_UK_landings_09_20$DataSource <- "National-statistics"
 df_clean_UK_landings_09_20$Dataset <- "UK-sea-fisheries-statistics"
 df_clean_UK_landings_09_20$Commodity <- "Production"
 df_clean_UK_landings_09_20$TempRes <- "Annual"
-```
-
-```{r Apply conversion factor}
-# Apply conversion factors i.e whole fish weight to edible weight
-# Average CF finfish: 0.49; shellfish: 0.28 
-unique(df_clean_UK_landings_09_20$SpeciesType)
-
-df_clean_UK_landings_09_20$CF<- if(df_clean_UK_landings_09_20$SpeciesType)
-
-```
-
-
-```{r Calculate grams consumed per capita}
-# Convert value from 000's tonnes to grams 
-df_clean_UK_landings_09_20$ValueGrams<- (df_clean_UK_landings_09_20$Value*1000)*1000000
-
-# Convert grams/year to g/capita/year. 
-# subset data
-df_clean_UK_landings_09_20$ValueGramsPerCapita<- df_clean_UK_landings_09_20$Value_grams/df_clean_UK_pop
-
-# see apply()?. or before melt, join based on year. then multiply tog
-  
 ```
 
 
