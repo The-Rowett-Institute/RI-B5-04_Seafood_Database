@@ -9,8 +9,15 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+## Part ???: Cleaning HMRC Trade data to map UK seafood supply chains 
 
-```{r Loading Libraries, include=FALSE}
+This R Markdown document outlines how the HRMC trade data was complied and cleaned. The HRMC trade data ranges from 2009 - 2019. 
+
+The justification for the data included in this data set can be found in the supporting excel document.  
+
+## Preparation
+
+```{r Loading Libraries, echo=TRUE}
 # It is good practice to load all needed libraries in the beginning of the scripted
 #library(here)
 library(tidyr)
@@ -26,6 +33,8 @@ library(mice) # md.pattern to show missing data
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
 
 ```
+
+## Loading the HMRC trade data
 
 ```{r Loading HMRC data}
 ########### HMRC Trade Data
@@ -58,22 +67,26 @@ rm(df_HMRC_1, df_HMRC_2, df_HMRC_3, df_HMRC_4, df_HMRC_5, df_HMRC_6) # removing 
 
 ```
 
+#### Checking for missing values
+
+
 ```{r Check for misisng values in HMRC data}
 
 md.pattern(df_HRMC_2009_to_2019, rotate.names = TRUE)
 
 ```
 
+### Loading the EUMOFA data
 
+We use the EUMOFA data as a help to facilitate the classification and translation of the HRMC CN-8 codes in to our desired species and species type. The EUMOFA has a classification mapped to each CN-8 code. Using this, instead of crawling through the HMRC "Product name"-column and searching for specific key words its text, will mitigate a lot of potential miss-classification. As the HMRC "Product name", does not seem to use controlled vocabulary and has various spelling version of the same word (plural & single) included.  
 
+[MAYBE MORE DETAILS ON EUMOFA DATA HERE]
 
 ```{r loading EUMOFA data}
 ############### EUMOFA-file
 
-#The EUMOFA-file with the commodity groups (CN8 code) will help us to easily identify fish for in "Non-Food use" and "Human consumption" in the HMRC-Trade data dataset.
-
 # Filepath to EUMOFA-file with complete CN-8 codes
-filepath <- paste(data_dir,"Methods/TradeData", sep="")
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="")
 # reading the EUMOFA-file
 df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 ## Note: the CN8 codes are related to the respective year, and have change over time.
@@ -83,16 +96,26 @@ df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 
 df_EUMOFA_CN8_MCS_CG <- vroom(file=paste(filepath,"EUMOFA_Annex4.csv", sep="/"))
 
+# loading Species classification - translation from EUMOFA MCS & CG to the classification we want to use.
+df_Species_Class <- vroom(file=paste(filepath,"SpeciesTypeClassificationCode.csv", sep="/"))
+
+
 ```
+
+#### Checking for missing values
+
 ```{r Check for misisng values in HMRC data}
 
 md.pattern(df_EUMOFA_CN8_MCS_CG, rotate.names = TRUE)
+
+md.pattern(df_Species_Class, rotate.names = TRUE)
 
 md.pattern(df_EUMOFA_CN8, rotate.names = TRUE)
 
 ```
 We have 25 missing (NA) values in the EUMOFA dataset, 20 in the "Explanation"-column and 5 in the "CN-8 product name"-column. As annoying as NA-values are, in this instance we can ignore them. As these values are irrelevant for us and the next steps, since the EUMOFA Annex 4 dataset has no NA-values and the main commercial species (MCS) and commodity groups (CG) for the respective CN-8 code.  
 
+## Processing the data
 
 ```{r preparing EUOFA CN8 data.frame}
 
@@ -151,12 +174,16 @@ df_HMRC_4DB <-df_HRMC.sum
 
 
 
-```{r Assigning main Commercial Species (MCS) and Commodity Group (CG)}
+```{r Assigning Species & Species Type}
 
-
+# mapping EUMOFA Main Commercial Species (MCS) and Commodity Group (CG) classification
 df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
 
-# reassign AL classifacation
+# Mapping our desired Species Species Type classification
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'EUMOFA_MCS_AL', 'Year'))
+
+
+
 # do new aggregated sum
 
 ```
