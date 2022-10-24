@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '19/10/2022'
+date: '24/10/2022'
 output: html_document
 ---
 
@@ -157,6 +157,11 @@ df_clean_UK_landings_09_20$DataSource <- "National-statistics"
 df_clean_UK_landings_09_20$Dataset <- "UK-sea-fisheries-statistics"
 df_clean_UK_landings_09_20$Commodity <- "Production"
 df_clean_UK_landings_09_20$TempRes <- "Annual"
+```
+
+```{r Select desired variables for the data set}
+dfc_simple_landings_UK <- df_clean_UK_landings_09_20[c("SpeciesType", "Species", "Year", "ValueGramsPerCapita", "DataSource", "Dataset", "Commodity")]
+
 ```
 
 
