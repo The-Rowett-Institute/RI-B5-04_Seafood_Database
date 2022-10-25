@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '24/10/2022'
+date: '25/10/2022'
 output: html_document
 ---
 
@@ -231,35 +231,76 @@ df_UK_aquaculture_201320_long$TempRes <- "Annual"
 
 ```{r Load data (2009 to 2020)}
 # UK aquaculture production 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920-edit.csv", sep="/"),na = c(".."))
-
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920-edited.csv", sep="/"),na = c(":"))
 ```
-
-```{r Allocating fish species corresonding species type (2009 to 2020)}
-# Allocate fish species group type 
-
-```
-
 
 ```{r Transform and clean dataset (2009 to 2020)}
-# Change structure of the dataset 
-df_EUROSTAT_UK_aquaculture_200920_long<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name="Year", value.name="Value")
+# Change structure of the data set. id.vars states the number of columns not to be stacked
+df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTATSpecies", "Species", "SimplifiedSpecies", "SpeciesType"), variable.name="Year", value.name="Value")
+```
+
+
+```{r Apply conversion factor to calculate edible portion of the fish}
+# Conversion factors used to convert whole fish weight to edible weight
+
+# Classify species as finfish or shellfish. New column for conversion name
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Finfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Finfish"
+
+# State average CF finfish: 0.49; shellfish: 0.28 
+df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Shellfish"] <- 0.28
+df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Finfish"] <- 0.49
+
+# Create new column and apply conversion factors values
+df_EUROSTAT_UKFarmed$CFValue<-df_EUROSTAT_UKFarmed$Value*
+  df_EUROSTAT_UKFarmed$CF
 
 ```
 
 
-```{r Add units and data source (Eurostat 2009 to 2020)}
+```{r Calculate grams available per capita}
+# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
+df_EUROSTAT_UKFarmed$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_EUROSTAT_UK_aquaculture_data))
+
+# Convert raw value from 000's tonnes to grams 
+df_EUROSTAT_UKFarmed$ValueGrams<- (df_EUROSTAT_UKFarmed$CFValue*1000)*1000000
+
+# Convert grams/year to g/capita/year
+df_EUROSTAT_UKFarmed$ValueGramsCapitaYear<- df_EUROSTAT_UKFarmed$ValueGrams/df_EUROSTAT_UKFarmed$PopSize
+
+# Convert grams/year to g/capita/week
+df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsPerCapita/52
+
+# Convert grams/year to g/capita/day
+df_EUROSTAT_UKFarmed$ValueGramsCapitaDay<- df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek/7
+
+# see apply()?. or before melt, join based on year. then multiply tog
+```
+
+```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_EUROSTAT_UK_aquaculture_200920_long$DataSource <- "Eurostat"
-df_EUROSTAT_UK_aquaculture_200920_long$Dataset <- "Aquaculture"
-df_EUROSTAT_UK_aquaculture_200920_long$Commodity <- "Production"
-df_EUROSTAT_UK_aquaculture_200920_long$TempRes <- "Annual"
+df_EUROSTAT_UKFarmed$DataSource <- "Eurostat"
+df_EUROSTAT_UKFarmed$Dataset <- "Aquaculture"
+df_EUROSTAT_UKFarmed$Commodity <- "Production"
+df_EUROSTAT_UKFarmed$TempRes <- "Annual"
 ```
 
-```{r Save cleaned data (Eurostat 2009 to 2020)}
+```{r Select desired variables for the data set}
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SpeciesType", "Species", "Year", "ValueGramsPerCapita", "DataSource", "Dataset", "Commodity")]
 
 ```
 
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+#filepath <- paste(data_dir,"ProcessedData/csv-files", sep="") 
+#NS_UK_capture_cleaned <- write.csv(df_clean_UK_landings_09_20,file = paste(filepath,"namefile.csv", sep=""))
+
+# can also use setwd()
+
+```
 
 
 ## Trade (HMRC)
@@ -283,21 +324,21 @@ df_NDNS_UK_data <- vroom(file=paste
 unique(df_NDNS_UK_data$`Age category`)
 
 # Create a pipe aggregating sub age cohort totals, irrespective of sex 
-all_sex <- df_NDNS_UK_data[df_NDNS_UK_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
+NDNS_totals <- df_NDNS_UK_data[df_NDNS_UK_data$`Age category` %in% c("Children 1.5-3 years", "Children 4-10 years", "Children 11-18 years", "Adults 19-64 years", "Adults 65 years and over"), ]
 
-# Sum all subsetted cohorts 
-df_clean_NDNS <- as.data.frame(colSums(all_sex[3:7])) 
+# Sum all consumption data for all years 
+df_NDNSSummed <- as.data.frame(apply(NDNS_totals[3:7], 2, sum))
 
-colnames(all_sex)
-df_clean_NDNS <- as.data.frame(colSums(all_sex[c("(2008/09 - 2009/10)", 
+df_NDNSSummed <- as.data.frame(apply(NDNS_totals[c("(2008/09 - 2009/10)", 
 "(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
-"(2016/17-2018/19)"])))
+"(2016/17-2018/19)")], 2, sum))
 
-df_clean_NDNS <- colSums(all_sex, c("(2008/09 - 2009/10)", 
+df_NDNSSummed <- as.data.frame(colSums(NDNS_totals[c("(2008/09 - 2009/10)", 
 "(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
-"(2016/17-2018/19)"), na.rm=TRUE)))
+"(2016/17-2018/19)")]))
 
-# Rename first column  
+# Rename first column 
+df_NDNSSummed<- colnames("Year", "Value")
 
 ```
 
