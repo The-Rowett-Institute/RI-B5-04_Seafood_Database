@@ -1,6 +1,6 @@
 ---
 title: "Loading_HMRC-data-trial_DELETE-LATER"
-author: "B. Scheliga"
+author: "B. Scheliga, A. Lofstedt"
 date: "`r Sys.Date()`"
 output: html_document
 ---
@@ -180,8 +180,7 @@ df_HMRC_4DB <-df_HRMC.sum
 df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
 
 # Mapping our desired Species Species Type classification
-df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'EUMOFA_MCS_AL', 'Year'))
-
+df_HMRC_4DB_test <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'EUMOFA_MCS'))
 
 
 # do new aggregated sum
