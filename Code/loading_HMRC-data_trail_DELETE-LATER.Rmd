@@ -2,7 +2,10 @@
 title: "Loading_HMRC-data-trial_DELETE-LATER"
 author: "B. Scheliga, A. Lofstedt"
 date: "`r Sys.Date()`"
-output: html_document
+output:
+  #word_document: default
+  #html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -104,7 +107,7 @@ df_Species_Class <- vroom(file=paste(filepath,"SpeciesTypeClassificationCode.csv
 
 #### Checking for missing values
 
-```{r Check for misisng values in HMRC data}
+```{r Check for misisng values in EUMOFA data and our classification}
 
 md.pattern(df_EUMOFA_CN8_MCS_CG, rotate.names = TRUE)
 
@@ -130,7 +133,7 @@ print("FYI: In the EUMOFA CN-8 product name-Column are large - symbols, which R 
 
 ```
 
-```{r preparing HRMC trade data data.frame}
+```{r preparing HRMC trade data data.frame part 1}
 
 # Need to separate the CN8 code from the description in the CN8-column of the HMRC data
 df_HRMC_2009_to_2019$Subset_aid_CN8 <- gsub(" .*$", "", df_HRMC_2009_to_2019$CN8) # subset string before white space
@@ -147,7 +150,7 @@ unique(df_HMRC_anti$CN8)
 
 It is item [2] "3074959", were we need to add a lead zero. 
 
-```{r  preparing HRMC trade data data.frame}
+```{r  preparing HRMC trade data data.frame part 2}
 # adding the lead 0 to "3074959" in the HRMC UK trade data
 df_HRMC_2009_to_2019$Subset_aid_CN8 <- str_replace(df_HRMC_2009_to_2019$Subset_aid_CN8,"3074959","03074959")
 
@@ -180,13 +183,15 @@ df_HMRC_4DB <-df_HRMC.sum
 df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
 
 # Mapping our desired Species Species Type classification
-df_HMRC_4DB_test <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'EUMOFA_MCS'))
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'EUMOFA_MCS'))
 
+# We will now need to aggregated the weight values for some species again. As we have aggregate some some of the species and species type e.g. atlantic & pacific salmon as just salmon
 
-# do new aggregated sum
+df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = EUMOFA_MCS_AL, SpeciesType = SpeciesType_AL, Year, Commodity) %>% summarise(`Net Mass (1000 t)`= sum(`Net Mass (kg)`)/1000000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
+
+df_HMRC_4DB <- df_HRMC.sum
 
 ```
-
 
 ```{r Adding column needed for data base}
 
@@ -195,27 +200,24 @@ df_HMRC_4DB$DataSupplier <- "HMRC"
 df_HMRC_4DB$DataSet <- "HMRC Overseas Trade data table - UK Trade Info"
 #determining if the Fish is for Human consumption or not based on the CF from the EUMOFA-file
 df_HMRC_4DB <- rename(df_HMRC_4DB, Value =`Net Mass (1000 t)`)
-df_HMRC_4DB <- rename(df_HMRC_4DB, Species = MCS_descr)
-df_HMRC_4DB <- rename(df_HMRC_4DB, SpeciesType = CG)
-
 df_HMRC_4DB$Units <- "1000 tonnes"
 df_HMRC_4DB$TemporalResolution <- "Annual"
-df_HMRC_4DB$Flag <- ifelse(df_HMRC_4DB$CF < 0, "EXAMPLES: UC, FiTyAlig", "UC, FiTyAlig, ?????")
-df_HMRC_4DB$FlagDescription <- ifelse(df_HMRC_4DB$CF < 0, "EXAMPLES:Units changed, Species aligned ", "Units changed, Species aligned, weight values converted using ?????")
-
+df_HMRC_4DB$Flag <- "EXAMPLES: UC, SSTAlig"
+df_HMRC_4DB$FlagDescription <- "EXAMPLES:Units changed, Species & Species Type aligned"
 
 ```
 
 
-
 ```{r Selecting Columns, removing non-food uses and Saving to .csv}
 # Selecting Columns
-df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, FishType, Species, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
+df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Species, SpeciesType, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
 
 # Removing Non-food uses im- & exports
-df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!Species %in% "Non-food use")
+df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!SpeciesType %in% "OtherNFU")
 
-#write.csv()
+filepath <- paste(data_dir,"ProcessedData", sep="")
+
+write.csv(df_HMRC_4DB, paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep="/"), row.names = FALSE)
 
 ```
 
