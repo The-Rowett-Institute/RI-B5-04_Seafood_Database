@@ -2,7 +2,7 @@
 ---
 title: "Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '26/10/2022'
+date: '27/10/2022'
 output: html_document
 ---
 
@@ -241,7 +241,6 @@ df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTA
 
 
 ```{r Apply conversion factor to calculate edible portion of the fish}
-# Conversion factors used to convert whole fish weight to edible weight
 
 # Classify species as finfish or shellfish. New column for conversion name
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
@@ -249,6 +248,7 @@ df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shell
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Finfish"
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Finfish"
 
+# Conversion factors used to convert whole fish weight to edible weight
 # State average CF finfish: 0.49; shellfish: 0.28 
 df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Shellfish"] <- 0.28
 df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Finfish"] <- 0.49
@@ -271,12 +271,11 @@ df_EUROSTAT_UKFarmed$ValueGrams<- (df_EUROSTAT_UKFarmed$CFValue*1000)*1000000
 df_EUROSTAT_UKFarmed$ValueGramsCapitaYear<- df_EUROSTAT_UKFarmed$ValueGrams/df_EUROSTAT_UKFarmed$PopSize
 
 # Convert grams/year to g/capita/week
-df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsPerCapita/52
+df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsCapitaYear/52
 
 # Convert grams/year to g/capita/day
 df_EUROSTAT_UKFarmed$ValueGramsCapitaDay<- df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek/7
 
-# see apply()?. or before melt, join based on year. then multiply tog
 ```
 
 ```{r Add additional variables to data set}
@@ -288,7 +287,8 @@ df_EUROSTAT_UKFarmed$TempRes <- "Annual"
 ```
 
 ```{r Select desired variables for the data set}
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SpeciesType", "Species", "Year", "ValueGramsPerCapita", "DataSource", "Dataset", "Commodity")]
+colnames(df_EUROSTAT_UKFarmed)
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaDay", "DataSource", "Dataset", "Commodity")]
 
 ```
 
@@ -340,6 +340,19 @@ df_NDNSSummed <- as.data.frame(colSums(NDNS_totals[c("(2008/09 - 2009/10)",
 # Rename first column 
 df_NDNSSummed<- colnames("Year", "Value")
 
+####
+
+NDNSYears <- c("(2008/09 - 2009/10)", 
+"(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
+"(2016/17-2018/19)")
+
+SumnedNDNS <- as.data.frame(colSums(NDNS_totals[c("(2008/09 - 2009/10)", 
+"(2010/11 - 2011/12)", "(2012/13 - 2013/14)", "(2014/15-2015/16)",  
+"(2016/17-2018/19)")]))
+
+df_NDNSSummed<- data.frame(NDNS_colnams, SumnedNDNS)
+
+
 ```
 
 ```{r Add units and data source}
@@ -349,8 +362,13 @@ df_clean_NDNS$DataSource <- "NDNS"
 df_clean_NDNS$Dataset <- "NDNS"
 df_clean_NDNS$Commodity <- "Consumption"
 df_clean_NDNS$TempRes <- "Biennial"
-df_clean_NDNS$FishSpecies <- "Unknown"
+df_clean_NDNS$SpeciesType <- "Unknown"
+```
 
+
+```{r Select desired variables for the data set}
+colnames(df_EUROSTAT_UKFarmed)
+df_clean_NDNS <- df_NDNSSummed[c("Year", "ValueGramsCapitaDay", "DataSource", "SpeciesType")]
 
 ```
 
@@ -377,23 +395,70 @@ df_DEFRA_household_201520 <- df_DEFRA_purchase_201520_data[df_DEFRA_purchase_201
 
 ```
 
+
+### i) Household purchases (DEFRA 2015 to 2020)
+
 ```{r Aggregate food groups}
-# Identify unique major food groups
-unique(df_DEFRA_household_201520$`Major Food Code`)
+# Identify unique major food groups descriptions 
+unique(df_DEFRA_household_201520$codeDESCRIPTION)
 
 # Major food codes according to FAO groupings
 df_DEFRA_household_201520$SpeciesType <- "Unknown"
+unique(df_DEFRA_household_201520$SpeciesType)
 
-#to fix
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10201", "10202", "11401"),] <- "Demersal"
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("11702", "11703"),] <- "Shellfish"
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10601", "10602", "10701", "10702", "10801", "119"),]<-"Pelagic"
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10201", "10202", "11401")] <- "Demersal"
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("11702", "11703")] <- "Shellfish"
+df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10601", "10602", "10701", "10702", "10801", "119")]<-"Pelagic"
+
+```
+
+```{r Classify as oily or lean}
+df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in% c("Pelagic")] <- "Oily"
+df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in% c("Demersal")]<-"Lean"
+df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in% c("Unknown")]<-"Unknown"
+df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in% c("Shellfish")]<-"Shellfish"
+
+```
+
+### ii) Eating out (DEFRA 2015 to 2020)
+
+```{r Aggregate food groups}
+# Identify unique major food groups descriptions 
+unique(df_DEFRA_eaten_out_201520$codeDESCRIPTION)
+
+# Major food codes according to FAO groupings
+df_DEFRA_eaten_out_201520$SpeciesType <- "Unknown"
+unique(df_DEFRA_eaten_out_201520$codecat)
+
+df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo120102", "eo120101")] <- "Demersal"
+df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo1203")] <- "Shellfish"
+df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo1204", "eo120202")]<-"Pelagic"
+
+### Trout, tuna and salmon aggregated together 
 
 ```
 
 
+```{r Classify as oily or lean}
+df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Pelagic")] <- "Oily"
+df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Demersal")]<-"Lean"
+df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Unknown")]<-"Unknown"
+df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Shellfish")]<-"Shellfish"
 
-#### i) Household purchases (DEFRA 2009 to 2014)
+```
+
+
+```{r Select desired variables from the data set}
+# Rename columns
+names(df_DEFRA_eaten_out_201520)[names(df_DEFRA_eaten_out_201520)=="codeDESCRIPTION"] <- "Species"
+names(df_DEFRA_eaten_out_201520)[names(df_DEFRA_eaten_out_201520)=="estimate"] <- "Value"
+
+df_DEFRA_eaten_out_clean_201520 <- c("Year", "SpeciesType", "Species", "Value", "SACN") 
+```
+
+
+
+#### iii) Household purchases (DEFRA 2009 to 2014)
 
 ```{r Load data (2009 to 2014)}
 # read DEFRA household dataset (.csv)
@@ -429,6 +494,7 @@ df_DEFRA_household_200914_clean<-df_DEFRA_household_200914[!grepl("Sum",
 
 ```
 
+
 ```{r Transform and clean dataset}
 # Subset dataframe to include variables we want 
 df_DEFRA_household_200914_main<-subset(df_DEFRA_household_200914_clean, select= c("Minor Food Code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType"))
@@ -436,8 +502,16 @@ df_DEFRA_household_200914_main<-subset(df_DEFRA_household_200914_clean, select= 
 # Change structure of the dataset 
 df_DEFRA_household_200914_long<-melt(df_DEFRA_household_200914_main, id.vars = c("Minor Food Code", "Units", "SpeciesType"), variable.name="Year", value.name="Value")
 
+# Rename columns for consistency 
+colnames(df_DEFRA_household_200914_long)
+
+names(df_DEFRA_household_200914_long)[names(df_DEFRA_eaten_out_201520)=="Minor Food Code"] <- "Species"
+names(df_DEFRA_household_200914_long)[names(df_DEFRA_eaten_out_201520)=="Value"] <- "GramsCapitaWeek"
+
+unique(df_DEFRA_household_200914_long$Units)
+
 # Combine household data (2009 to 2014 and 2015 to 2020)
-df_DEFRA_household_long<-rbind(df_DEFRA_household_200914_long, )
+df_DEFRA_household_long<-rbind(df_DEFRA_household_200914_long, df_DEFRA_eaten_out_clean_201520)
 ```
 
 
