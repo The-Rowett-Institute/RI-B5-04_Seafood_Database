@@ -85,11 +85,31 @@ df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-ed
 # Rename column
 names(df_UK_landings_11_20_data)[names(df_UK_landings_11_20_data)=="Species_type"] <- "SpeciesType"
 
+# Provide greater granularity to shellfish species
+UK_shellfishLandings_11_20 <- subset(df_UK_landings_11_20_data, SpeciesType == "Shellfish") 
+
+# Default SpeciesType to "mollusc"
+UK_shellfishLandings_11_20$SpeciesType <- "Mollusc"
+
+# Allocate crustaceans 
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
+
+# Allocate cephalopods
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+
+# Allocate other shellfish
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% "Other Shellfish"] <- "Other shellfish"
+
+# Combine with data set 
+UK_finfishLandings_11_20 <- df_UK_landings_11_20_data[(df_UK_landings_11_20_data$SpeciesType == "Pelagic") | (df_UK_landings_11_20_data$SpeciesType == "Demersal"),]
+
+df_UK_landings_11_20 <- rbind(UK_finfishLandings_11_20, UK_shellfishLandings_11_20)
+
 ```
 
 ```{r Transform and clean dataset (2011 to 2020)}
 # Change structure of the dataset 
-df_UK_landings_201120_long<-melt(df_UK_landings_11_20_data, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
+df_UK_landings_201120_long<-melt(df_UK_landings_11_20, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
 
 ```
 
@@ -104,8 +124,28 @@ df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812-ed
 # Rename column
 names(df_UK_landings_08_12_data)[names(df_UK_landings_08_12_data)=="Species_type"] <- "SpeciesType"
 
+# Provide greater granularity to shellfish species
+UK_shellfishLandings_08_12 <- subset(df_UK_landings_08_12_data, SpeciesType == "Shellfish") 
+
+# Default SpeciesType to "mollusc"
+UK_shellfishLandings_08_12$SpeciesType <- "Mollusc"
+
+# Allocate crustaceans 
+UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
+
+# Allocate cephalopods
+UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+
+# Allocate other shellfish
+UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% "Other Shellfish"] <- "Other shellfish"
+
+# Combine with data set 
+UK_finfishLandings_08_12 <- df_UK_landings_08_12_data[(df_UK_landings_08_12_data$SpeciesType == "Pelagic") | (df_UK_landings_08_12_data$SpeciesType == "Demersal"),]
+
+df_UK_fishLandings_08_12 <- rbind(UK_finfishLandings_08_12, UK_shellfishLandings_08_12)
+
 # Select only years 2009 and 2010
-df_UK_landings_09_10 <- subset(df_UK_landings_08_12_data, 
+df_UK_landings_09_10 <- subset(df_UK_fishLandings_08_12, 
                            select = c('SpeciesType', 'Species', '2009', '2010'))
 
 ```
@@ -122,13 +162,33 @@ df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_2
 ```
 
 
-```{r Apply conversion factor to calculate edible portion of the fish}
-# Conversion factors used to convert whole fish weight to edible weight
+```{r Allocate oily or lean}
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Crustacean"] <- "Shellfish"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Mollusc"] <- "Shellfish"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Cephalopod"] <- "Shellfish"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Other shellfish"] <- "Shellfish"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Freshwater"] <- "Oily"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- "Lean"
+df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- "Oily"
 
+```
+
+
+
+```{r Apply conversion factor to calculate edible portion of the fish}
+# Classify species as finfish or shellfish. New column for conversion name
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Crustacean"] <- "Shellfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Mollusc"] <- "Shellfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Cephalopod"] <- "Shellfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Other shellfish"] <- "Shellfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Freshwater"] <- "Finfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- "Finfish"
+df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- "Finfish"
+
+# Conversion factors used to convert whole fish weight to edible weight
 # State average CF finfish: 0.49; shellfish: 0.28 
-df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Shellfish"] <- 0.28
-df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- 0.49
-df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- 0.49 
+df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$CN == "Shellfish"] <- 0.28
+df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$CN == "Finfish"] <- 0.49
 
 # Create new column and apply conversion factors values
 df_clean_UK_landings_09_20$CFValue<-df_clean_UK_landings_09_20$Value*
@@ -139,28 +199,34 @@ df_clean_UK_landings_09_20$CFValue<-df_clean_UK_landings_09_20$Value*
 
 ```{r Calculate grams available per capita}
 # Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
-df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_11_20_data))
+df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
 
 # Convert raw value from 000's tonnes to grams 
 df_clean_UK_landings_09_20$ValueGrams<- (df_clean_UK_landings_09_20$CFValue*1000)*1000000
 
 # Convert grams/year to g/capita/year
-df_clean_UK_landings_09_20$ValueGramsPerCapita<- df_clean_UK_landings_09_20$ValueGrams/df_clean_UK_landings_09_20$PopSize
+df_clean_UK_landings_09_20$ValueGramsCapitaYear<- df_clean_UK_landings_09_20$ValueGrams/df_clean_UK_landings_09_20$PopSize
+
+# Convert grams/year to g/capita/week
+df_clean_UK_landings_09_20$ValueGramsCapitaWeek<- df_clean_UK_landings_09_20$ValueGramsCapitaYear/52
+
+# Convert grams/year to g/capita/day
+df_clean_UK_landings_09_20$ValueGramsCapitaDay<- df_clean_UK_landings_09_20$ValueGramsCapitaWeek/7
 
 # see apply()?. or before melt, join based on year. then multiply tog
 ```
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_UK_landings_09_20$ValueUnits <- "000-tonnes"
 df_clean_UK_landings_09_20$DataSource <- "National-statistics"
 df_clean_UK_landings_09_20$Dataset <- "UK-sea-fisheries-statistics"
 df_clean_UK_landings_09_20$Commodity <- "Production"
 df_clean_UK_landings_09_20$TempRes <- "Annual"
+df_clean_UK_landings_09_20$Flag <- "ConV1"
 ```
 
 ```{r Select desired variables for the data set}
-dfc_simple_landings_UK <- df_clean_UK_landings_09_20[c("SpeciesType", "Species", "Year", "ValueGramsPerCapita", "DataSource", "Dataset", "Commodity")]
+dfc_simple_landings_UK <- df_clean_UK_landings_09_20[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay", "DataSource", "Dataset", "Commodity", "Flag")]
 
 ```
 
@@ -240,8 +306,19 @@ df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTA
 ```
 
 
-```{r Apply conversion factor to calculate edible portion of the fish}
+```{r Allocate oily or lean}
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Cephalopod"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Other shellfish"] <- "Shellfish"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Lean"
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oily"
 
+```
+
+
+```{r Apply conversion factor to calculate edible portion of the fish}
 # Classify species as finfish or shellfish. New column for conversion name
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shellfish"
@@ -281,14 +358,16 @@ df_EUROSTAT_UKFarmed$ValueGramsCapitaDay<- df_EUROSTAT_UKFarmed$ValueGramsCapita
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
 df_EUROSTAT_UKFarmed$DataSource <- "Eurostat"
-df_EUROSTAT_UKFarmed$Dataset <- "Aquaculture"
+df_EUROSTAT_UKFarmed$DataSet <- "Aquaculture"
 df_EUROSTAT_UKFarmed$Commodity <- "Production"
 df_EUROSTAT_UKFarmed$TempRes <- "Annual"
+df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 ```
 
 ```{r Select desired variables for the data set}
 colnames(df_EUROSTAT_UKFarmed)
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaDay", "DataSource", "Dataset", "Commodity")]
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaDay", "DataSource", "DataSet", "Commodity", "Flag")]
+
 
 ```
 
@@ -353,22 +432,26 @@ SumnedNDNS <- as.data.frame(colSums(NDNS_totals[c("(2008/09 - 2009/10)",
 df_NDNSSummed<- data.frame(NDNS_colnams, SumnedNDNS)
 
 
+
 ```
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
 df_clean_NDNS$Units <- "g/capita/day"
 df_clean_NDNS$DataSource <- "NDNS"
-df_clean_NDNS$Dataset <- "NDNS"
+df_clean_NDNS$DataSet <- "NDNS"
 df_clean_NDNS$Commodity <- "Consumption"
 df_clean_NDNS$TempRes <- "Biennial"
+
+# SpeciesType, SACN and Species unknown
 df_clean_NDNS$SpeciesType <- "Unknown"
+df_clean_NDNS$SACN <- "Unknown"
+df_clean_NDNS$Species <- "Unknown"
 ```
 
 
 ```{r Select desired variables for the data set}
-colnames(df_EUROSTAT_UKFarmed)
-df_clean_NDNS <- df_NDNSSummed[c("Year", "ValueGramsCapitaDay", "DataSource", "SpeciesType")]
+dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaDay", "DataSource", "DataSet", "Commodity", "flag")]
 
 ```
 
