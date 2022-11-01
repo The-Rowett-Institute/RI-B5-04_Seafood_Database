@@ -64,6 +64,21 @@ df_clean_UK_pop$Data_source <- "National-statistics"
 ```
 
 
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/csv-files", sep="")
+filepath <- paste(data_dir,"ProcessedData", sep="")
+write.csv(df_clean_UK_pop, file = paste(filepath,"PopSize_NS.csv", sep=""))
+
+#filepath <- paste(data_dir,"ProcessedData", sep="")
+#write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv", sep=""))
+
+
+```
+
+
+
+
 ## Production
 
 UK fish production data includes capture fisheries and aquaculture production 
@@ -381,7 +396,69 @@ write.csv(df_cleaned_UKFarmed, file = paste(filepath,"FarmedData_Eurostat.csv", 
 
 ## Trade (HMRC)
 
-```{r Load data}
+```{r Load data from processed data file}
+# Some edits are needed to ensure consistency with processed data sets
+
+# Read in UK trade data 
+df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep="/"))
+str(df_trade_HMRC_data)
+
+```
+
+
+```{r Calcualte grams available per capita}
+# Create new column converting volume from 1000 tonnes to grams
+unique(df_trade_HMRC_data$Units)
+new_df_trade_HMRC_data$ValueGrams <- (new_df_trade_HMRC_data$Value*1000)*1000000
+
+# Number of seafood entries differ per year so need to create a pipe
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2020"] <- 67081000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2019"] <- 66796800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2018"] <- 66435600
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2017"] <- 66040200
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2016"] <- 65648100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2015"] <- 65110000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2014"] <- 64596800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2013"] <- 64105700
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2012"] <- 63705000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2011"] <- 63285100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2010"] <- 62759500
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2009"] <- 62260500
+
+# Make popsize column numerical value
+df_trade_HMRC_data$popSize <- as.numeric(df_trade_HMRC_data$popSize)
+
+# Calculate grams/capita/year
+df_trade_HMRC_data$ValueGramsCapitaYear <- df_trade_HMRC_data$Value/df_trade_HMRC_data$popSize
+
+# Calculate grams/capita/week
+df_trade_HMRC_data$ValueGramsCapitaWeek <- df_trade_HMRC_data$ValueGramsCapitaYear/52
+
+# Calculate grams/capita/day
+df_trade_HMRC_data$ValueGramsCapitaDay <- df_trade_HMRC_data$ValueGramsCapitaWeek/7
+
+```
+
+
+```{r Allocate SACN values}
+# Create a new column for SACN values
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Crustacean"] <- "Shellfish"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Mollusc"] <- "Shellfish"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Cephalopod"] <- "Shellfish"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Other shellfish"] <- "Shellfish"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Freshwater"] <- "Oily"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Demersal"] <- "Lean"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Pelagic"] <- "Oily"
+```
+
+
+```{r Select desired values}
+new_df_trade_HMRC_data<- df_trade_HMRC_data[c("SACN", "SpeciesType", "Species","Year", "ValueGramsCapitaDay", "DataSupplier", "DataSet", "Commodity", "Flag")]
+```
+
+
+```{r Save cleaned data}
+write.csv(new_df_trade_HMRC_data, file = paste(filepath,"TradeData_HMRC-edits.csv", sep=""))
 
 ```
 
