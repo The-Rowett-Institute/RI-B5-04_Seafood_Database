@@ -1,8 +1,8 @@
 
 ---
-title: "Data cleaning. RI-B5-04: UK seafood supply chains"
+title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '31/10/2022'
+date: '02/11/2022'
 output: html_document
 ---
 
@@ -13,7 +13,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Part 1: Cleaning data to map UK seafood supply chains 
 
-This R Markdown document (part 1) outlines how the data complied in the final spreadsheet mapping UK seafood supply chains was cleaned. 
+This R Markdown document outlines how the data from the various data suppliers used to map UK seafood supply chains was cleaned. 
+
+An overview and summary of the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R, the data was initially cleaned. Details describing this process can be found in the supporting excel document. We adivce following this document.    
 
 The justification for the data included in this data set can be found in the supporting excel document.  
 
@@ -69,10 +71,6 @@ df_clean_UK_pop$Data_source <- "National-statistics"
 filepath <- paste(data_dir,"ProcessedData/csv-files", sep="")
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_clean_UK_pop, file = paste(filepath,"PopSize_NS.csv", sep=""))
-
-#filepath <- paste(data_dir,"ProcessedData", sep="")
-#write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv", sep=""))
-
 
 ```
 
@@ -541,51 +539,53 @@ dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaD
 
 #### i) DEFRA UK purchases (both household and eating out)
 
-```{r Load data 2015 to 2020} 
-# read DEFRA purchasing (household and eating out) data (.csv)
-df_DEFRA_purchase_201520_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201520.csv", sep="/"))
+```{r Load data 2016 to 2020} 
+# Error in raw data in 2015 so data from 2016 onwards used
 
-# Provide full calendar year date
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==15] <- 2015
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==16] <- 2016
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==17] <- 2017
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==18] <- 2018
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==19] <- 2019
-df_DEFRA_purchase_201520_data$Year[df_DEFRA_purchase_201520_data$Year==20] <- 2020
-unique(df_DEFRA_purchase_201520_data$Year)
+# read DEFRA purchasing (household and eating out) data (.csv)
+df_DEFRA_purchase_201620_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+
+# State full calendar year date
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==15] <- 2015
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==16] <- 2016
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==17] <- 2017
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==18] <- 2018
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==19] <- 2019
+df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==20] <- 2020
+unique(df_DEFRA_purchase_201620_data$Year)
 
 # Separate purchasing data for household and eating out purposes based on code. Create a pipe aggregating fish products consumed within the household and eaten out
-df_DEFRA_eaten_out_201520 <- df_DEFRA_purchase_201520_data[df_DEFRA_purchase_201520_data$codecat %in% c( "eo120101", "eo120102", "eo120201", "eo120202", "eo1203", "eo1204", "eo1205", "eo120601", "eo120602", "eo120603"), ]
+df_DEFRA_eaten_out_201620 <- df_DEFRA_purchase_201620_data[df_DEFRA_purchase_201620_data$codecat %in% c( "eo120101", "eo120102", "eo120201", "eo120202", "eo1203", "eo1204", "eo1205", "eo120601", "eo120602", "eo120603"), ]
 
-df_DEFRA_household_201520 <- df_DEFRA_purchase_201520_data[df_DEFRA_purchase_201520_data$codecat %in% c( "10201", "10202", "10601", "10602", "10701", "10702", "10801", "11401", "11702", "11702", "118", "119", "120", "121", "12304", "12305"), ]
+df_DEFRA_household_201620 <- df_DEFRA_purchase_201620_data[df_DEFRA_purchase_201620_data$codecat %in% c( "10201", "10202", "10601", "10602", "10701", "10702", "10801", "11401", "11702", "11702", "118", "119", "120", "121", "12304", "12305"), ]
 
 ```
 
 
-### i) Household purchases (DEFRA 2015 to 2020)
+### i) Household purchases (DEFRA 2016 to 2020)
 
 ```{r Allocate SpeciesType to food groups}
 # Identify unique major food groups descriptions 
-unique(df_DEFRA_household_201520$codeDESCRIPTION)
+unique(df_DEFRA_household_201620$codeDESCRIPTION)
 
 # Major food codes according to FAO groupings
-df_DEFRA_household_201520$SpeciesType <- "Unknown"
-unique(df_DEFRA_household_201520$SpeciesType)
+df_DEFRA_household_201620$SpeciesType <- "Unknown"
+unique(df_DEFRA_household_201620$SpeciesType)
 
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10201", "10202", "11401")] <- "Demersal"
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("11702", "11703")] <- "Shellfish"
-df_DEFRA_household_201520$SpeciesType[df_DEFRA_household_201520$codecat %in% c("10601", "10602", "10701", "10702", "10801", "119")]<-"Pelagic"
+df_DEFRA_household_201620$SpeciesType[df_DEFRA_household_201620$codecat %in% c("10201", "10202", "11401")] <- "Demersal"
+df_DEFRA_household_201620$SpeciesType[df_DEFRA_household_201620$codecat %in% c("11702", "11703")] <- "Shellfish"
+df_DEFRA_household_201620$SpeciesType[df_DEFRA_household_201620$codecat %in% c("10601", "10602", "10701", "10702", "10801", "119")]<-"Pelagic"
 
 ```
 
 ```{r Allocate SACN i.e. lean or oily}
-df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in% 
+df_DEFRA_household_201620$SACN[df_DEFRA_household_201620$SpeciesType %in% 
                                  c("Pelagic")] <- "Oily"
-df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in%
+df_DEFRA_household_201620$SACN[df_DEFRA_household_201620$SpeciesType %in%
                                  c("Demersal")]<-"Lean"
-df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in%
+df_DEFRA_household_201620$SACN[df_DEFRA_household_201620$SpeciesType %in%
                                  c("Unknown")]<-"Unknown"
-df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in%
+df_DEFRA_household_201620$SACN[df_DEFRA_household_201620$SpeciesType %in%
                                  c("Shellfish")]<-"Shellfish"
 
 ```
@@ -593,36 +593,39 @@ df_DEFRA_household_201520$SACN[df_DEFRA_household_201520$SpeciesType %in%
 
 ```{r Calculate grams available per capita}
 # Rename "estimate column"
-names(df_DEFRA_household_201520)[names(df_DEFRA_household_201520)=="estimate"] <- "ValueGramsCapitaWeek"
+names(df_DEFRA_household_201620)[names(df_DEFRA_household_201620)=="estimate"] <- "ValueGramsCapitaWeek"
 
 # Convert grams/capita/week to grams/capita/day
-df_DEFRA_household_201520$ValueGramsCapitaDay <-  df_DEFRA_household_201520$ValueGramsCapitaWeek/7
+df_DEFRA_household_201620$ValueGramsCapitaDay <-  df_DEFRA_household_201620$ValueGramsCapitaWeek/7
 
 ```
 
 ```{r Select desired variables from data set}
 # Rename columns
-names(df_DEFRA_household_201520)[names(df_DEFRA_household_201520)=="codeDESCRIPTION"] <- "Species"
+names(df_DEFRA_household_201620)[names(df_DEFRA_household_201620)=="codeDESCRIPTION"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_household_201520 <- df_DEFRA_household_201520[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_household_201520 <- df_DEFRA_household_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
 
+# Check data
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = df_DEFRA_household_201620, FUN = sum))
+plot(aggregate(ValueGramsCapitaDay ~ SpeciesType, data = df_DEFRA_household_201620, FUN = sum))
 ```
 
 
-### ii) Eating out (DEFRA 2015 to 2020)
+### ii) Eating out (DEFRA 2016 to 2020)
 
 ```{r Allocate SpeciesType to food groups}
 # Identify unique major food groups descriptions 
-unique(df_DEFRA_eaten_out_201520$codeDESCRIPTION)
+unique(df_DEFRA_eaten_out_201620$codeDESCRIPTION)
 
 # Major food codes according to FAO groupings
-df_DEFRA_eaten_out_201520$SpeciesType <- "Unknown"
-unique(df_DEFRA_eaten_out_201520$codecat)
+df_DEFRA_eaten_out_201620$SpeciesType <- "Unknown"
+unique(df_DEFRA_eaten_out_201620$codecat)
 
-df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo120102", "eo120101")] <- "Demersal"
-df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo1203")] <- "Shellfish"
-df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("eo1204", "eo120202")] <- "Pelagic"
+df_DEFRA_eaten_out_201620$SpeciesType[df_DEFRA_eaten_out_201620$codecat %in% c("eo120102", "eo120101")] <- "Demersal"
+df_DEFRA_eaten_out_201620$SpeciesType[df_DEFRA_eaten_out_201620$codecat %in% c("eo1203")] <- "Shellfish"
+df_DEFRA_eaten_out_201620$SpeciesType[df_DEFRA_eaten_out_201620$codecat %in% c("eo1204", "eo120202")] <- "Pelagic"
 
 ### Trout, tuna and salmon aggregated together 
 
@@ -630,134 +633,154 @@ df_DEFRA_eaten_out_201520$SpeciesType[df_DEFRA_eaten_out_201520$codecat %in% c("
 
 
 ```{r Allocate SACN i.e. lean or oily}
-df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Pelagic")] <- "Oily"
-df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Demersal")] <- "Lean"
-df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Unknown")] <- "Unknown"
-df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$SpeciesType %in% c("Shellfish")] <- "Shellfish"
+df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$SpeciesType %in% c("Pelagic")] <- "Oily"
+df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$SpeciesType %in% c("Demersal")] <- "Lean"
+df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$SpeciesType %in% c("Unknown")] <- "Unknown"
+df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$SpeciesType %in% c("Shellfish")] <- "Shellfish"
 
 # Note
-df_DEFRA_eaten_out_201520$SACN[df_DEFRA_eaten_out_201520$codecat %in% c("eo120201")] <- "Oily" # note: Trout, tuna and salmon aggregated together thus can allocate via SpeciesType
+df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$codecat %in% c("eo120201")] <- "Oily" # note: Trout, tuna and salmon aggregated together thus can allocate via SpeciesType
 
 ```
 
 
 ```{r Calculate grams available per capita}
 
-names(df_DEFRA_eaten_out_201520)[names(df_DEFRA_eaten_out_201520)=="estimate"] <- "ValueGramsCapitaWeek"
+names(df_DEFRA_eaten_out_201620)[names(df_DEFRA_eaten_out_201620)=="estimate"] <- "ValueGramsCapitaWeek"
 
 # Calculate grams/capita/week to grams/capita/day
-df_DEFRA_eaten_out_201520$ValueGramsCapitaDay <-  df_DEFRA_eaten_out_201520$ValueGramsCapitaWeek/7
+df_DEFRA_eaten_out_201620$ValueGramsCapitaDay <-  df_DEFRA_eaten_out_201620$ValueGramsCapitaWeek/7
 
 ```
 
 
 ```{r Select desired variables from data set}
 # Rename columns
-colnames(df_DEFRA_eaten_out_201520)
-names(df_DEFRA_eaten_out_201520)[names(df_DEFRA_eaten_out_201520)=="codeDESCRIPTION"] <- "Species"
+colnames(df_DEFRA_eaten_out_201620)
+names(df_DEFRA_eaten_out_201620)[names(df_DEFRA_eaten_out_201620)=="codeDESCRIPTION"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_eatenOut_201520 <- df_DEFRA_eaten_out_201520[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_eatenOut_201620 <- df_DEFRA_eaten_out_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
 
 ```
 
 
-#### iii) Household purchases (DEFRA 2009 to 2014)
+#### iii) Household purchases (DEFRA 2009 to 2015)
 
-```{r Load data (2009 to 2014)}
+```{r Load data (2009 to 2015)}
 # read DEFRA household data set (.csv)
-df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200914-edited.csv", sep="/"))
+df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200915-edited.csv", sep="/"))
 
-# Select only years 2009 to 2014
+# Select only years 2009 to 2015
 df_DEFRA_household_200914 <- subset(df_DEFRA_household_data, 
                            select = c("Code", "Food Category", "Food Group",
                                       "Major Food Code", "Minor Food Code",
                                       "Units", "2009", "2010", "2011",
-                                      "2012", "2013", "2014"))
+                                      "2012", "2013", "2014", "2015"))
 
 ```
 
 
+```{r Delete later}
+# check data
+df_DEFRA_household_2015 <- subset(df_DEFRA_household_data, 
+                           select = c("Code", "Food Category", "Food Group",
+                                      "Major Food Code", "Minor Food Code",
+                                      "Units", "2009", "2010", "2011",
+                                      "2012", "2013", "2014", "2015"))
+
+
+
+
+# Change structure of the data set 
+df_DEFRA_household_20015_long<-melt(df_DEFRA_household_2015, id.vars = c("Code", "Food Category", "Food Group", "Major Food Code", "Minor Food Code","Units", "Minor Food Code", "Units"), variable.name="Year", value.name="Value")
+
+plot(aggregate(Value ~ Year, data = df_DEFRA_household_20015_long, FUN= sum))
+
+```
+
+
+
 ```{r Allocate SpeciesType to food groups}
 # Identify unique major food groups
-unique(df_DEFRA_household_200914$`Major Food Code`)
+unique(df_DEFRA_household_200915$`Major Food Code`)
 
 # Major food codes according to FAO groupings
-df_DEFRA_household_200914$SpeciesType <- "Unknown"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "White fish, fresh, chilled or frozen"] <- "Demersal"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "White fish, dried, salted or smoked"] <- "Demersal"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Shellfish"] <- "Shellfish"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Salmon, fresh, chilled or frozen"] <- "Pelagic"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Blue fish, dried or salted or smoked"] <- "Pelagic"
-df_DEFRA_household_200914$SpeciesType[df_DEFRA_household_200914$`Major Food Code` == "Salmon, tinned"] <- "Pelagic"
+df_DEFRA_household_200915$SpeciesType <- "Unknown"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "White fish, fresh, chilled or frozen"] <- "Demersal"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "White fish, dried, salted or smoked"] <- "Demersal"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "Shellfish"] <- "Shellfish"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "Herrings and other blue fish, fresh, chilled or frozen"] <-"Pelagic"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "Salmon, fresh, chilled or frozen"] <- "Pelagic"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "Blue fish, dried or salted or smoked"] <- "Pelagic"
+df_DEFRA_household_200915$SpeciesType[df_DEFRA_household_200915$`Major Food Code` == "Salmon, tinned"] <- "Pelagic"
 
 # Remove rows where sum is provided 
-df_DEFRA_household_200914_clean<-df_DEFRA_household_200914[!grepl("Sum", 
-                                         df_DEFRA_household_200914$`Minor Food Code`),]
+df_DEFRA_household_200915_clean<-df_DEFRA_household_200915[!grepl("Sum", 
+                                         df_DEFRA_household_200915$`Minor Food Code`),]
 
 ```
 
 
 ```{r Allocate SACN i.e. lean or oily}
-df_DEFRA_household_200914_clean$SACN[df_DEFRA_household_200914_clean$SpeciesType %in% c("Pelagic")] <- "Oily"
-df_DEFRA_household_200914_clean$SACN[df_DEFRA_household_200914_clean$SpeciesType %in% c("Demersal")]<-"Lean"
-df_DEFRA_household_200914_clean$SACN[df_DEFRA_household_200914_clean$SpeciesType %in% c("Unknown")]<-"Unknown"
-df_DEFRA_household_200914_clean$SACN[df_DEFRA_household_200914_clean$SpeciesType %in% c("Shellfish")]<-"Shellfish"
+df_DEFRA_household_200915_clean$SACN[df_DEFRA_household_200915_clean$SpeciesType %in% c("Pelagic")] <- "Oily"
+df_DEFRA_household_200915_clean$SACN[df_DEFRA_household_200915_clean$SpeciesType %in% c("Demersal")]<-"Lean"
+df_DEFRA_household_200915_clean$SACN[df_DEFRA_household_200915_clean$SpeciesType %in% c("Unknown")]<-"Unknown"
+df_DEFRA_household_200915_clean$SACN[df_DEFRA_household_200915_clean$SpeciesType %in% c("Shellfish")]<-"Shellfish"
 
 ```
 
 
 ```{r Transform and clean data set}
 # Subset data frame to include variables we want before changing structure
-df_DEFRA_household_200914_main<-subset(df_DEFRA_household_200914_clean, select= c("Minor Food Code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType", "SACN"))
+df_DEFRA_household_200915_main<-subset(df_DEFRA_household_200915_clean, select= c("Minor Food Code", "Units", "2009", "2010", "2011", "2012", "2013", "2014","2015", "SpeciesType", "SACN"))
 
 # Change structure of the data set 
-df_DEFRA_household_200914_long<-melt(df_DEFRA_household_200914_main, id.vars = c("Minor Food Code", "Units", "SpeciesType", "SACN"), variable.name="Year", value.name="Value")
+df_DEFRA_household_200915_long<-melt(df_DEFRA_household_200915_main, id.vars = c("Minor Food Code", "Units", "SpeciesType", "SACN"), variable.name="Year", value.name="Value")
 
 # Rename columns for consistency 
-colnames(df_DEFRA_household_200914_long)
-names(df_DEFRA_household_200914_long)[names(df_DEFRA_household_200914_long)=="Minor Food Code"] <- "Species"
+colnames(df_DEFRA_household_200915_long)
+names(df_DEFRA_household_200915_long)[names(df_DEFRA_household_200915_long)=="Minor Food Code"] <- "Species"
 
 ```
 
 
 ```{r Calculate grams available per capita}
-names(df_DEFRA_household_200914_long)[names(df_DEFRA_household_200914_long)=="Value"] <- "ValueGramsCapitaWeek"
+names(df_DEFRA_household_200915_long)[names(df_DEFRA_household_200915_long)=="Value"] <- "ValueGramsCapitaWeek"
 
-df_DEFRA_household_200914_long$ValueGramsCapitaDay <- df_DEFRA_household_200914_long$ValueGramsCapitaWeek/7
+df_DEFRA_household_200915_long$ValueGramsCapitaDay <- df_DEFRA_household_200915_long$ValueGramsCapitaWeek/7
 
 ```
 
 
 ```{r Select desired variables from data set}
 # Rename columns
-colnames(df_DEFRA_household_200914_long)
-names(df_DEFRA_household_200914_long)[names(df_DEFRA_household_200914_long)=="codeDESCRIPTION"] <- "Species"
+colnames(df_DEFRA_household_200915_long)
+names(df_DEFRA_household_200915_long)[names(df_DEFRA_household_200915_long)=="codeDESCRIPTION"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_household_200914 <- df_DEFRA_household_200914_long[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_household_200915 <- df_DEFRA_household_200915_long[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
 
 ```
 
 
-```{r Combine DEFRA household data sets (2009 to 2014 and 2015 to 2020)}
-# Combine household data (2009 to 2014 and 2015 to 2020)
-colnames(dfc_DEFRA_household_200914)
-str(dfc_DEFRA_household_200914)
-unique(dfc_DEFRA_household_200914$Year)
+```{r Combine DEFRA household data sets (2009 to 2015 and 2016 to 2020)}
+# Combine household data (2009 to 2015 and 2016 to 2020)
+colnames(dfc_DEFRA_household_200915)
+str(dfc_DEFRA_household_200915)
+unique(dfc_DEFRA_household_200915$Year)
 
-colnames(dfc_DEFRA_household_201520)
-str(dfc_DEFRA_household_201520)
-unique(dfc_DEFRA_household_201520$Year)
+colnames(dfc_DEFRA_household_201620)
+str(dfc_DEFRA_household_201620)
+unique(dfc_DEFRA_household_201620$Year)
 
 
 # Ensure "Year" column is as a factor value
-dfc_DEFRA_household_200914$Year<-as.factor(dfc_DEFRA_household_200914$Year)
-dfc_DEFRA_household_201520$Year<-as.factor(dfc_DEFRA_household_201520$Year)
+dfc_DEFRA_household_200915$Year<-as.factor(dfc_DEFRA_household_200915$Year)
+dfc_DEFRA_household_201620$Year<-as.factor(dfc_DEFRA_household_201620$Year)
 
 # Row bind data frames (2009 to 2020)
-dfc_DEFRA_household_200920 <- rbind(dfc_DEFRA_household_200914, dfc_DEFRA_household_201520)
+dfc_DEFRA_household_200920 <- rbind(dfc_DEFRA_household_200915, dfc_DEFRA_household_201620)
 
 str(dfc_DEFRA_household_200920)
 unique(dfc_DEFRA_household_200920$Year)
@@ -784,87 +807,87 @@ write.csv(dfc_DEFRA_household_200920, file = paste(filepath,"HouseholdPurchases_
 ```
 
 
-#### ii) Eating out (DEFRA 2009 to 2014)
+#### ii) Eating out (DEFRA 2009 to 2015)
 
-```{r Load data (2009 to 2014)}
+```{r Load data (2009 to 2015)}
 # read DEFRA eaten out data set
-df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200914-edited.csv", sep="/"))
+df_DEFRA_eaten_out_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200915-edited.csv", sep="/"))
 
-# Select only years 2009 to 2014
-df_DEFRA_EO_200914 <- subset(df_DEFRA_eaten_out_data, 
+# Select only years 2009 to 2015
+df_DEFRA_EO_200915 <- subset(df_DEFRA_eaten_out_data, 
                            select = c("Code", "EO Food Group", 
                                       "EO Major code", "EO Minor code",
                                       "Units", "2009", "2010", "2011",
-                                      "2012", "2013", "2014"))
+                                      "2012", "2013","2014", "2015"))
 ```
 
 
 ```{r Allocate SpeciesType to food group}
 # Identify unique major food groups
-unique(df_DEFRA_EO_200914$`EO Major code`)
+unique(df_DEFRA_EO_200915$`EO Major code`)
 
 # Major food codes according to FAO groupings.
-df_DEFRA_EO_200914$SpeciesType <- "Unknown"
-df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "White fish"] <- "Demersal"
-df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"] <- "Shellfish"
-df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Fatty fish"] <- "Pelagic"
-df_DEFRA_EO_200914$SpeciesType[df_DEFRA_EO_200914$`EO Major code` == "Kippers and other smoked fish (e.g. smoked salmon)"] <- "Pelagic"
+df_DEFRA_EO_200915$SpeciesType <- "Unknown"
+df_DEFRA_EO_200915$SpeciesType[df_DEFRA_EO_200915$`EO Major code` == "White fish"] <- "Demersal"
+df_DEFRA_EO_200915$SpeciesType[df_DEFRA_EO_200915$`EO Major code` == "Shellfish - without sauce or dressing (e.g. prawns, shrimps, oysters, crab)"] <- "Shellfish"
+df_DEFRA_EO_200915$SpeciesType[df_DEFRA_EO_200915$`EO Major code` == "Fatty fish"] <- "Pelagic"
+df_DEFRA_EO_200915$SpeciesType[df_DEFRA_EO_200915$`EO Major code` == "Kippers and other smoked fish (e.g. smoked salmon)"] <- "Pelagic"
 
 # Remove rows where sum is provided 
-df_DEFRA_EO_200914_clean<-df_DEFRA_EO_200914[!grepl("Sum", 
-                                         df_DEFRA_EO_200914$`EO Minor code`),]
+df_DEFRA_EO_200915_clean<-df_DEFRA_EO_200915[!grepl("Sum", 
+                                         df_DEFRA_EO_200915$`EO Minor code`),]
 
 ```
 
 
 ```{r Allocate SACN i.e. lean or oily}
-df_DEFRA_EO_200914_clean$SACN[df_DEFRA_EO_200914_clean$SpeciesType %in% c("Pelagic")] <- "Oily"
-df_DEFRA_EO_200914_clean$SACN[df_DEFRA_EO_200914_clean$SpeciesType %in% c("Demersal")]<-"Lean"
-df_DEFRA_EO_200914_clean$SACN[df_DEFRA_EO_200914_clean$SpeciesType %in% c("Unknown")]<-"Unknown"
-df_DEFRA_EO_200914_clean$SACN[df_DEFRA_EO_200914_clean$SpeciesType %in% c("Shellfish")]<-"Shellfish"
+df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Pelagic")] <- "Oily"
+df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Demersal")]<-"Lean"
+df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Unknown")]<-"Unknown"
+df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Shellfish")]<-"Shellfish"
 
 ```
 
 
 ```{r Transform and clean data set}
 # Subset data frame to include variables we want 
-df_DEFRA_EO_200914_main<-subset(df_DEFRA_EO_200914_clean, select= c("EO Minor code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "SpeciesType", "SACN"))
+df_DEFRA_EO_200915_main<-subset(df_DEFRA_EO_200915_clean, select= c("EO Minor code", "Units", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "SpeciesType", "SACN"))
 
 # Change structure of the data set 
-df_DEFRA_eatenOut_200914_long<-melt(df_DEFRA_EO_200914_main, id.vars = c("EO Minor code", "Units", "SpeciesType", "SACN"), variable.name="Year", value.name="Value")
+df_DEFRA_eatenOut_200915_long<-melt(df_DEFRA_EO_200915_main, id.vars = c("EO Minor code", "Units", "SpeciesType", "SACN"), variable.name="Year", value.name="Value")
 ```
 
 
 ```{r Calculate grams available per capita}
 # Change column variable name to include units 
-names(df_DEFRA_eatenOut_200914_long)[names(df_DEFRA_eatenOut_200914_long)=="Value"] <- "ValueGramsCapitaWeek"
+names(df_DEFRA_eatenOut_200915_long)[names(df_DEFRA_eatenOut_200915_long)=="Value"] <- "ValueGramsCapitaWeek"
 
 # Calculate grams available per capita per day
-df_DEFRA_eatenOut_200914_long$ValueGramsCapitaDay <- df_DEFRA_eatenOut_200914_long$ValueGramsCapitaWeek/7
+df_DEFRA_eatenOut_200915_long$ValueGramsCapitaDay <- df_DEFRA_eatenOut_200915_long$ValueGramsCapitaWeek/7
 
 ```
 
 
 ```{r Select desired variables from data set}
 # Rename columns
-colnames(df_DEFRA_eatenOut_200914_long)
-names(df_DEFRA_eatenOut_200914_long)[names(df_DEFRA_eatenOut_200914_long)=="EO Minor code"] <- "Species"
+colnames(df_DEFRA_eatenOut_200915_long)
+names(df_DEFRA_eatenOut_200915_long)[names(df_DEFRA_eatenOut_200915_long)=="EO Minor code"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_eatenOut_200914 <- df_DEFRA_eatenOut_200914_long[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_eatenOut_200915 <- df_DEFRA_eatenOut_200915_long[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
 
 ```
 
 
-```{r Combine DEFRA eating out data (2009 to 2014 and 2015 to 2020)}
+```{r Combine DEFRA eating out data (2009 to 2015 and 2015 to 2020)}
 # Convert "Year" to a factor value
 str(dfc_DEFRA_eatenOut_201520)
 str(dfc_DEFRA_eatenOut_201520)
 
 dfc_DEFRA_eatenOut_201520$Year <- as.factor(dfc_DEFRA_eatenOut_201520$Year)
 
-# Combine DEFRA eating out data between 2009 to 2014 and 2015 to 2020
-dfc_DEFRA_eatenOut_200920 <- rbind(dfc_DEFRA_eatenOut_200914, dfc_DEFRA_eatenOut_201520)
+# Combine DEFRA eating out data between 2009 to 2015 and 2015 to 2020
+dfc_DEFRA_eatenOut_200920 <- rbind(dfc_DEFRA_eatenOut_200915, dfc_DEFRA_eatenOut_201520)
 
 ```
 
