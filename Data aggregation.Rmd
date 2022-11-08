@@ -2,7 +2,7 @@
 ---
 title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '02/11/2022'
+date: '08/11/2022'
 output: html_document
 ---
 
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 This R Markdown document outlines how the data from the various data suppliers used to map UK seafood supply chains was cleaned. 
 
-An overview and summary of the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R, the data was initially cleaned. Details describing this process can be found in the supporting excel document. We adivce following this document.    
+An overview and summary of the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R, the data was initially cleaned. Details describing this process can be found in the supporting excel document. We advice following this document.    
 
 The justification for the data included in this data set can be found in the supporting excel document.  
 
@@ -41,6 +41,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep="")
 # note we are able to change this to another file e.g. saving the output
 
 ```
+
 
 ## UK population data (Office of National Statistics)
 
@@ -247,59 +248,6 @@ write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv",
 #filepath <- paste(data_dir,"ProcessedData", sep="")
 #write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv", sep=""))
 
-
-```
-
-
-### B) Aquaculture production (CEFAS)
-
-```{r Load data (2013 to 2020)}
-# UK aquaculture production 
-df_CEFAS_UK_aquaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
-
-# Rename column
-names(df_CEFAS_UK_aquaculture_data)[names(df_CEFAS_UK_aquaculture_data)=="Tonnes"] <- "Units"
-```
-
-```{r Transform and clean data set (2013 to 2010)}
-# Change structure of the data set 
-df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aquaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
-
-```
-
-```{r Allocating fish species corresonding species type (2013 to 2010)}
-# Allocate fish species group type 
-
-```
-
-```{r Load data (2009 to 2012)}
-# UK aquaculture production 
-df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,".csv", sep="/"))
-
-```
-
-
-```{r Transform and clean data set (2009 to 2012)}
-# Change structure of the data set 
-df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
-
-```
-
-```{r Allocating fish species corresonding species type (2009 to 2012)}
-# Allocate fish species group type 
-
-```
-
-
-```{r Add units and data source (2013 to 2020)}
-# Create "cleaned" data frame, defining units and data source 
-df_UK_aquaculture_201320_long$DataSource <- "CEFAS"
-df_UK_aquaculture_201320_long$DataSet <- "Aquaculture"
-df_UK_aquaculture_201320_long$Commodity <- "Production"
-df_UK_aquaculture_201320_long$TempRes <- "Annual"
-```
-
-```{r Save cleaned data (CEFAS 2013 to 2020)}
 
 ```
 
@@ -968,3 +916,57 @@ df_MMS_production$DataSet <- "Scottish-aquaculture"
 df_MMS_production$Commodity <- "Production"
 df_MMS_production$TempRes <- "Annual"
 ```
+
+
+### B) Aquaculture production (CEFAS)
+
+```{r Load data (2013 to 2020)}
+# UK aquaculture production 
+df_CEFAS_UK_aquaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-201320-edit.csv", sep="/"))
+
+# Rename column
+names(df_CEFAS_UK_aquaculture_data)[names(df_CEFAS_UK_aquaculture_data)=="Tonnes"] <- "Units"
+```
+
+```{r Transform and clean data set (2013 to 2010)}
+# Change structure of the data set 
+df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aquaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
+
+```
+
+```{r Allocating fish species corresonding species type (2013 to 2010)}
+# Allocate fish species group type 
+
+```
+
+```{r Load data (2009 to 2012)}
+# UK aquaculture production 
+df_CEFAS_UK_aqaculture_data <- vroom(file=paste(filepath,".csv", sep="/"))
+
+```
+
+
+```{r Transform and clean data set (2009 to 2012)}
+# Change structure of the data set 
+df_UK_aquaculture_201320_long<-melt(df_CEFAS_UK_aqaculture_data, id.vars = c("Type", "Species", "Units"), variable.name="Year", value.name="Value")
+
+```
+
+```{r Allocating fish species corresonding species type (2009 to 2012)}
+# Allocate fish species group type 
+
+```
+
+
+```{r Add units and data source (2013 to 2020)}
+# Create "cleaned" data frame, defining units and data source 
+df_UK_aquaculture_201320_long$DataSource <- "CEFAS"
+df_UK_aquaculture_201320_long$DataSet <- "Aquaculture"
+df_UK_aquaculture_201320_long$Commodity <- "Production"
+df_UK_aquaculture_201320_long$TempRes <- "Annual"
+```
+
+```{r Save cleaned data (CEFAS 2013 to 2020)}
+
+```
+
