@@ -77,6 +77,24 @@ df_aquaProd_Eurostat_data <- rename(df_aquaProd_Eurostat_data, Species= Simplifi
 
 ```
 
+```{r Identify unique species names in the data set}
+# Identify unique species in the data set 
+captureFish_NS <- as.data.frame(sort(unique(df_wildProd_NS_data$Species)))
+farmedFish_Eurostat <- as.data.frame(sort(unique(df_aquaProd_Eurostat_data$SimplifiedSpecies)))
+trade_HMRC <- as.data.frame(sort(unique(df_trade_HMRC_data$Species)))
+checkSpeciesNames <- cbind(trade_HMRC, farmedFish_Eurostat, captureFish_NS)
+
+getwd()
+write.csv(captureFish_NS, file= "NS_speciesNames")
+write.csv(farmedFish_Eurostat, file= "Eurostat_speciesNames")
+write.csv(trade_HMRC, file= "HMRC_speciesNames")
+
+```
+
+
+
+
+
 ```{r Merge data set by column names}
 # Merge dataframes
 UK_seafood_data <- rbind(df_wildProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data, df_trade_HMRC_data)
