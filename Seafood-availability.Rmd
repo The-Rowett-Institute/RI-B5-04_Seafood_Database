@@ -1,0 +1,461 @@
+---
+title: "UK_seafood-availability"
+author: "AL"
+date: "2022-11-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Result 1: UK net seafood availability 
+
+Average UK net per capita seafood supplies between 2009 and 2019 were derived from data on imports and production (from both capture fisheries and aquaculture), accounting for exports. UK fish dietary recommendations were compared with national seafood supplies. 
+
+The data set created from the RESAS B5 project was used to calculate UK seafood availability. 
+Seafood production (aquaculture, capture), trade (imports and exports), consumption and purchasing data were collated from separate data sources. Appropriate conversion factors were previously applied (live weight to processed weight) and converted from tonnes to grams/capita/ day.
+
+### Preparation 
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+
+```
+
+```{r Load file path, echo=TRUE}
+# Loading file path to the data into a value 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep="") 
+# note we are able to change this to another file e.g. saving the output
+
+```
+
+```{r Load data}
+# Read in UK capture production data 
+df_captProd_NS_data <- vroom(file=paste(filepath,"ProductionData_NS-edit.csv", sep="/"))
+str(df_captProd_NS_data)
+
+# Read in UK aquaculture data 
+df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat.csv", sep="/"))
+str(df_aquaProd_Eurostat_data)
+
+# Read in UK trade data--- further processed 
+df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC-edits.csv", sep="/"))
+str(df_trade_HMRC_data)
+
+# Read in UK household purchasing data 
+df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_edit.csv", sep="/"))
+str(df_housePurch_DEFRA_data)
+
+# Read in UK eating out purchasing data 
+df_eatenOutPurch_DEFRA_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
+str(df_eatenOutPurch_DEFRA_data)
+
+```
+
+
+```{r Check structure of data frames}
+# See individual column names
+colnames(df_captProd_NS_data)
+colnames(df_housePurch_DEFRA_data)
+colnames(df_eatenOutPurch_DEFRA_data)
+colnames(df_trade_HMRC_data)
+
+# Rename species column in aquaculture data set 
+df_aquaProd_Eurostat_data <- rename(df_aquaProd_Eurostat_data, Species= SimplifiedSpecies)
+
+```
+
+
+```{r Merge data sets}
+# Create on lage data set with all commodities 
+UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data, df_trade_HMRC_data)
+
+
+UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_trade_HMRC_data)
+
+str(UK_seafood_data)
+
+
+
+# Read in .csv file
+FAO_food_balance<- read.csv("FAO.2020.FBS.csv")
+str(FAO_food_balance)
+
+# Identify unique names species groups as defined by the FAO)
+unique(FAO_food_balance$FAOSTAT.group..Name.)
+
+# FAO species groups include: demersal, freshwater, pelagic, cephalopods, crustaceans,  molluscs an other.
+
+# Remove "aquatic animals nei" from dataset- not included in dietary guidelines
+#FAO_food<- FAO_food_balance[FAO_food_balance$FAOSTAT.group..Name.!= "Aquatic animals nei",]
+
+
+```
+
+
+
+
+## UK population 
+
+```{r Read in .csv file for each UK population cohort}
+# Adults are recommended to consume 2 portion of fish per week (not children) 
+# Population size > 65. 
+pop65_above<-read.csv("WB_pop_65.plus.csv")
+str(pop65_above)
+
+# Population size 15 to 64. 
+pop15_64<-read.csv("WB_pop_15.64.csv")
+str(pop15_64)
+
+# Population size 0 to 14.
+# Children advised to consume half the dietary recommendation -> less than 15. 
+pop0_14<-read.csv("WB_pop_0.14.csv")
+str(pop0_14)
+```
+
+
+```{r Average population size for each cohort between 2009 and 2019}
+# Calculate average pop size over past 10 years for all age cohorts. New column with mean pop size
+pop65_above$meanpop <- rowMeans(subset(pop65_above, select = c(X2007:X2017)), na.rm = TRUE)
+pop15_64$meanpop <- rowMeans(subset(pop15_64, select = c(X2007:X2017)), na.rm = TRUE)
+pop0_14$meanpop <- rowMeans(subset(pop0_14, select = c(X2007:X2017)), na.rm = TRUE)
+
+# Combine all population cohorts
+totalpop <- cbind.data.frame(pop65_above$?..Country.Name, pop65_above$meanpop, pop15_64$meanpop, pop0_14$meanpop)
+
+# Rename dataframe columns 
+names(totalpop)<-c("Country", "pop65", "pop15", "pop0")
+
+# Create columns for adults and child pops
+totalpop$adultpop<- totalpop$pop65+ totalpop$pop15
+totalpop$childpop<- totalpop$pop0
+totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
+
+
+```
+
+
+
+### Average UK net seafood availability 
+
+```{r Calculate grams per capita per week}
+# Create a new column for grams/ capita/ week 
+df_captProd_NS_data$ValueGramsCapitaWeek <- df_captProd_NS_data$ValueGramsCapitaDay * 7
+df_aquaProd_Eurostat_data$ValueGramsCapitaWeek <- 
+  df_aquaProd_Eurostat_data$ValueGramsCapitaDay *7
+df_housePurch_DEFRA_data$ValueGramsCapitaWeek <- df_housePurch_DEFRA_data$ValueGramsCapitaDay * 7
+
+```
+
+
+```{r Calculate average grams per capita of seafood available between 2009 and 2019}
+
+# Create empty data frame with years in one column. Then populate columns with below
+captProd <- aggregate(df_captProd_NS_data$ValueGramsCapitaWeek, 
+                                       by = list(df_captProd_NS_data$Year), mean)
+
+householdPurch <- aggregate(df_housePurch_DEFRA_data$ValueGramsCapitaWeek, 
+                                       by = list(df_housePurch_DEFRA_data$Year), mean)
+
+
+householdPurch <- aggregate(df_housePurch_DEFRA_data$ValueGramsCapitaWeek, 
+                                       by = list(df_housePurch_DEFRA_data$Year), mean)
+
+# Combine production values (capture and aquaculture production)
+
+```
+
+
+```{r Calculate average net seafood availabilty (grams/capita/week)}
+# Calculate average net seafood availability = (production + imports) - exports
+FAO_net_food_pop$net<- (FAO_net_food_pop$production_gcw + FAO_net_food_pop$imports_gcw) - FAO_net_food_pop$exports_gcw
+
+```
+
+```{r Figure 1. UK average net seafood availabilty between 2009 and 2019}
+# Plot bar chart displaying imports (red bar), exports (grey bar), production (orange dot) and dietary recommendation (blue dot)
+
+# Ensure data needed for the figure is all in one data frame
+
+
+# Export Figure 1. 
+
+
+```
+
+
+
+### UK seafood availability between 2009 to 2019
+
+```{r}
+
+```
+
+
+
+
+# Merge dietary recommendations to production data. Merge all countries (including 
+# those with no dietary recommendations)
+fish_recs<- merge(diet_recs, FAO_net_food, by = "Country", all = T)
+str(fish_recs) # 45 observations
+unique(FAO_net_food$Country)
+unique(fish_recs$Country)
+unique(totalpop$Country)
+
+
+
+# Merge 
+FAO_net_food_pop<- merge(fish_recs, totalpop, by = "Country")
+str(FAO_net_food_pop) # 41 observations
+unique(FAO_net_food_pop$Country)
+
+# Calculate grams per capita per week
+FAO_net_food_pop$production_gcw <- (FAO_net_food_pop$production_g / FAO_net_food_pop$totpop)/ 52
+FAO_net_food_pop$nonfood_gcw <- (FAO_net_food_pop$nonfood_g / FAO_net_food_pop$totpop)/ 52
+FAO_net_food_pop$imports_gcw <- (FAO_net_food_pop$imports_g /FAO_net_food_pop$totpop)/52
+FAO_net_food_pop$exports_gcw <- (FAO_net_food_pop$exports_g /FAO_net_food_pop$totpop)/52
+
+# Calculate net availability 
+FAO_net_food_pop$net<- ((FAO_net_food_pop$production_gcw - FAO_net_food_pop$nonfood_gcw) + FAO_net_food_pop$imports_gcw) - FAO_net_food_pop$exports_gcw
+
+
+```{r Export data frame }
+# Export data frame as .csv
+write.csv(FAO_net_food_pop, file="FAO_seafood_availability.csv")
+```
+
+
+
+##############################################################
+
+
+### Check dataset
+
+# Read in food balance sheet. 
+getwd()
+
+FAO_food_balance<- read.csv("FAO.2020.FBS.csv")
+str(FAO_food_balance)
+
+# Identify unique names of FAOSTAT group names)
+unique(FAO_food_balance$FAOSTAT.group..Name.)
+
+# Remove "aquatic animals nei" from dataset- not included in dietary guidelines
+FAO_food<- FAO_food_balance[FAO_food_balance$FAOSTAT.group..Name.!= "Aquatic animals nei",]
+
+# Check removal
+unique(FAO_food$FAOSTAT.group..Name.)
+
+#  Note: Crustaceans and mollusks retained in the dataset (smae converstion foactor applied)
+
+
+###########################################
+
+### A. EUROPEAN SEAFOOD PRODUCTION (tonnes[live weight]/year/country)
+## Fish commodity production in 2017
+
+# Convert commodities from live weight to processed weight
+# Donate conversion factors
+FAO_food$CF<- ifelse(FAO_food$FAOSTAT.group..Name. %in% c("Demersal fish", "Pelagic fish", "Marine fish nei", "Freshwater & diadromous fish"), 0.49,
+                     ifelse(FAO_food$FAOSTAT.group..Name. %in% c("Cephalopods", "Crustaceans", "Molluscs excl. cephalopods"), 0.28, 1))
+
+unique(FAO_food$CF) # 1 donated to "totals"
+
+# Apply conversion factors to seafood commodities for 2017
+FAO_food$CFV_17<- FAO_food$X2017* FAO_food$CF 
+
+# Sum seafood commodities by trade  and country) 
+FAO_avg_17<-aggregate(FAO_food$CFV_17, by=list(FAO_food$Element..Name., FAO_food$Country..Name.), FUN= sum)
+
+# check structure
+str(FAO_avg_17)
+
+# Rename dataframe
+names(FAO_avg_17)<-c("trade", "Country", "CFV_17")
+
+# Subset data by trade type
+unique(FAO_avg_17$trade)
+production<- subset(FAO_avg_17, trade== "Production")
+nonfood_uses <- subset(FAO_avg_17, trade== "Non-food uses")
+imports<- subset(FAO_avg_17, trade== "Food imports")
+exports<- subset(FAO_avg_17, trade== "Food exports")
+
+# Merge dataset by country
+library(plyr)
+FAO_net_food<- join_all(list(production, nonfood_uses, imports, exports), by = "Country")
+
+# Rename columns in dataframe
+names(FAO_net_food)<-c("x.production ", "Country", "production", "x.nonfood", "nonfood", "x.imports", "imports", "x.exports", "exports")
+str(FAO_net_food)
+
+# Convert (processed weight/ tonnes) values in to grams
+FAO_net_food$production_g <- FAO_net_food$production*1000000
+FAO_net_food$nonfood_g <- FAO_net_food$nonfood*1000000
+FAO_net_food$imports_g <- FAO_net_food$imports*1000000
+FAO_net_food$exports_g <- FAO_net_food$exports*1000000
+
+head(FAO_net_food)
+
+##################
+
+### B. POPULATION DATA
+# Read in population data by cohort. Note population data not provided by continent (only country). 
+
+# Adults recommended to consume guideline-> older than 15. 
+# Population size > 65. 
+pop65_above<-read.csv("WB_pop_65.plus.csv")
+str(pop65_above)
+
+# Population size 15 to 64. 
+pop15_64<-read.csv("WB_pop_15.64.csv")
+str(pop15_64)
+
+# Population size 0 to 14.
+# Children advised to consume half the dietary recommendation -> less than 15. 
+pop0_14<-read.csv("WB_pop_0.14.csv")
+str(pop0_14)
+
+# *Demographic population data not provided for the Faroe Islands (obtained from a separate data source). 
+# Add in data manually. 
+pop65_above$X2017[pop65_above$?..Country.Name== "Faroe Islands"] <- (4111+4391)
+pop15_64$X2017[pop15_64$?..Country.Name== "Faroe Islands"] <- (3738+3538+10252+8676+3054+2878)
+pop0_14$X2017[pop0_14$?..Country.Name== "Faroe Islands"] <- (5214+4878)
+
+# data from 2020
+#pop65_above$X2017[pop65_above$?..Country.Name== "Faroe Islands"] <- (8096)
+#pop15_64$X2017[pop15_64$?..Country.Name== "Faroe Islands"] <- (2222+4404+22527+4055)
+#pop0_14$X2017[pop0_14$?..Country.Name== "Faroe Islands"] <- (5050+5800)
+
+# Bind population data in 2017 for all cohorts 
+totalpop_17<-cbind.data.frame(pop65_above$?..Country.Name, pop65_above$X2017, pop15_64$X2017, pop0_14$X2017)
+str(totalpop_17)
+
+# Rename dataframe columns 
+names(totalpop_17)<-c("Country", "pop65", "pop15", "pop0")
+
+## Add together "adult" population data (aged 15 and above)
+totalpop_17$adultpop<- totalpop_17$pop65+ totalpop_17$pop15
+totalpop_17$childpop<- totalpop_17$pop0
+totalpop_17$totpop<-totalpop_17$adultpop +(totalpop_17$childpop*0.5)# total pop whilst accounting for children
+str(totalpop_17)
+
+
+######
+
+### C. DIETARY RECOMMENDATIONS
+# Read in dietary recommendations 
+diet_recs<-read.csv("revised_diet_recs.csv")
+str(diet_recs)
+
+
+######
+
+### D. APPARENT NET EUROPEAN SEAFOOD AVALIABILITY 
+
+# Merge datasets by country name
+# Need to check spellings of counties in the dataset (have different spellings). 
+unique(FAO_net_food$Country)# seafood data
+unique(totalpop_17$Country) # population data
+unique(diet_recs$Country) # diet  recommendations data
+
+# Merge dietary recommendations to seafood data
+# Merge all countries (including those with no dietary recommendations)
+fish_recs<- merge(diet_recs, FAO_net_food, by = "Country", all = T)
+str(fish_recs) # 45 observations
+
+# Rename fish rec country to match with population dataframe names
+fish_recs$Country[fish_recs$Country == "Moldova, Republic of"] <-"Moldova"
+
+# Rename population countries to match with population dataframe names
+totalpop_17$Country[totalpop_17$Country == "Czech Republic"] <- "Czechia"
+totalpop_17$Country[totalpop_17$Country == "Slovak Republic"] <-"Slovakia"
+
+# Note FAO data includes countries which no longer exist 
+# :Belgium-Luxembourg,Czechoslovakia, Serbia and Montenegro, Yugoslavia SFR (x4)
+
+# Merge population data to fish recommendations
+FAO_net_food_pop<- merge(fish_recs, totalpop_17, by = "Country")
+str(FAO_net_food_pop) # 41 observations
+
+# Calculate trade commodities (g/capita/week)
+FAO_net_food_pop$production_gcw <- ((FAO_net_food_pop$production_g / FAO_net_food_pop$totpop)/ 52)
+FAO_net_food_pop$nonfood_gcw <- ((FAO_net_food_pop$nonfood_g / FAO_net_food_pop$totpop)/ 52)
+FAO_net_food_pop$imports_gcw <- ((FAO_net_food_pop$imports_g /FAO_net_food_pop$totpop)/52)
+FAO_net_food_pop$exports_gcw <- ((FAO_net_food_pop$exports_g /FAO_net_food_pop$totpop)/52)
+
+# Calculate net availability (g/capita/week)
+FAO_net_food_pop$net<- (((FAO_net_food_pop$production_gcw - FAO_net_food_pop$nonfood_gcw) + FAO_net_food_pop$imports_gcw) - FAO_net_food_pop$exports_gcw)
+
+
+### E. EXPORT DATAFRAME
+# Export dataframe as CSV
+getwd()
+write.csv(FAO_net_food_pop, file="FAO_seafood_availability.csv")
+
+### Average seafood production  (average g/year/country)
+## Average aquatic food commodity production over last 10 years (2007 to 2017)
+
+# Calculate average aquatic food availability 
+# Data set includes marine, pelagic, demersal, freshwater/ diadromous fish, crustaceans, 
+# cephalopods and molluscs. Conversion factors differ 
+#  If so, apply conversion factor?
+FAO_food$avg10<- rowMeans(subset(FAO_food, select = c(X2007:X2017)), na.rm = TRUE)
+
+# Donate conversion factors
+FAO_food$CF<- ifelse(FAO_food$FAOSTAT.group..Name. %in% c("Demersal fish", "Pelagic fish", "Marine fish nei", "Freshwater & diadromous fish"), 0.49,
+                     ifelse(FAO_food$FAOSTAT.group..Name. %in% c("Cephalopods", "Crustaceans", "Molluscs excl. cephalopods"), 0.28, 1))
+
+
+unique(FAO_food$CF) # 1 donated to "totals"
+str(FAO_food)
+
+# Apply conversion factors to averages
+FAO_food$CF_avg10<- FAO_food$avg10 * FAO_food$CF
+
+# Sum averages for each country and trade element
+FAO_avg<-aggregate(FAO_food$CF_avg10, by=list(FAO_food$Element..Name., FAO_food$Country..Name.), FUN= sum)
+str(FAO_avg)
+
+unique(FAO_food$Country..Name.)
+
+# Rename dataframe
+names(FAO_avg)<-c("trade", "Country", "avg10_CR")
+
+# Subset data by trade type
+unique(FAO_avg$trade)
+production<- subset(FAO_avg, trade== "Production")
+nonfood_uses <- subset(FAO_avg, trade== "Non-food uses")
+imports<- subset(FAO_avg, trade== "Food imports")
+exports<- subset(FAO_avg, trade== "Food exports")
+
+str(production)
+
+# Merge dataset by country
+library(plyr)
+FAO_net_food<- join_all(list(production, nonfood_uses, imports, exports), by = "Country")
+str(FAO_net_food)
+
+unique(FAO_food$Country..Name.)
+
+# Rename columns in dataframe
+names(FAO_net_food)<-c("x.production ", "Country", "production", "x.nonfood", "nonfood", "x.imports", "imports", "x.exports", "exports")
+str(FAO_net_food)
+
+# Convert (processed weight/ tonnes) values in to grams
+FAO_net_food$production_g <- FAO_net_food$production*1000000
+FAO_net_food$nonfood_g <- FAO_net_food$nonfood*1000000
+FAO_net_food$imports_g <- FAO_net_food$imports*1000000
+FAO_net_food$exports_g <- FAO_net_food$exports*1000000
+
+head(FAO_net_food)
+
