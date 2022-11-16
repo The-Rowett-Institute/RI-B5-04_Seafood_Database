@@ -23,11 +23,13 @@ The justification for the data included in this data set can be found in the sup
 
 ```{r Load libraries, include=FALSE}
 # Load packages
-library(tidyr)
-library(dplyr)
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
 library(vroom) # for loading and transforming data
-library(tidyverse)
-library(reshape2)
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
 
 ```
 
@@ -80,162 +82,158 @@ write.csv(df_clean_UK_pop, file = paste(filepath,"PopSize_NS.csv", sep=""))
 
 ## Production
 
-UK fish production data includes capture fisheries and aquaculture production 
+UK fish production data includes data from capture fisheries and aquaculture production 
 
 ### A) Capture fisheries (Office of National Statistics)
 
-```{r Load data (2011 to 2020)}
-# i) Landings into the UK by UK vessels: 2011 to 2020 (a)
-# extract UK landings data between 2011 and 2020.
+```{r Load data (2017 to 2021)}
+# i) Landings into the UK by UK vessels: 2017 to 2021
+# Read in .csv file
+df_UK_landings_17_21_data <- vroom(file=paste(filepath,"NS_UK_landings-201721-edits.csv", sep="/"))
 
-# Read in landing data
-df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-edit.csv", sep="/"), na = c(".."))
+# Check for missing values
+md.pattern(df_UK_landings_17_21_data, rotate.names = TRUE)
 
-# Rename column
-names(df_UK_landings_11_20_data)[names(df_UK_landings_11_20_data)=="Species_type"] <- "SpeciesType"
+```
 
-# Provide greater granularity to shellfish species
-UK_shellfishLandings_11_20 <- subset(df_UK_landings_11_20_data, SpeciesType == "Shellfish") 
+```{r Transform data set (2017 to 2021)}
+# Change structure of the data set 
+df_UK_landings_201721_long<-melt(df_UK_landings_17_21_data, id.vars = c("Species"), variable.name="Year", value.name="Value")
+```
 
-# Default SpeciesType to "mollusc"
-UK_shellfishLandings_11_20$SpeciesType <- "Mollusc"
+
+```{r Load data (2012 to 2016)}
+# ii) Landings into the UK by UK vessels: 2012 to 2016 
+# Read in .csv file
+df_UK_landings_12_16_data <- vroom(file=paste(filepath,"NS_UK_landings-201216.csv", sep="/"))
+
+# Check for missing values
+md.pattern(df_UK_landings_12_16_data, rotate.names = TRUE)
+
+```
+
+```{r Transform data set (2012 to 2016)}
+# Change structure of the data set 
+df_UK_landings_201216_long<-melt(df_UK_landings_12_16_data, id.vars = c("Species"), variable.name="Year", value.name="Value")
+```
+
+
+```{r Load data (2008 to 2012)}
+# iii) Landings into the UK by UK vessels: 2008 to 2012 but select 2009 to 2011 
+# Read in .csv file
+df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812NEW.csv", sep="/"))
+
+# Check for missing values
+md.pattern(df_UK_landings_08_12_data, rotate.names = TRUE)
+
+# Select for years 2009 to 2011
+df_UK_landings_09_11_data <- subset(df_UK_landings_08_12_data, Year > 2008)
+
+```
+
+```{r Transform data set (2008 to 2012)}
+# Change structure of the data set 
+df_UK_landings_200911_long<-melt(df_UK_landings_09_11_data, id.vars = c("Species"), variable.name="Year", value.name="Value")
+```
+
+
+```{r Combine data sets: i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2021)}
+# Combine capture production data i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2021)
+df_UK_landings_09_21 <- rbind(df_UK_landings_201721_long, 
+                                    df_UK_landings_201216_long, df_UK_landings_200911_long)
+```
+
+
+```{r Provide greater granularity in the SpeciesType column}
+# Provide greater granularity in the "SpeciesType" column for shellfish
+UK_shellfishLandings_09_21 <- subset(df_UK_landings_09_21, SpeciesType == "Shellfish") 
+
+# Default "SpeciesType" to "Mollusc"
+UK_shellfishLandings_09_21$SpeciesType <- "Mollusc"
 
 # Allocate crustaceans 
-UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
+UK_shellfishLandings_09_21$SpeciesType[UK_shellfishLandings_09_21$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
 
 # Allocate cephalopods
-UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+UK_shellfishLandings_09_21$SpeciesType[UK_shellfishLandings_09_21$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
 
 # Allocate other shellfish
-UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% "Other Shellfish"] <- "Other shellfish"
+UK_shellfishLandings_09_21$SpeciesType[UK_shellfishLandings_09_21$Species %in% "Other Shellfish"] <- "Other shellfish"
 
 # Combine with data set 
-UK_finfishLandings_11_20 <- df_UK_landings_11_20_data[(df_UK_landings_11_20_data$SpeciesType == "Pelagic") | (df_UK_landings_11_20_data$SpeciesType == "Demersal"),]
+# Subset finfish landings 
+UK_finfishLandings_09_21 <- UK_shellfishLandings_17_21[(df_UK_landings_09_21$SpeciesType == "Pelagic") | (df_UK_landings_09_21$SpeciesType == "Demersal"),]
 
-df_UK_landings_11_20 <- rbind(UK_finfishLandings_11_20, UK_shellfishLandings_11_20)
-
-```
-
-```{r Transform and clean data set (2011 to 2020)}
-# Change structure of the data set 
-df_UK_landings_201120_long<-melt(df_UK_landings_11_20, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
-
-```
-
-
-```{r Load data (2009 to 2010)}
-# ii) Landings into the UK by UK vessels: 2008 to 2012 (b)
-# Extract UK landings data between 2009 and 2010. 
-
-# Read in landing data
-df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812-edit.csv", sep="/"),na = c(".."))
-
-# Rename column
-names(df_UK_landings_08_12_data)[names(df_UK_landings_08_12_data)=="Species_type"] <- "SpeciesType"
-
-# Provide greater granularity to shellfish species
-UK_shellfishLandings_08_12 <- subset(df_UK_landings_08_12_data, SpeciesType == "Shellfish") 
-
-# Default SpeciesType to "mollusc"
-UK_shellfishLandings_08_12$SpeciesType <- "Mollusc"
-
-# Allocate crustaceans 
-UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
-
-# Allocate cephalopods
-UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
-
-# Allocate other shellfish
-UK_shellfishLandings_08_12$SpeciesType[UK_shellfishLandings_08_12$Species %in% "Other Shellfish"] <- "Other shellfish"
-
-# Combine with data set 
-UK_finfishLandings_08_12 <- df_UK_landings_08_12_data[(df_UK_landings_08_12_data$SpeciesType == "Pelagic") | (df_UK_landings_08_12_data$SpeciesType == "Demersal"),]
-
-df_UK_fishLandings_08_12 <- rbind(UK_finfishLandings_08_12, UK_shellfishLandings_08_12)
-
-# Select only years 2009 and 2010
-df_UK_landings_09_10 <- subset(df_UK_fishLandings_08_12, 
-                           select = c('SpeciesType', 'Species', '2009', '2010'))
-
-```
-
-
-```{r Transform and clean data set (2009 to 2010)}
-# Change structure of the data set 
-df_UK_landings_200910_long<-melt(df_UK_landings_09_10, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
-```
-
-```{r Combine data sets (2009 to 2010 and 2011 to 2020)}
-# Combine capture production data sets (2009 to 2010 and 2011 to 2020)
-df_clean_UK_landings_09_20 <- rbind(df_UK_landings_201120_long, df_UK_landings_200910_long)
-```
-
-
-```{r Allocate oily or lean}
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Crustacean"] <- "Shellfish"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Mollusc"] <- "Shellfish"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Cephalopod"] <- "Shellfish"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Other shellfish"] <- "Shellfish"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Freshwater"] <- "Oily"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- "Lean"
-df_clean_UK_landings_09_20$SACN[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- "Oily"
+# Combine shellfish and finfish landings 
+df_UK_landings_200921 <- rbind(UK_finfishLandings_09_21, UK_shellfishLandings_09_21)
 
 ```
 
 
 
-```{r Apply conversion factor to calculate edible portion of the fish}
+```{r Allocate oily/lean/shellfish}
+# Identify unique SpeciesType entries
+unique(df_clean_UK_landings_09_21)
+
+# Create a new column in the data frame and allocate oily/lean/shellfish classification
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Crustacean"] <- "Shellfish"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Mollusc"] <- "Shellfish"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Cephalopod"] <- "Shellfish"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "OtherShellfish"] <- "Shellfish"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Freshwater"] <- "Oily"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Demersal"] <- "Lean"
+df_UK_landings_200921$SACN[df_UK_landings_200921$SpeciesType == "Pelagic"] <- "Oily"
+
+```
+
+
+
+```{r Apply conversion factor to calculate edible portion of seafood}
 # Classify species as finfish or shellfish. New column for conversion name
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Crustacean"] <- "Shellfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Mollusc"] <- "Shellfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Cephalopod"] <- "Shellfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Other shellfish"] <- "Shellfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Freshwater"] <- "Finfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Demersal"] <- "Finfish"
-df_clean_UK_landings_09_20$CN[df_clean_UK_landings_09_20$SpeciesType == "Pelagic"] <- "Finfish"
+
+df_UK_landings_200921$CN[df_UK_landings_200921$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish")] <- "Shellfish"
+
+df_UK_landings_200921$CN[df_UK_landings_200921$SpeciesType %in% c("Freshwater", "Demersal", "Pelagic")] <- "Finfish"
 
 # Conversion factors used to convert whole fish weight to edible weight
 # State average CF finfish: 0.49; shellfish: 0.28 
-df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$CN == "Shellfish"] <- 0.28
-df_clean_UK_landings_09_20$CF[df_clean_UK_landings_09_20$CN == "Finfish"] <- 0.49
+df_UK_landings_200921$CF[df_UK_landings_200921$CN == "Shellfish"] <- 0.28
+df_UK_landings_200921$CF[df_UK_landings_200921$CN == "Finfish"] <- 0.49
 
 # Create new column and apply conversion factors values
-df_clean_UK_landings_09_20$CFValue<-df_clean_UK_landings_09_20$Value*
-  df_clean_UK_landings_09_20$CF
+df_UK_landings_200921$CFValue<-df_UK_landings_200921$Value*
+  df_UK_landings_200921$CF
 
 ```
+
 
 
 ```{r Calculate grams available per capita}
 # Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
-df_clean_UK_landings_09_20$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
+df_UK_landings_200921$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
 
 # Convert raw value from 000's tonnes to grams 
-df_clean_UK_landings_09_20$ValueGrams<- (df_clean_UK_landings_09_20$CFValue*1000)*1000000
+df_UK_landings_200921$ValueGrams<- (df_UK_landings_200921$CFValue*1000)*1000000
 
 # Convert grams/year to g/capita/year
-df_clean_UK_landings_09_20$ValueGramsCapitaYear<- df_clean_UK_landings_09_20$ValueGrams/df_clean_UK_landings_09_20$PopSize
+df_UK_landings_200921$ValueGramsCapitaYear<- df_UK_landings_200921$ValueGrams/df_UK_landings_200921$PopSize
 
 # Convert grams/year to g/capita/week
-df_clean_UK_landings_09_20$ValueGramsCapitaWeek<- df_clean_UK_landings_09_20$ValueGramsCapitaYear/52
+df_UK_landings_200921$ValueGramsCapitaWeek<- df_UK_landings_200921$ValueGramsCapitaYear/52
 
-# Convert grams/year to g/capita/day
-df_clean_UK_landings_09_20$ValueGramsCapitaDay<- df_clean_UK_landings_09_20$ValueGramsCapitaWeek/7
-
-# see apply()?. or before melt, join based on year. then multiply tog
 ```
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_UK_landings_09_20$DataSource <- "National-statistics"
-df_clean_UK_landings_09_20$DataSet <- "UK-sea-fisheries-statistics"
-df_clean_UK_landings_09_20$Commodity <- "Production"
-df_clean_UK_landings_09_20$TempRes <- "Annual"
-df_clean_UK_landings_09_20$Flag <- "ConV1, ConV2"
+df_UK_landings_200921$DataSource <- "National-statistics"
+df_UK_landings_200921$DataSet <- "UK-sea-fisheries-statistics"
+df_UK_landings_200921$Commodity <- "Production"
+df_UK_landings_200921$TempRes <- "Annual"
+df_UK_landings_200921$Flag <- "ConV1, ConV2"
 ```
 
 ```{r Select desired variables for the data set}
-dfc_simple_landings_UK <- df_clean_UK_landings_09_20[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UK_landings_200921 <- df_UK_landings_200921[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
 
 ```
 
@@ -243,10 +241,7 @@ dfc_simple_landings_UK <- df_clean_UK_landings_09_20[c("SACN", "SpeciesType", "S
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData/csv-files", sep="")
-write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv", sep=""))
-
-#filepath <- paste(data_dir,"ProcessedData", sep="")
-#write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv", sep=""))
+write.csv(df_cleaned_UK_landings_200921, file = paste(filepath,"ProductionData_NS.csv", sep=""))
 
 
 ```
@@ -255,21 +250,23 @@ write.csv(dfc_simple_landings_UK, file = paste(filepath,"ProductionData_NS.csv",
 ### B) Aquaculture production (EUROSTAT)
 
 ```{r Load data (2009 to 2020)}
-# UK aquaculture production 
+# Read in .csv file 
 df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920-edited.csv", sep="/"),na = c(":"))
+
+# Check for missing values
+md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
+
 ```
 
-```{r Transform and clean data set (2009 to 2020)}
+```{r Transform data set (2009 to 2020)}
 # Change structure of the data set. id.vars states the number of columns not to be stacked
 df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTATSpecies", "Species", "SimplifiedSpecies", "SpeciesType"), variable.name="Year", value.name="Value")
 ```
 
 
-```{r Allocate oily or lean}
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shellfish"
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Cephalopod"] <- "Shellfish"
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Other shellfish"] <- "Shellfish"
+```{r Allocate oily/lean/shellfish}
+df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish" )]<- "Shellfish"
+
 df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
 df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Lean"
 df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oily"
@@ -277,12 +274,10 @@ df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oil
 ```
 
 
-```{r Apply conversion factor to calculate edible portion of the fish}
+```{r Apply conversion factor to calculate edible portion of seafood}
 # Classify species as finfish or shellfish. New column for conversion name
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Crustacean"] <- "Shellfish"
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Mollusc"] <- "Shellfish"
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Finfish"
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Finfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc")] <- "Shellfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Freshwater", "Demersal")] <- "Finfish"
 
 # Conversion factors used to convert whole fish weight to edible weight
 # State average CF finfish: 0.49; shellfish: 0.28 
@@ -309,9 +304,6 @@ df_EUROSTAT_UKFarmed$ValueGramsCapitaYear<- df_EUROSTAT_UKFarmed$ValueGrams/df_E
 # Convert grams/year to g/capita/week
 df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsCapitaYear/52
 
-# Convert grams/year to g/capita/day
-df_EUROSTAT_UKFarmed$ValueGramsCapitaDay<- df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek/7
-
 ```
 
 ```{r Add additional variables to data set}
@@ -325,7 +317,7 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 
 ```{r Select desired variables for the data set}
 colnames(df_EUROSTAT_UKFarmed)
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaDay", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
 
 
 ```
@@ -412,7 +404,7 @@ write.csv(new_df_trade_HMRC_data, file = paste(filepath,"TradeData_HMRC-edits.cs
 ## UK fish consumption (NDNS)
 
 ```{r Load data}
-# Read in NDNS data
+# Read in .csv file
 df_NDNS_UK_data <- vroom(file=paste
                       (filepath,"NDNS_UK_consumption-edit.csv", sep="/"))
 
@@ -457,11 +449,10 @@ df_NDNSSummed<- data.frame(NDNS_colnams, SumnedNDNS)
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-df_clean_NDNS$Units <- "g/capita/day"
 df_clean_NDNS$DataSource <- "NDNS"
 df_clean_NDNS$DataSet <- "NDNS"
 df_clean_NDNS$Commodity <- "Consumption"
-df_clean_NDNS$TempRes <- "Biennial"
+df_clean_NDNS$TempRes <- ""
 
 # SpeciesType, SACN and Species unknown
 df_clean_NDNS$SpeciesType <- "Unknown"
@@ -471,7 +462,7 @@ df_clean_NDNS$Species <- "Unknown"
 
 
 ```{r Select desired variables for the data set}
-dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaDay", "DataSource", "DataSet", "Commodity", "flag")]
+dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "flag")]
 
 ```
 
@@ -488,7 +479,7 @@ dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaD
 #### i) DEFRA UK purchases (both household and eating out)
 
 ```{r Load data 2016 to 2020} 
-# Error in raw data in 2015 so data from 2016 onwards used
+# *Error in raw data in 2015, so data from 2016 onwards used
 
 # read DEFRA purchasing (household and eating out) data (.csv)
 df_DEFRA_purchase_201620_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
@@ -543,9 +534,6 @@ df_DEFRA_household_201620$SACN[df_DEFRA_household_201620$SpeciesType %in%
 # Rename "estimate column"
 names(df_DEFRA_household_201620)[names(df_DEFRA_household_201620)=="estimate"] <- "ValueGramsCapitaWeek"
 
-# Convert grams/capita/week to grams/capita/day
-df_DEFRA_household_201620$ValueGramsCapitaDay <-  df_DEFRA_household_201620$ValueGramsCapitaWeek/7
-
 ```
 
 ```{r Select desired variables from data set}
@@ -553,11 +541,11 @@ df_DEFRA_household_201620$ValueGramsCapitaDay <-  df_DEFRA_household_201620$Valu
 names(df_DEFRA_household_201620)[names(df_DEFRA_household_201620)=="codeDESCRIPTION"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_household_201520 <- df_DEFRA_household_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_household_201520 <- df_DEFRA_household_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaWeek")]
 
 # Check data
-plot(aggregate(ValueGramsCapitaDay ~ Year, data = df_DEFRA_household_201620, FUN = sum))
-plot(aggregate(ValueGramsCapitaDay ~ SpeciesType, data = df_DEFRA_household_201620, FUN = sum))
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = df_DEFRA_household_201620, FUN = sum))
+plot(aggregate(ValueGramsCapitaWeek ~ SpeciesType, data = df_DEFRA_household_201620, FUN = sum))
 ```
 
 
@@ -596,9 +584,6 @@ df_DEFRA_eaten_out_201620$SACN[df_DEFRA_eaten_out_201620$codecat %in% c("eo12020
 
 names(df_DEFRA_eaten_out_201620)[names(df_DEFRA_eaten_out_201620)=="estimate"] <- "ValueGramsCapitaWeek"
 
-# Calculate grams/capita/week to grams/capita/day
-df_DEFRA_eaten_out_201620$ValueGramsCapitaDay <-  df_DEFRA_eaten_out_201620$ValueGramsCapitaWeek/7
-
 ```
 
 
@@ -608,7 +593,7 @@ colnames(df_DEFRA_eaten_out_201620)
 names(df_DEFRA_eaten_out_201620)[names(df_DEFRA_eaten_out_201620)=="codeDESCRIPTION"] <- "Species"
 
 # Create new data frame with desired variables
-dfc_DEFRA_eatenOut_201620 <- df_DEFRA_eaten_out_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaDay")]
+dfc_DEFRA_eatenOut_201620 <- df_DEFRA_eaten_out_201620[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaWeek")]
 
 ```
 
@@ -619,6 +604,9 @@ dfc_DEFRA_eatenOut_201620 <- df_DEFRA_eaten_out_201620[c("SACN", "SpeciesType", 
 # read DEFRA household data set (.csv)
 df_DEFRA_household_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200915-edited.csv", sep="/"))
 
+# Check for missing values
+md.pattern(df_DEFRA_household_data, rotate.names = TRUE)
+
 # Select only years 2009 to 2015
 df_DEFRA_household_200914 <- subset(df_DEFRA_household_data, 
                            select = c("Code", "Food Category", "Food Group",
@@ -627,26 +615,6 @@ df_DEFRA_household_200914 <- subset(df_DEFRA_household_data,
                                       "2012", "2013", "2014", "2015"))
 
 ```
-
-
-```{r Delete later}
-# check data
-df_DEFRA_household_2015 <- subset(df_DEFRA_household_data, 
-                           select = c("Code", "Food Category", "Food Group",
-                                      "Major Food Code", "Minor Food Code",
-                                      "Units", "2009", "2010", "2011",
-                                      "2012", "2013", "2014", "2015"))
-
-
-
-
-# Change structure of the data set 
-df_DEFRA_household_20015_long<-melt(df_DEFRA_household_2015, id.vars = c("Code", "Food Category", "Food Group", "Major Food Code", "Minor Food Code","Units", "Minor Food Code", "Units"), variable.name="Year", value.name="Value")
-
-plot(aggregate(Value ~ Year, data = df_DEFRA_household_20015_long, FUN= sum))
-
-```
-
 
 
 ```{r Allocate SpeciesType to food groups}
@@ -695,8 +663,6 @@ names(df_DEFRA_household_200915_long)[names(df_DEFRA_household_200915_long)=="Mi
 
 ```{r Calculate grams available per capita}
 names(df_DEFRA_household_200915_long)[names(df_DEFRA_household_200915_long)=="Value"] <- "ValueGramsCapitaWeek"
-
-df_DEFRA_household_200915_long$ValueGramsCapitaDay <- df_DEFRA_household_200915_long$ValueGramsCapitaWeek/7
 
 ```
 
@@ -810,9 +776,6 @@ df_DEFRA_eatenOut_200915_long<-melt(df_DEFRA_EO_200915_main, id.vars = c("EO Min
 # Change column variable name to include units 
 names(df_DEFRA_eatenOut_200915_long)[names(df_DEFRA_eatenOut_200915_long)=="Value"] <- "ValueGramsCapitaWeek"
 
-# Calculate grams available per capita per day
-df_DEFRA_eatenOut_200915_long$ValueGramsCapitaDay <- df_DEFRA_eatenOut_200915_long$ValueGramsCapitaWeek/7
-
 ```
 
 
@@ -854,6 +817,8 @@ dfc_DEFRA_eatenOut_200920$Flag <- "ConV1, ConV3"
 write.csv(dfc_DEFRA_eatenOut_200920, file = paste(filepath,"EatenOutPurchases_DEFRA.csv", sep=""))
 
 ```
+
+
 
 #### END
 
@@ -967,6 +932,49 @@ df_UK_aquaculture_201320_long$TempRes <- "Annual"
 ```
 
 ```{r Save cleaned data (CEFAS 2013 to 2020)}
+
+```
+
+####
+```{r}
+# Rename column
+names(df_UK_landings_11_20_data)[names(df_UK_landings_11_20_data)=="Species_type"] <- "SpeciesType"
+```
+
+```{r Load data (2011 to 2020)}
+# i) Landings into the UK by UK vessels: 2011 to 2020 (a)
+
+# Read in .csv file
+df_UK_landings_11_20_data <- vroom(file=paste(filepath,"NS_UK_landings-201120-edit.csv", sep="/"), na = c(".."))
+```
+
+
+```{r Provide greater granularity in "SpeciesType" column}
+# Provide greater granularity to shellfish species
+UK_shellfishLandings_11_20 <- subset(df_UK_landings_11_20_data, SpeciesType == "Shellfish") 
+
+# Default "SpeciesType" to "mollusc"
+UK_shellfishLandings_11_20$SpeciesType <- "Mollusc"
+
+# Allocate crustaceans 
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
+
+# Allocate cephalopods
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+
+# Allocate other shellfish
+UK_shellfishLandings_11_20$SpeciesType[UK_shellfishLandings_11_20$Species %in% "Other Shellfish"] <- "Other shellfish"
+
+# Combine with data set 
+UK_finfishLandings_11_20 <- df_UK_landings_11_20_data[(df_UK_landings_11_20_data$SpeciesType == "Pelagic") | (df_UK_landings_11_20_data$SpeciesType == "Demersal"),]
+
+df_UK_landings_11_20 <- rbind(UK_finfishLandings_11_20, UK_shellfishLandings_11_20)
+
+```
+
+```{r Transform and clean data set (2011 to 2020)}
+# Change structure of the data set 
+df_UK_landings_201120_long<-melt(df_UK_landings_11_20, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
 
 ```
 

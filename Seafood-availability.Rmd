@@ -56,6 +56,10 @@ md.pattern(df_captProd_NS_data_omit, rotate.names = TRUE)
 # Read in UK aquaculture data 
 df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat.csv", sep="/"))
 str(df_aquaProd_Eurostat_data)
+md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)
+
+
+
 
 # Read in UK trade data--- further processed 
 df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC-edits.csv", sep="/"))
