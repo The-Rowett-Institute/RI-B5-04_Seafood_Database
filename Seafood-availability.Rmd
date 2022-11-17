@@ -1,7 +1,7 @@
 ---
 title: "UK_seafood-availability"
-author: "AL"
-date: "2022-11-14"
+author: "Lofstedt, A"
+date: "2022-11-17"
 output: html_document
 ---
 
@@ -43,88 +43,83 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 
 ```{r Load data}
 # Read in UK capture production data 
-df_captProd_NS_data <- vroom(file=paste(filepath,"ProductionData_NS-edit.csv", sep="/"), na = c("NA"))
+df_captProd_NS_data <- vroom(file=paste(filepath,"CaptureProduction_NS_clean.csv", sep="/"))
 
 # Check for missing data
 # right column summed to be total number of rows in the data set
 md.pattern(df_captProd_NS_data, rotate.names = TRUE)
 
-# omit NAs from the dataset 
-df_captProd_NS_data_omit <- na.omit(df_captProd_NS_data)
-md.pattern(df_captProd_NS_data_omit, rotate.names = TRUE)
+
 
 # Read in UK aquaculture data 
-df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat.csv", sep="/"))
-str(df_aquaProd_Eurostat_data)
+df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureProd_Eurostat_clean.csv", sep="/"), na = c("NA"))
+
+# Check for missing data
 md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)
-
-
-
-
-# Read in UK trade data--- further processed 
-df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC-edits.csv", sep="/"))
-str(df_trade_HMRC_data)
-
-# Read in UK household purchasing data 
-df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_edit.csv", sep="/"))
-str(df_housePurch_DEFRA_data)
-
-# Read in UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
-str(df_eatenOutPurch_DEFRA_data)
-
-```
-
-```{r}
-
-```
-
-
-
-
-```{r Check structure of data frames}
-# See individual column names
-colnames(df_captProd_NS_data_omit)
-colnames(df_housePurch_DEFRA_data)
-colnames(df_eatenOutPurch_DEFRA_data)
-colnames(df_trade_HMRC_data)
+# Some rows with no data- omit rows with NA from the data set
+# Omit rows will NA's in 
+df_aquaProd_Eurostat_data_omit<- na.omit(df_aquaProd_Eurostat_data)
+md.pattern(df_aquaProd_Eurostat_data_omit, rotate.names = TRUE)
 
 # Rename species column in aquaculture data set 
 df_aquaProd_Eurostat_data <- rename(df_aquaProd_Eurostat_data, Species= SimplifiedSpecies)
+
+
+
+# Read in UK trade data (further cleaned)
+df_trade_HMRC_data <- vroom(file=paste(filepath,"Trade_HMRC_cleaned_again.csv", sep="/"))
+md.pattern(df_trade_HMRC_data, rotate.names =  TRUE)
+
+
+# Read in UK household purchasing data 
+df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_clean.csv", sep="/"))
+md.pattern(df_housePurch_DEFRA_data, rotate.names = TRUE)
+
+
+# Read in UK eating out purchasing data 
+df_eatenOutPurch_DEFRA_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA_clean.csv", sep="/"))
+md.pattern(df_eatenOutPurch_DEFRA_data, rotate.names = TRUE)
 
 ```
 
 
 ```{r Merge data sets}
-# Create on lage data set with all commodities 
-UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data, df_trade_HMRC_data)
+# Create on data set with all commodities 
+UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data,
+                         df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data,
+                         df_trade_HMRC_data)
 
-
-UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_trade_HMRC_data)
-
+# Check structure of data set
 str(UK_seafood_data)
 
+# Check for missing values
+md.pattern(UK_seafood_data, rotate.names = T)
+
+# Identify unique SpeciesTypes and SCAN entries
+unique(UK_seafood_data$SpeciesType)
+unique(UK_seafood_data$SACN)
+
+```
 
 
-# Read in .csv file
-FAO_food_balance<- read.csv("FAO.2020.FBS.csv")
-str(FAO_food_balance)
-
-# Identify unique names species groups as defined by the FAO)
-unique(FAO_food_balance$FAOSTAT.group..Name.)
-
-# FAO species groups include: demersal, freshwater, pelagic, cephalopods, crustaceans,  molluscs an other.
+```{r Think about species type allocations}
+# Be clear on the allocation between species type and species. 
 
 # Remove "aquatic animals nei" from dataset- not included in dietary guidelines
-#FAO_food<- FAO_food_balance[FAO_food_balance$FAOSTAT.group..Name.!= "Aquatic animals nei",]
+# Does this include invertebrates too and sharks etc.
+
+# Main FAO species groups include: demersal, freshwater, pelagic, cephalopods, crustaceans,  molluscs an other.
+
+# We have: Demersal, Pelagic, Mollusc, Crustacean, Cephalopod, OtherShellfish, 
+# Freshwater, Shellfish, Unknown, OtherFishProducts, Marine fish and Invertebrates. 
+
+# What species are in "other fish products"? should these be omitted from the data set? 
 
 
 ```
 
 
-
-
-## UK population 
+## UK population revision?
 
 ```{r Read in .csv file for each UK population cohort}
 # Adults are recommended to consume 2 portion of fish per week (not children) 
@@ -165,86 +160,77 @@ totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
 
 
 
-### Average UK net seafood availability 
+### Annual net UK net seafood availability for human consumption between 2009 and 2018 
 
-```{r Calculate grams per capita per week}
-# Create a new column for grams/ capita/ week 
-df_captProd_NS_data$ValueGramsCapitaWeek <- df_captProd_NS_data$ValueGramsCapitaDay * 7
-df_aquaProd_Eurostat_data$ValueGramsCapitaWeek <- 
-  df_aquaProd_Eurostat_data$ValueGramsCapitaDay *7
-df_housePurch_DEFRA_data$ValueGramsCapitaWeek <- df_housePurch_DEFRA_data$ValueGramsCapitaDay * 7
+```{r Calculate annual UK seafood supply (g/capita/week) between 2009 and 2018}
+# Sum amount of fish available g/capita/week per year for each commodity. 
+
+# Name columns in aggregate function
+captProd <- aggregate(list(CaptureProd = df_captProd_NS_data$ValueGramsCapitaWeek), 
+                      list(Year = df_captProd_NS_data$Year), sum)
+captProd <- subset(captProd, Year < 2019) # up to 2018
+
+aquaProd <- aggregate(list(AquaProd = df_aquaProd_Eurostat_data_omit$ValueGramsCapitaWeek), 
+                      list(Year = df_aquaProd_Eurostat_data_omit$Year), sum)
+aquaProd <- subset(aquaProd, Year < 2019)# up to 2018
+
+householdPurch <- aggregate(list(HPurch = df_housePurch_DEFRA_data$ValueGramsCapitaWeek), 
+                      list(Year = df_housePurch_DEFRA_data$Year), sum)
+householdPurch <- subset(householdPurch, Year < 2019) # up to 2018
+
+eatenOutPurch <- aggregate(list(EOPurch = df_eatenOutPurch_DEFRA_data$ValueGramsCapitaWeek), 
+                      list(Year = df_eatenOutPurch_DEFRA_data$Year), sum)
+eatenOutPurch<- subset(eatenOutPurch, Year < 2019) # up to 2018
+
+
+# Separate imports and export data
+seafoodImports <- subset(df_trade_HMRC_data, Commodity == "Imports")
+seafoodExports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+
+imports <- aggregate(list(Imports = seafoodImports$ValueGramsCapitaWeek), 
+                      list(Year = seafoodImports$Year), sum)
+imports <- subset(imports, Year < 2019) # up to 2018
+
+exports <- aggregate(list(Exports = seafoodExports$ValueGramsCapitaWeek), 
+                      list(Year = seafoodExports$Year), sum)
+exports <- subset(exports, Year < 2019) # up to 2018
+
+#captProd <- aggregate(df_captProd_NS_data$ValueGramsCapitaWeek, 
+#                                       by = list(df_captProd_NS_data$Year), mean)
+```
+
+
+```{r Merge summed commodities bweteen 2009 and 2018 }
+# Merge aggregated data
+df_avgSeafood <- cbind(captProd, aquaProd[,2], imports[,2], exports[,2] )
+
+# Rename column in the data frame
+names(df_avgSeafood) <- c("Year", "CaptureProd", "Aquaprod", "Imports", "Exports")
 
 ```
 
 
-```{r Calculate average grams per capita of seafood available between 2009 and 2019}
+```{r Calculate annual net seafood availabilty (grams/capita/week)}
+# Calculate total seafood production
+df_avgSeafood$totProd <- (df_avgSeafood$CaptureProd + df_avgSeafood$Aquaprod)
 
-# Create empty data frame with years in one column. Then populate columns with below
-years <- c(2009:2020)
-avg_seafoodAvailable <- data.frame(years)
-
-## up to here
-
-# Calculate means of each commodity 
-captProd <- aggregate(df_captProd_NS_data_omit$ValueGramsCapitaWeek, 
-                                       by = list(df_captProd_NS_data_omit$Year), mean)
-
-aquaProd <- aggregate(df_aquaProd_Eurostat_data$ValueGramsCapitaWeek, 
-                                       by = list(df_aquaProd_Eurostat_data$Year), mean)
-
-imports
-
-exports 
-
-householdPurch <- aggregate(df_housePurch_DEFRA_data$ValueGramsCapitaWeek, 
-                                       by = list(df_housePurch_DEFRA_data$Year), mean)
-
-eatenOutPurch <- aggregate(df_eatenOut_DEFRA_data$ValueGramsCapitaWeek, 
-                                       by = list(df_eatenOut_DEFRA_data$Year), mean)
-
-
-# Combine production values (capture and aquaculture production)
-prod <- cbind(captProd, aquaProd[,2])
-
-str(captProd)
-
-###
-
-captProd <- aggregate(df_captProd_NS_data_omit, 
-                      list(captProd = df_captProd_NS_data_omit[,"ValueGramsCapitaWeek"], 
-                           Year = df_captProd_NS_data_omit[,"Year"]), mean)
-
-captProd <- aggregate(df_captProd_NS_data_omit,
-                      list(df_captProd_NS_data_omit[,"ValueGramsCapitaWeek"], 
-                           df_captProd_NS_data_omit[,"Year"], mean))
-
-v <- aggregate(state.x77,
-          list(Region = state.region,
-               Cold = state.x77[,"Frost"] > 130),
-          mean)
-str(state.x77)
-colnames(state.x77)
-####
-
-# Combine data frames
-
-"Year", "captureProd", "aquaProd", "imports", "exports"))
-
-avg_seafoodAvailable <- data.frame(c(prod[,2], "captureProd", "aquaProd", "imports", "exports"))
-
-avg_seafoodAvailable$
-
-
-```
-
-
-```{r Calculate average net seafood availabilty (grams/capita/week)}
 # Calculate average net seafood availability = (production + imports) - exports
-FAO_net_food_pop$net<- (FAO_net_food_pop$production_gcw + FAO_net_food_pop$imports_gcw) - FAO_net_food_pop$exports_gcw
+df_avgSeafood$available <- (df_avgSeafood$totProd + 
+                              df_avgSeafood$Imports) - df_avgSeafood$Exports 
 
 ```
 
-```{r Figure 1. UK average net seafood availabilty between 2009 and 2019}
+```{r Figure 1. Annual UK seafood supply (g/capita/week) between 2009 and 2018}
+
+
+plot(available ~ Year, data = df_avgSeafood)
+
+plot(Aquaprod ~ Year, data = df_avgSeafood)
+plot(CaptureProd ~ Year, data = df_avgSeafood)
+
+
+
+
 # Plot bar chart displaying imports (red bar), exports (grey bar), production (orange dot) and dietary recommendation (blue dot)
 
 # Ensure data needed for the figure is all in one data frame
@@ -259,7 +245,7 @@ FAO_net_food_pop$net<- (FAO_net_food_pop$production_gcw + FAO_net_food_pop$impor
 
 ### UK seafood availability between 2009 to 2019
 
-```{r}
+```{r Figure 1. UK average net seafood availabilty between 2009 and 2019}
 
 ```
 
