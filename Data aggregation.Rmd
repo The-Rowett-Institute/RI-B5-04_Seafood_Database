@@ -89,7 +89,7 @@ UK fish production data includes data from capture fisheries and aquaculture pro
 ```{r Load data (2017 to 2021)}
 # i) Landings into the UK by UK vessels: 2017 to 2021
 # Read in .csv file
-df_UK_landings_17_21_data <- vroom(file=paste(filepath,"NS_UK_landings-201721-edited.csv", sep="/"))
+df_UK_landings_17_21_data <- vroom(file=paste(filepath,"NS_UK_landings-201721.csv", sep="/"))
 
 # Check for missing values
 md.pattern(df_UK_landings_17_21_data, rotate.names = TRUE)
@@ -124,7 +124,7 @@ df_UK_landings_201216_long<-melt(df_UK_landings_12_16_data, id.vars = c("Species
 ```{r Load data (2008 to 2012)}
 # iii) Landings into the UK by UK vessels: 2008 to 2012 but select years 2009 to 2011 
 # Read in .csv file
-df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812-edit.csv", sep="/"))
+df_UK_landings_08_12_data <- vroom(file=paste(filepath,"NS_UK_landings-200812.csv", sep="/"))
 
 # Check for missing values
 md.pattern(df_UK_landings_08_12_data, rotate.names = TRUE)
@@ -240,6 +240,7 @@ df_UK_landings_200920$DataSet <- "UK-sea-fisheries-statistics"
 df_UK_landings_200920$Commodity <- "Production"
 df_UK_landings_200920$TempRes <- "Annual"
 df_UK_landings_200920$Flag <- "ConV1, ConV2"
+
 ```
 
 ```{r Select desired variables for the data set}
