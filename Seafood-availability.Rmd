@@ -63,7 +63,9 @@ df_aquaProd_Eurostat_data_omit<- na.omit(df_aquaProd_Eurostat_data)
 md.pattern(df_aquaProd_Eurostat_data_omit, rotate.names = TRUE)
 
 # Rename species column in aquaculture data set 
-df_aquaProd_Eurostat_data_omit <- rename(df_aquaProd_Eurostat_data_omit, Species= SimplifiedSpecies)
+df_aquaProd_Eurostat_data_omit <- rename(df_aquaProd_Eurostat_data_omit, Species = SimplifiedSpecies)
+
+colnames(df_aquaProd_Eurostat_data_omit) <- c("..1", "SACN","SpeciesType", "Species","Year","ValueGramsCapitaWeek", "DataSource","DataSet","Commodity", "Flag")
 
 
 
@@ -411,4 +413,79 @@ arrange(capture18, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod
 # Ensure data needed for the figure is all in one data frame
 
 ```
+
+### Figure 4. Average seafood availabilty between 2009 and 2018
+
+```{r Calculate average UK seafood supply (g/capita/week) between 2009 and 2018}
+# Calculate average amount of fish available g/capita/week per year for each commodity between 2009 and 2018. 
+
+captProd_avg <- mean(df_captProd_NS_data$ValueGramsCapitaWeek) 
+captProd_avg <- mean(df_captProd_NS_data$ValueGramsCapitaWeek) 
+captProd_avg <- mean(df_captProd_NS_data$ValueGramsCapitaWeek) 
+captProd_avg <- mean(df_captProd_NS_data$ValueGramsCapitaWeek) 
+
+
+captProd <- subset(captProd, Year < 2019) # up to 2018
+
+aquaProd <- aggregate(list(AquaProd = df_aquaProd_Eurostat_data_omit$ValueGramsCapitaWeek), 
+                      list(Year = df_aquaProd_Eurostat_data_omit$Year), mean)
+aquaProd <- subset(aquaProd, Year < 2019)# up to 2018
+
+householdPurch <- aggregate(list(HPurch = df_housePurch_DEFRA_data$ValueGramsCapitaWeek), 
+                      list(Year = df_housePurch_DEFRA_data$Year), mean)
+householdPurch <- subset(householdPurch, Year < 2019) # up to 2018
+
+eatenOutPurch <- aggregate(list(EOPurch = df_eatenOutPurch_DEFRA_data$ValueGramsCapitaWeek), 
+                      list(Year = df_eatenOutPurch_DEFRA_data$Year), mean)
+eatenOutPurch<- subset(eatenOutPurch, Year < 2019) # up to 2018
+
+
+# Separate imports and export data
+seafoodImports <- subset(df_trade_HMRC_data, Commodity == "Imports")
+seafoodExports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+
+imports <- aggregate(list(Imports = seafoodImports$ValueGramsCapitaWeek), 
+                      list(Year = seafoodImports$Year), mean)
+imports <- subset(imports, Year < 2019) # up to 2018
+
+exports <- aggregate(list(Exports = seafoodExports$ValueGramsCapitaWeek), 
+                      list(Year = seafoodExports$Year), mean)
+exports <- subset(exports, Year < 2019) # up to 2018
+
+#captProd <- aggregate(df_captProd_NS_data$ValueGramsCapitaWeek, 
+#                                       by = list(df_captProd_NS_data$Year), mean)
+```
+
+
+
+```{r Merge average commodities bweteen 2009 and 2018 }
+# Merge aggregated data
+df_avgSeafood <- cbind(captProd, aquaProd[,2], imports[,2], exports[,2] )
+
+# Rename column in the data frame
+names(df_avgSeafood) <- c("Year", "CaptureProd", "Aquaprod", "Imports", "Exports")
+colMeans(df_avgSeafood)
+
+```
+
+
+```{r Calculate average net seafood availabilty (grams/capita/week)}
+# Calculate total seafood production
+df_avgSeafood$totProd <- (df_avgSeafood$CaptureProd + df_avgSeafood$Aquaprod)
+
+# Calculate average net seafood availability = (production + imports) - exports
+df_avgSeafood$available <- (df_avgSeafood$totProd + 
+                              df_avgSeafood$Imports) - df_avgSeafood$Exports 
+
+
+```
+
+
+```{r}
+# Create one plot
+
+
+
+```
+
 
