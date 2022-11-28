@@ -30,6 +30,7 @@ library(tidyverse) # data exploration
 library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
 
 ```
 
@@ -108,7 +109,7 @@ df_UK_landings_201720_long<-melt(df_UK_landings_17_20_data, id.vars = c("Species
 ```{r Load data (2012 to 2016)}
 # ii) Landings into the UK by UK vessels: 2012 to 2016 
 # Read in .csv file
-df_UK_landings_12_16_data <- vroom(file=paste(filepath,"NS_UK_landings-201216-edit.csv", sep="/"))
+df_UK_landings_12_16_data <- vroom(file=paste(filepath,"NS_UK_landings-201216.csv", sep="/"))
 
 # Check for missing values
 md.pattern(df_UK_landings_12_16_data, rotate.names = TRUE)
@@ -139,9 +140,6 @@ df_UK_landings_09_11_data<- df_UK_landings_08_12_data[c("SpeciesType","Species",
 # Change structure of the data set 
 df_UK_landings_200911_long<-melt(df_UK_landings_09_11_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
 
-
-
-
 ```
 
 
@@ -150,6 +148,35 @@ df_UK_landings_200911_long<-melt(df_UK_landings_09_11_data, id.vars = c("Species
 df_UK_landings_09_20 <- rbind(df_UK_landings_200911_long, df_UK_landings_201216_long, 
                               df_UK_landings_201720_long)
 ```
+
+
+The spellings and grammar of some species are inconsistent between data sets e.g. "Blue whiting" v.s. "Blue Whiting; "Crab" v.s. "Crabs". Need to make species names consistent. 
+
+
+```{r Rename selected individual species names}
+str_replace(df_UK_landings_09_20$Species, "Blue Whiting", "Blue whiting")
+str_replace(df_UK_landings_09_20$Species, "Cockles", "Cockle")
+str_replace(df_UK_landings_09_20$Species, "Crabs", "Crab")
+str_replace(df_UK_landings_09_20$Species, "Horse Mackerel", "Horse mackerel")
+str_replace(df_UK_landings_09_20$Species, "Lobsters", "Lobster")
+str_replace(df_UK_landings_09_20$Species, "Monks or Anglers", "Monk")
+str_replace(df_UK_landings_09_20$Species, "Mussels", "Mussels")
+str_replace(df_UK_landings_09_20$Species, "Pollack (Lythe)", "Pollock")
+str_replace(df_UK_landings_09_20$Species, "Mussels", "Mussels")
+str_replace(df_UK_landings_09_20$Species, "Sand Eels", "Sandeel")
+str_replace(df_UK_landings_09_20$Species, "Sardines", "Sardine")
+str_replace(df_UK_landings_09_20$Species, "Shrimps and Prawns", "Shrimp")
+str_replace(df_UK_landings_09_20$Species, "Shrimps and Prawns", "Shrimp")
+str_replace(df_UK_landings_09_20$Species, "Skates and Rays", "Skate")
+str_replace(df_UK_landings_09_20$Species, "Whelks", "Whelk")
+
+unique(df_UK_landings_09_20$Species)
+
+
+```
+
+
+
 
 
 ```{r Provide greater granularity in the SpeciesType column}
