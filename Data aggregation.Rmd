@@ -2,7 +2,7 @@
 ---
 title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '08/11/2022'
+date: '29/11/2022'
 output: html_document
 ---
 
@@ -46,40 +46,6 @@ filepath <- paste(data_dir,"RawData/csv-files", sep="")
 ```
 
 
-## UK population data (Office of National Statistics)
-
-Download UK population data- need to convert per g/capita data to g/total UK total population.
-
-```{r Load data}
-# Read in UK population data 
-df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK_population.csv", sep="/"))
-```
-
-```{r Subset data}
-# Extract UK population data between 2009 onwards
-df_UK_pop <- subset(df_NS_UK_pop_data, 
-                      CDID > 2008, select= c(CDID, UKPOP))
-
-```
-
-```{r Add units and data source}
-# Create "cleaned" data frame, defining units and data source 
-df_clean_UK_pop <- df_UK_pop
-df_clean_UK_pop$Units <- "UK-total-pop"
-df_clean_UK_pop$Data_source <- "National-statistics"
-```
-
-
-```{r Save cleaned data}
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData/csv-files", sep="")
-filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(df_clean_UK_pop, file = paste(filepath,"PopSize_NS.csv", sep=""))
-
-```
-
-
-
 
 ## Production
 
@@ -96,13 +62,13 @@ df_UK_landings_17_21_data <- vroom(file=paste(filepath,"NS_UK_landings-201721.cs
 md.pattern(df_UK_landings_17_21_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2020)
-df_UK_landings_17_20_data<- df_UK_landings_17_21_data[c("SpeciesType","Species", "2017", "2018","2019", "2020")]
+df_UK_landings_17_20_data <- df_UK_landings_17_21_data[c("SpeciesType","Species", "2017", "2018","2019", "2020")]
 
 ```
 
 ```{r Transform data set (2017 to 2021)}
 # Change structure of the data set 
-df_UK_landings_201720_long<-melt(df_UK_landings_17_20_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
+df_UK_landings_201720_long <- melt(df_UK_landings_17_20_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
 ```
 
 
@@ -118,7 +84,7 @@ md.pattern(df_UK_landings_12_16_data, rotate.names = TRUE)
 
 ```{r Transform data set (2012 to 2016)}
 # Change structure of the data set 
-df_UK_landings_201216_long<-melt(df_UK_landings_12_16_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
+df_UK_landings_201216_long <- melt(df_UK_landings_12_16_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
 ```
 
 
@@ -132,13 +98,13 @@ md.pattern(df_UK_landings_08_12_data, rotate.names = TRUE)
 colnames(df_UK_landings_08_12_data)
 
 # Select desired variables and years (2009 to 2011)
-df_UK_landings_09_11_data<- df_UK_landings_08_12_data[c("SpeciesType","Species", "2009", "2010","2011")]
+df_UK_landings_09_11_data <- df_UK_landings_08_12_data[c("SpeciesType","Species", "2009", "2010","2011")]
 
 ```
 
 ```{r Transform data set (2008 to 2012)}
 # Change structure of the data set 
-df_UK_landings_200911_long<-melt(df_UK_landings_09_11_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
+df_UK_landings_200911_long <- melt(df_UK_landings_09_11_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
 
 ```
 
@@ -154,28 +120,19 @@ The spellings and grammar of some species are inconsistent between data sets e.g
 
 
 ```{r Rename selected individual species names}
-str_replace(df_UK_landings_09_20$Species, "Blue Whiting", "Blue whiting")
-str_replace(df_UK_landings_09_20$Species, "Cockles", "Cockle")
-str_replace(df_UK_landings_09_20$Species, "Crabs", "Crab")
-str_replace(df_UK_landings_09_20$Species, "Horse Mackerel", "Horse mackerel")
-str_replace(df_UK_landings_09_20$Species, "Lobsters", "Lobster")
-str_replace(df_UK_landings_09_20$Species, "Monks or Anglers", "Monk")
-str_replace(df_UK_landings_09_20$Species, "Mussels", "Mussels")
-str_replace(df_UK_landings_09_20$Species, "Pollack (Lythe)", "Pollock")
-str_replace(df_UK_landings_09_20$Species, "Mussels", "Mussels")
-str_replace(df_UK_landings_09_20$Species, "Sand Eels", "Sandeel")
-str_replace(df_UK_landings_09_20$Species, "Sardines", "Sardine")
-str_replace(df_UK_landings_09_20$Species, "Shrimps and Prawns", "Shrimp")
-str_replace(df_UK_landings_09_20$Species, "Shrimps and Prawns", "Shrimp")
-str_replace(df_UK_landings_09_20$Species, "Skates and Rays", "Skate")
-str_replace(df_UK_landings_09_20$Species, "Whelks", "Whelk")
+# Replace all occurrences of a certain pattern i.e. the species names
+df_UK_landings_09_20$Species <- str_replace_all(df_UK_landings_09_20$Species, 
+                   c("Blue Whiting" = "Blue whiting", "Cockles" = "Cockle", "Crabs" = "Crabs",
+                  "Horse Mackerel" = "Horse mackerel", "Lobsters" = "Lobster", 
+                  "Monks or Anglers" = "Monks", "Mussels" = "Mussel", 
+                  "Pollack (Lythe)" = "Pollock", "Sand Eels" = "Sandeel", 
+                  "Sardines" = "Sardine", "Shrimps and Prawns" = "Shrimp", 
+                  "Skates and Rays" = "Skate", "Whelks" = "Whelk"))
 
+# Identify unique species  
 unique(df_UK_landings_09_20$Species)
 
-
 ```
-
-
 
 
 
@@ -187,7 +144,7 @@ UK_shellfishLandings_09_20 <- subset(df_UK_landings_09_20, SpeciesType == "Shell
 UK_shellfishLandings_09_20$SpeciesType <- "Mollusc"
 
 # Allocate crustaceans 
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% c("Crabs", "Lobsters", "Nephrops", "Shrimps and Prawns")] <- "Crustacean"
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% c("Crab", "Lobster", "Nephrops", "Shrimp")] <- "Crustacean"
 
 # Allocate cephalopods
 UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
@@ -227,9 +184,10 @@ df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Freshwater"] <-
 
 ```{r Apply conversion factor to calculate edible portion of seafood}
 # Classify species as finfish or shellfish. New column for conversion name
-
+# Select shellfish
 df_UK_landings_200920$CN[df_UK_landings_200920$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish")] <- "Shellfish"
 
+# Select finfish
 df_UK_landings_200920$CN[df_UK_landings_200920$SpeciesType %in% c("Freshwater", "Demersal", "Pelagic")] <- "Finfish"
 
 # Conversion factors used to convert whole fish weight to edible weight
@@ -244,34 +202,24 @@ df_UK_landings_200920$CFValue<-df_UK_landings_200920$Value*
 ```
 
 
-
-```{r Calculate grams available per capita}
-# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
-df_UK_landings_200920$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
-
+```{r Convert 1000 tonnes to grams}
 # Convert raw value from 000's tonnes to grams 
 df_UK_landings_200920$ValueGrams<- (df_UK_landings_200920$CFValue*1000)*1000000
-
-# Convert grams/year to g/capita/year
-df_UK_landings_200920$ValueGramsCapitaYear<- df_UK_landings_200920$ValueGrams/df_UK_landings_200920$PopSize
-
-# Convert grams/year to g/capita/week
-df_UK_landings_200920$ValueGramsCapitaWeek<- df_UK_landings_200920$ValueGramsCapitaYear/52
-
 ```
+
+
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_landings_200920$DataSource <- "National-statistics"
-df_UK_landings_200920$DataSet <- "UK-sea-fisheries-statistics"
+df_UK_landings_200920$DataSource <- "NationalStatistics"
+df_UK_landings_200920$DataSet <- "UK_SeaFisheries_Statistics"
 df_UK_landings_200920$Commodity <- "Production"
-df_UK_landings_200920$TempRes <- "Annual"
 df_UK_landings_200920$Flag <- "ConV1, ConV2"
 
 ```
 
 ```{r Select desired variables for the data set}
-df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "Species", "Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "Species", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
 
 ```
 
@@ -284,11 +232,12 @@ write.csv(df_cleaned_UK_landings_200920, file = paste(filepath,"ProductionData_N
 ```
 
 
+
 ### B) Aquaculture production (EUROSTAT)
 
 ```{r Load data (2009 to 2020)}
 # Read in .csv file 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920-edited.csv", sep="/"),na = c(":"))
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920.csv", sep="/"),na = c(":"))
 
 # Check for missing values
 md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
@@ -301,7 +250,19 @@ df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTA
 ```
 
 
+```{r Rename selected individual species}
+# Replace all occurrences of a certain pattern i.e. the species names
+df_EUROSTAT_UKFarmed$SimplifiedSpecies <- 
+  str_replace_all(df_EUROSTAT_UKFarmed$SimplifiedSpecies, 
+                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel"))
+
+# Identify unique species  
+unique(df_EUROSTAT_UKFarmed$SimplifiedSpecies)
+```
+
+
 ```{r Allocate oily/lean/shellfish}
+# Create a new column with fish properties
 df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish" )]<- "Shellfish"
 
 df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
@@ -322,26 +283,17 @@ df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Shellfish"] <- 0.28
 df_EUROSTAT_UKFarmed$CF[df_EUROSTAT_UKFarmed$CN == "Finfish"] <- 0.49
 
 # Create new column and apply conversion factors values
-df_EUROSTAT_UKFarmed$CFValue<-df_EUROSTAT_UKFarmed$Value*
+df_EUROSTAT_UKFarmed$CFValue <- df_EUROSTAT_UKFarmed$Value*
   df_EUROSTAT_UKFarmed$CF
 
 ```
 
-
-```{r Calculate grams available per capita}
-# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
-df_EUROSTAT_UKFarmed$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_EUROSTAT_UK_aquaculture_data))
-
+```{r Convert from tonnes to grams}
 # Convert raw value from tonnes to grams 
-df_EUROSTAT_UKFarmed$ValueGrams<- (df_EUROSTAT_UKFarmed$CFValue*1000000)
-
-# Convert grams/year to g/capita/year
-df_EUROSTAT_UKFarmed$ValueGramsCapitaYear<- df_EUROSTAT_UKFarmed$ValueGrams/df_EUROSTAT_UKFarmed$PopSize
-
-# Convert grams/year to g/capita/week
-df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsCapitaYear/52
+df_EUROSTAT_UKFarmed$ValueGrams <- (df_EUROSTAT_UKFarmed$CFValue*1000000)
 
 ```
+
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
@@ -354,7 +306,7 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 
 ```{r Select desired variables for the data set}
 colnames(df_EUROSTAT_UKFarmed)
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
 
 
 ```
@@ -370,6 +322,28 @@ write.csv(df_cleaned_UKFarmed, file =
 ```
 
 
+```{r Check to see if species columns successfully merge}
+# Rename framed column 
+colnames(df_cleaned_UKFarmed)[colnames(df_cleaned_UKFarmed) == 'SimplifiedSpecies'] <- 'Species' 
+
+colnames(df_cleaned_UKFarmed)[colnames(df_cleaned_UKFarmed) == "SimplifiedSpecies"] <- "Species_A"
+colnames(df_cleaned_UK_landings_200920)[colnames(df_cleaned_UK_landings_200920) == "Species"] <- "Species_A"
+
+rename(df_cleaned_UKFarmed, SpeciesA = SimplifiedSpecies)
+
+colnames(df_cleaned_UKFarmed)
+
+colnames(df_aquaProd_Eurostat_data_omit) <- c("...1", "SACN","SpeciesType", "Species","Year","ValueGramsCapitaWeek", "DataSource","DataSet","Commodity", "Flag")
+
+
+check_names <- merge(df_cleaned_UK_landings_200920, df_cleaned_UKFarmed, by = "Species_A")
+unique(check_names$Species)
+
+```
+
+
+
+
 ## Trade (HMRC)
 
 ```{r Load data from processed data file}
@@ -381,35 +355,25 @@ str(df_trade_HMRC_data)
 
 ```
 
+```{r Rename selected individuial species}
+# Replace all occurrences of a certain pattern i.e. the species names
+df_trade_HMRC_data$SimplifiedSpecies <- 
+  str_replace_all(df_trade_HMRC_data$SimplifiedSpecies, 
+                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel"))
+
+# Identify unique species  
+unique(df_trade_HMRC_data$SimplifiedSpecies)
+
+
+
+```
+
+
+
 
 ```{r Calcualte grams available per capita}
-# Create new column converting volume from 1000 tonnes to grams
-unique(df_trade_HMRC_data$Units)
-
+# Create new column converting values from 1000 tonnes to grams
 df_trade_HMRC_data$ValueGrams <- (df_trade_HMRC_data$Value*1000)*1000000
-
-# Number of seafood entries differ per year so need to create a pipe
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2020"] <- 67081000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2019"] <- 66796800
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2018"] <- 66435600
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2017"] <- 66040200
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2016"] <- 65648100
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2015"] <- 65110000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2014"] <- 64596800
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2013"] <- 64105700
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2012"] <- 63705000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2011"] <- 63285100
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2010"] <- 62759500
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2009"] <- 62260500
-
-# Make popsize column numerical value
-df_trade_HMRC_data$popSize <- as.numeric(df_trade_HMRC_data$popSize)
-
-# Calculate grams/capita/year
-df_trade_HMRC_data$ValueGramsCapitaYear <- df_trade_HMRC_data$ValueGrams/df_trade_HMRC_data$popSize
-
-# Calculate grams/capita/week
-df_trade_HMRC_data$ValueGramsCapitaWeek <- df_trade_HMRC_data$ValueGramsCapitaYear/52
 
 ```
 
@@ -439,18 +403,6 @@ df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Invertebrate"] <- "Un
 df_trade_HMRC_data <- rename(df_trade_HMRC_data, DataSource = DataSupplier)
 
 new_df_trade_HMRC_data<- df_trade_HMRC_data[c("SACN", "SpeciesType", "Species","Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
-
-seafoodImports <- subset(new_df_trade_HMRC_data, Commodity == "Imports")
-seafoodExports <- subset(new_df_trade_HMRC_data, Commodity == "Exports")
-
-imports <- aggregate(list(Imports = seafoodImports$ValueGramsCapitaWeek), 
-                      list(Year = seafoodImports$Year), sum)
-
-exports <- aggregate(list(Exports = seafoodExports$ValueGramsCapitaWeek), 
-                      list(Year = seafoodExports$Year), sum)
-
-plot(Exports ~ Year, data = exports)
-plot(Imports ~ Year, data = imports)
 
 ```
 
@@ -532,6 +484,7 @@ dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaW
 ```{r Save cleaned data}
 
 ```
+
 
 
 ## UK fish purchasing data (DEFRA and Kantar)
@@ -1057,6 +1010,114 @@ df_UK_landings_11_20 <- rbind(UK_finfishLandings_11_20, UK_shellfishLandings_11_
 ```{r Transform and clean data set (2011 to 2020)}
 # Change structure of the data set 
 df_UK_landings_201120_long<-melt(df_UK_landings_11_20, id.vars = c("SpeciesType","Species"), variable.name="Year", value.name="Value")
+
+```
+
+
+## UK population data (Office of National Statistics)
+
+Download UK population data- need to convert per g/capita data to g/total UK total population.
+
+```{r Load data}
+# Read in UK population data 
+df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK_population.csv", sep="/"))
+```
+
+```{r Subset data}
+# Extract UK population data between 2009 onwards
+df_UK_pop <- subset(df_NS_UK_pop_data, 
+                      CDID > 2008, select= c(CDID, UKPOP))
+
+```
+
+```{r Add units and data source}
+# Create "cleaned" data frame, defining units and data source 
+df_clean_UK_pop <- df_UK_pop
+df_clean_UK_pop$Units <- "UK-total-pop"
+df_clean_UK_pop$Data_source <- "National-statistics"
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/csv-files", sep="")
+filepath <- paste(data_dir,"ProcessedData", sep="")
+write.csv(df_clean_UK_pop, file = paste(filepath,"PopSize_NS.csv", sep=""))
+
+```
+
+```{r}
+# Changes species one at a time 
+str_replace_all(df_UK_landings_09_20$Species, "Blue Whiting", "Blue whiting")
+str_replace_all(df_UK_landings_09_20$Species, "Cockles", "Cockle")
+str_replace_all(df_UK_landings_09_20$Species, "Crabs", "Crab")
+#str_replace_all(df_UK_landings_09_20$Species, "Horse Mackerel", "Horse mackerel")
+#str_replace_all(df_UK_landings_09_20$Species, "Lobsters", "Lobster")
+#str_replace_all(df_UK_landings_09_20$Species, "Monks or Anglers", "Monk")
+#str_replace_all(df_UK_landings_09_20$Species, "Mussels", "Mussel")
+#str_replace_all(df_UK_landings_09_20$Species, "Pollack (Lythe)", "Pollock")
+#str_replace_all(df_UK_landings_09_20$Species, "Sand Eels", "Sandeel")
+#str_replace_all(df_UK_landings_09_20$Species, "Sardines", "Sardine")
+#str_replace_all(df_UK_landings_09_20$Species, "Shrimps and Prawns", "Shrimp")
+#str_replace_all(df_UK_landings_09_20$Species, "Skates and Rays", "Skate")
+#str_replace_all(df_UK_landings_09_20$Species, "Whelks", "Whelk")
+
+#df_UK_landings_09_20$Species == "Pollack (Lythe)"
+```
+
+
+```{r Calculate grams available per capita}
+
+# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
+#df_UK_landings_200920$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
+
+# Convert grams/year to g/capita/year
+#df_UK_landings_200920$ValueGramsCapitaYear<- #df_UK_landings_200920$ValueGrams/df_UK_landings_200920$PopSize
+
+# Convert grams/year to g/capita/week
+#df_UK_landings_200920$ValueGramsCapitaWeek<- df_UK_landings_200920$ValueGramsCapitaYear/52
+
+```
+
+
+```{r Calculate grams available per capita}
+# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
+#df_EUROSTAT_UKFarmed$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = #nrow(df_EUROSTAT_UK_aquaculture_data))
+
+# Convert raw value from tonnes to grams 
+#df_EUROSTAT_UKFarmed$ValueGrams<- (df_EUROSTAT_UKFarmed$CFValue*1000000)
+
+# Convert grams/year to g/capita/year
+#df_EUROSTAT_UKFarmed$ValueGramsCapitaYear<- #df_EUROSTAT_UKFarmed$ValueGrams/df_EUROSTAT_UKFarmed$PopSize
+
+# Convert grams/year to g/capita/week
+#df_EUROSTAT_UKFarmed$ValueGramsCapitaWeek<- df_EUROSTAT_UKFarmed$ValueGramsCapitaYear/52
+
+```
+
+```{r}
+# Number of seafood entries differ per year so need to create a pipe
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2020"] <- 67081000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2019"] <- 66796800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2018"] <- 66435600
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2017"] <- 66040200
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2016"] <- 65648100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2015"] <- 65110000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2014"] <- 64596800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2013"] <- 64105700
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2012"] <- 63705000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2011"] <- 63285100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2010"] <- 62759500
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2009"] <- 62260500
+
+# Make popsize column numerical value
+df_trade_HMRC_data$popSize <- as.numeric(df_trade_HMRC_data$popSize)
+
+# Calculate grams/capita/year
+df_trade_HMRC_data$ValueGramsCapitaYear <- df_trade_HMRC_data$ValueGrams/df_trade_HMRC_data$popSize
+
+# Calculate grams/capita/week
+df_trade_HMRC_data$ValueGramsCapitaWeek <- df_trade_HMRC_data$ValueGramsCapitaYear/52
 
 ```
 
