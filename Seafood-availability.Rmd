@@ -42,23 +42,27 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 
 ```
 
-```{r Load data}
+# Load in cleaned data
+
+```{r Load UK capture production data}
 # Read in UK capture production data 
 df_captProd_NS_data <- vroom(file=paste(filepath,"CaptureProduction_NS_clean.csv", sep="/"))
 
 # Check for missing data
 # right column summed to be total number of rows in the data set
 md.pattern(df_captProd_NS_data, rotate.names = TRUE)
+```
 
 
+```{r Load UK aqauculture production data}
 # Read in UK aquaculture data 
 df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureProd_Eurostat_clean.csv", sep="/"), na = c("NA"))
 
 # Check for missing data
 md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)
-# Some rows with no data- omit rows with NA from the data set
-# Omit rows will NA's in 
-df_aquaProd_Eurostat_data_omit<- na.omit(df_aquaProd_Eurostat_data)
+
+# Some rows with no data- omit rows with NA from the data set so omit rows with NA 
+df_aquaProd_Eurostat_data_omit <- na.omit(df_aquaProd_Eurostat_data)
 md.pattern(df_aquaProd_Eurostat_data_omit, rotate.names = TRUE)
 
 # Rename species column in aquaculture data set 
@@ -100,6 +104,11 @@ md.pattern(UK_seafood_data, rotate.names = T)
 # Identify unique SpeciesTypes and SCAN entries
 unique(UK_seafood_data$SpeciesType)
 unique(UK_seafood_data$SACN)
+
+
+#
+UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data,
+                         df_trade_HMRC_data)
 
 ```
 

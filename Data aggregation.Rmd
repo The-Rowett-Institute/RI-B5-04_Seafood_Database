@@ -120,38 +120,41 @@ The spellings and grammar of some species are inconsistent between data sets e.g
 
 
 ```{r Rename selected individual species names}
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_UK_landings_09_20$SpeciesNEW <- df_UK_landings_09_20$Species
+
 # Replace all occurrences of a certain pattern i.e. the species names
-df_UK_landings_09_20$Species <- str_replace_all(df_UK_landings_09_20$Species, 
-                   c("Blue Whiting" = "Blue whiting", "Cockles" = "Cockle", "Crabs" = "Crabs",
-                  "Horse Mackerel" = "Horse mackerel", "Lobsters" = "Lobster", 
-                  "Monks or Anglers" = "Monks", "Mussels" = "Mussel", 
-                  "Pollack (Lythe)" = "Pollock", "Sand Eels" = "Sandeel", 
-                  "Sardines" = "Sardine", "Shrimps and Prawns" = "Shrimp", 
-                  "Skates and Rays" = "Skate", "Whelks" = "Whelk", 
-                  "Other Demersal (b)" = "Other_demersal", "Other Pelagic" == "Other_elagic"))
+df_UK_landings_09_20$SpeciesNEW <- str_replace_all(df_UK_landings_09_20$SpeciesNEW, 
+                   c("Blue Whiting" = "Blue whiting", "Cockles" = "Cockle", 
+                     "Crabs" = "Crab", "Horse Mackerel" = "Horse mackerel",
+                     "Lobsters" = "Lobster", "Lemon sole" = "Sole", 
+                     "Monks or Anglers" = "Monks", "Mussels" = "Mussel", 
+                     "Pollack (Lythe)" = "Pollock", "Sand Eels" = "Sandeel",
+                     "Sardines" = "Sardine", "Shrimps and Prawns" = "Shrimp", 
+                     "Skates and Rays" = "Ray", "Whelks" = "Whelk", 
+                     "Bass" = "Seabass", "Other Demersal (b)" = "Other demersal",
+                     "Other Pelagic" = "Other pelagics", "Scallops" = "Scallop",
+                     "Other Shellfish" = "Other shellfish"))
 
 # Identify unique species  
-unique(df_UK_landings_09_20$Species)
-
+unique(df_UK_landings_09_20$SpeciesNEW)
 ```
-
 
 
 ```{r Provide greater granularity in the SpeciesType column}
 # Provide greater granularity in the "SpeciesType" column for shellfish
 UK_shellfishLandings_09_20 <- subset(df_UK_landings_09_20, SpeciesType == "Shellfish") 
-
 # Default "SpeciesType" to "Mollusc"
 UK_shellfishLandings_09_20$SpeciesType <- "Mollusc"
 
 # Allocate crustaceans 
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% c("Crab", "Lobster", "Nephrops", "Shrimp")] <- "Crustacean"
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Crab", "Lobster", "Nephrops", "Shrimp")] <- "Crustacean"
 
 # Allocate cephalopods
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
 
 # Allocate other shellfish
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$Species %in% "Other Shellfish"] <- "OtherShellfish"
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% "Other Shellfish"] <- "OtherShellfish"
 
 # Combine with data set 
 # Subset finfish landings 
@@ -184,7 +187,7 @@ df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Freshwater"] <-
 
 
 ```{r Apply conversion factor to calculate edible portion of seafood}
-# Classify species as finfish or shellfish. New column for conversion name
+# Classify species as finfish or shellfish and create a new column for stating the conversion factor
 # Select shellfish
 df_UK_landings_200920$CN[df_UK_landings_200920$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish")] <- "Shellfish"
 
@@ -220,7 +223,9 @@ df_UK_landings_200920$Flag <- "ConV1, ConV2"
 ```
 
 ```{r Select desired variables for the data set}
-df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "Species", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
+# Identify column names
+colnames(df_UK_landings_200920)
+df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
 
 ```
 
@@ -247,17 +252,27 @@ md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
 
 ```{r Transform data set (2009 to 2020)}
 # Change structure of the data set. id.vars states the number of columns not to be stacked
-df_EUROSTAT_UKFarmed<-melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTATSpecies", "Species", "SimplifiedSpecies", "SpeciesType"), variable.name="Year", value.name="Value")
+df_EUROSTAT_UKFarmed <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTATSpecies", "Species", "SimplifiedSpecies", "SpeciesType"), variable.name="Year", value.name="Value")
 ```
 
 
 ```{r Rename selected individual species}
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$SimplifiedSpecies
+
+
 # Replace all occurrences of a certain pattern i.e. the species names
-df_EUROSTAT_UKFarmed$SimplifiedSpecies <- 
-  str_replace_all(df_EUROSTAT_UKFarmed$SimplifiedSpecies, 
-                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel"))
+df_EUROSTAT_UKFarmed$SpeciesNEW <- 
+  str_replace_all(df_EUROSTAT_UKFarmed$SpeciesNEW, 
+                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel", 
+                     "Marine crustaceans" = "Other crustaceans",
+                     "Freshwater fishes" = "Other freshwater fish", 
+                     "Salmonids" = "Other salmonids", "Marine fishes" = 
+                     "Other marine fishes", "Bream" = "Seabream"))
 
 # Identify unique species  
+unique(df_EUROSTAT_UKFarmed$SpeciesNEW)
+unique(df_EUROSTAT_UKFarmed$Species)
 unique(df_EUROSTAT_UKFarmed$SimplifiedSpecies)
 ```
 
@@ -307,7 +322,7 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 
 ```{r Select desired variables for the data set}
 colnames(df_EUROSTAT_UKFarmed)
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SimplifiedSpecies", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
 
 
 ```
@@ -319,30 +334,26 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_cleaned_UKFarmed, file = 
             paste(filepath,"FarmedData_Eurostat_clean.csv", sep=""))
 
-
 ```
 
+## Delete later
 
-```{r Check to see if species columns successfully merge}
-# Rename framed column 
-colnames(df_cleaned_UKFarmed)[colnames(df_cleaned_UKFarmed) == 'SimplifiedSpecies'] <- 'Species' 
+```{r DELETE LATER. Check to see if species columns successfully merge}
 
-colnames(df_cleaned_UKFarmed)[colnames(df_cleaned_UKFarmed) == "SimplifiedSpecies"] <- "Species_A"
-colnames(df_cleaned_UK_landings_200920)[colnames(df_cleaned_UK_landings_200920) == "Species"] <- "Species_A"
-
-rename(df_cleaned_UKFarmed, SpeciesA = SimplifiedSpecies)
-
+# Compare column names 
 colnames(df_cleaned_UKFarmed)
+colnames(df_cleaned_UK_landings_200920)
 
-colnames(df_aquaProd_Eurostat_data_omit) <- c("...1", "SACN","SpeciesType", "Species","Year","ValueGramsCapitaWeek", "DataSource","DataSet","Commodity", "Flag")
+# Merge data frames by species name and year
+check_names <- merge(df_cleaned_UK_landings_200920, df_cleaned_UKFarmed, 
+                     by = c("SpeciesNEW", "Year"))
 
-
-check_names <- merge(df_cleaned_UK_landings_200920, df_cleaned_UKFarmed, by = "Species_A", all)
-unique(check_names$Species)
+# Check the species names that overlap between the two data sets
+unique(check_names$SpeciesNEW)
+unique(df_cleaned_UK_landings_200920$SpeciesNEW)
+unique(df_cleaned_UKFarmed$SpeciesNEW)
 
 ```
-
-
 
 
 ## Trade (HMRC)
@@ -357,22 +368,22 @@ str(df_trade_HMRC_data)
 ```
 
 ```{r Rename selected individuial species}
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_trade_HMRC_data$SpeciesNEW <- df_trade_HMRC_data$Species
+
 # Replace all occurrences of a certain pattern i.e. the species names
-df_trade_HMRC_data$SimplifiedSpecies <- 
-  str_replace_all(df_trade_HMRC_data$SimplifiedSpecies, 
-                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel"))
+df_trade_HMRC_data$SpeciesNEW <- 
+  str_replace_all(df_trade_HMRC_data$SpeciesNEW, 
+                   c("Tuna, bluefin" = "Tuna", 
+                   "Caviar, livers and roes" = "Other fishProducts"))
 
-# Identify unique species  
-unique(df_trade_HMRC_data$SimplifiedSpecies)
-
-
+# Identify unique species names in trade data  
+unique(df_trade_HMRC_data$SpeciesNEW)
 
 ```
 
 
-
-
-```{r Calcualte grams available per capita}
+```{r Calculate grams available}
 # Create new column converting values from 1000 tonnes to grams
 df_trade_HMRC_data$ValueGrams <- (df_trade_HMRC_data$Value*1000)*1000000
 
@@ -400,10 +411,11 @@ df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Invertebrate"] <- "Un
 
 
 ```{r Select desired values}
-# Rename data supplier 
-df_trade_HMRC_data <- rename(df_trade_HMRC_data, DataSource = DataSupplier)
+# Identify columns
+colnames(df_trade_HMRC_data)
 
-new_df_trade_HMRC_data<- df_trade_HMRC_data[c("SACN", "SpeciesType", "Species","Year", "ValueGramsCapitaWeek", "DataSource", "DataSet", "Commodity", "Flag")]
+# Select desired columns
+df_clean_trade_HMRC <- df_trade_HMRC_data[c("SACN", "SpeciesType", "SpeciesNEW","Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
 
 ```
 
@@ -411,9 +423,32 @@ new_df_trade_HMRC_data<- df_trade_HMRC_data[c("SACN", "SpeciesType", "Species","
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(new_df_trade_HMRC_data, file = paste(filepath,"Trade_HMRC_clean.csv", sep=""))
+write.csv(df_clean_trade_HMRC, file = paste(filepath,"Trade_HMRC_clean.csv", sep=""))
 
 ```
+
+
+## Delete later
+
+```{r DELETE LATER. Check to see if species columns successfully merge}
+# Compare column names 
+colnames(df_cleaned_UKFarmed)
+colnames(df_cleaned_UK_landings_200920)
+colnames(df_clean_trade_HMRC)
+
+# Merge data frames by species name and year
+check_names_again <- merge(df_cleaned_UK_landings_200920, df_clean_trade_HMRC, 
+                     by = c("SpeciesNEW", "Year"))
+
+# to check: monk, pollock, 
+
+# Check the species names that overlap between the two data sets
+unique(check_names_again$SpeciesNEW)
+unique(df_cleaned_UK_landings_200920$SpeciesNEW)
+unique(df_clean_trade_HMRC$SpeciesNEW)
+```
+
+
 
 
 ## UK fish consumption (NDNS)
