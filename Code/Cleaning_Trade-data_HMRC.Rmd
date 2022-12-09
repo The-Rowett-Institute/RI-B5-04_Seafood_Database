@@ -1,5 +1,5 @@
 ---
-title: "Loading_HMRC-data-trial_DELETE-LATER"
+title: "Cleaning of the trade data set from the HMRC"
 author: "B. Scheliga, A. Lofstedt"
 date: "`r Sys.Date()`"
 output:
@@ -12,9 +12,9 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Part ???: Cleaning HMRC Trade data to map UK seafood supply chains 
+## Part ???: Cleaning of the trade data set (imports & exports) from the HMRC 
 
-This R Markdown document outlines how the HRMC trade data was complied and cleaned. The HRMC trade data ranges from 2009 - 2019. 
+This R Markdown document outlines how the trade data set from HRMC was processed and cleaned. The data set details the imports and exports of seafood products between the years 2009 - 2019. 
 
 The justification for the data included in this data set can be found in the supporting excel document.  
 
