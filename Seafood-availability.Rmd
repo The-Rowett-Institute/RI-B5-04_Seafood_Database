@@ -11,10 +11,10 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Result 1: UK net seafood availability 
 
-Average UK net per capita seafood supplies between 2009 and 2019 were derived from data on imports and production (from both capture fisheries and aquaculture), accounting for exports. UK fish dietary recommendations were compared with national seafood supplies. 
+UK seafood supplies between 2009 and 2019 were derived from data on imports and production (from both capture fisheries and aquaculture), accounting for exports. UK fish dietary recommendations were compared with national seafood supplies. 
 
 The data set created from the RESAS B5 project was used to calculate UK seafood availability. 
-Seafood production (aquaculture, capture), trade (imports and exports), consumption and purchasing data were collated from separate data sources. Appropriate conversion factors were previously applied (live weight to processed weight) and converted from tonnes to grams/capita/ day.
+Seafood production (aquaculture, capture), trade (imports and exports), consumption and purchasing data were collated from separate data sources. Appropriate conversion factors were previously applied (live weight to processed weight). Data are provided in grams. grams/capita/day.
 
 ### Preparation 
 
@@ -42,7 +42,8 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 
 ```
 
-# Load in cleaned data
+
+### Load in cleaned data
 
 ```{r Load UK capture production data}
 # Read in UK capture production data 
@@ -65,15 +66,17 @@ md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)
 df_aquaProd_Eurostat_data_omit <- na.omit(df_aquaProd_Eurostat_data)
 md.pattern(df_aquaProd_Eurostat_data_omit, rotate.names = TRUE)
 
-# Rename species column in aquaculture data set 
-#df_aquaProd_Eurostat_data_omit <- rename(df_aquaProd_Eurostat_data_omit, Species = #SimplifiedSpecies)
-#colnames(df_aquaProd_Eurostat_data_omit) <- c("...1", "SACN","SpeciesType", #"Species","Year","ValueGramsCapitaWeek", "DataSource","DataSet","Commodity", "Flag")
+```
 
 
+```{r Load UK trade data}
 # Read in UK trade data (further cleaned)
 df_trade_HMRC_data <- vroom(file=paste(filepath,"Trade_HMRC_clean.csv", sep="/"))
 md.pattern(df_trade_HMRC_data, rotate.names =  TRUE)
+```
 
+
+```{r Load UK fish purchases}
 # Read in UK household purchasing data 
 df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_clean.csv", sep="/"))
 md.pattern(df_housePurch_DEFRA_data, rotate.names = TRUE)
@@ -91,9 +94,6 @@ UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data_omit,
                          df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data,
                          df_trade_HMRC_data)
 
-# Check structure of data set
-str(UK_seafood_data)
-
 # Check for missing values
 md.pattern(UK_seafood_data, rotate.names = T)
 
@@ -101,28 +101,15 @@ md.pattern(UK_seafood_data, rotate.names = T)
 UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data,
                          df_trade_HMRC_data)
 
-```
-
-
-```{r Think about species type allocations}
-# Be clear on the allocation between species type and species. 
-
-# Remove "aquatic animals nei" from dataset- not included in dietary guidelines
-# Does this include invertebrates too and sharks etc.
-
-# Main FAO species groups include: demersal, freshwater, pelagic, cephalopods, crustaceans,  molluscs an other.
-
-# We have: Demersal, Pelagic, Mollusc, Crustacean, Cephalopod, OtherShellfish, 
-# Freshwater, Shellfish, Unknown, OtherFishProducts, Marine fish and Invertebrates. 
-
-# What species are in "other fish products"? should these be omitted from the data set? 
-
+# Identify unique fish species
+unique(UK_seafood_data$SpeciesNEW)
 
 ```
 
 
+## Calculate edible portion of fish (grams) available per capita (g/capita/week)
 
-## Calculate edible portion of fish (grams) available per capita
+# A) by cohort 
 
 ```{r UK population by cohort}
 # Adults are recommended to consume 2 portion of fish per week (not children) so calculate adult population size 
@@ -162,15 +149,7 @@ totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
 ```
 
 
-
-## Total UK population data (Office of National Statistics)
-
-Download UK population data- need to convert per g/capita data to g/total UK total population.
-
-```{r Load data}
-# Read in UK population data 
-df_NS_UK_pop_data <- vroom(file=paste(filepath,"NS_UK_population.csv", sep="/"))
-```
+##  b) by total population size 
 
 ```{r Subset data}
 # Extract UK population data between 2009 onwards
@@ -186,43 +165,38 @@ df_clean_UK_pop$Units <- "UK-total-pop"
 df_clean_UK_pop$Data_source <- "National-statistics"
 ```
 
+Processed here:
 
-```{r Calculate grams available per capita}
+```{r Load data}
+# Read in UK population data 
+df_NS_UK_pop_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
+colnames(df_NS_UK_pop_data)
 
-# Add in annual UK population data in a separate column. Duplicate population data for each year. Number of replicates dictated by number of rows in the short and narrow data set.
-#df_UK_landings_200920$PopSize<- rep(c(df_clean_UK_pop$UKPOP), each = nrow(df_UK_landings_08_12_data))
+# Select desired columns from data set
+df_NS_UK_pop <- df_NS_UK_pop_data[c("CDID", "UKPOP")]
 
-# Convert grams/year to g/capita/year
-#df_UK_landings_200920$ValueGramsCapitaYear<- #df_UK_landings_200920$ValueGrams/df_UK_landings_200920$PopSize
-
-# Convert grams/year to g/capita/week
-#df_UK_landings_200920$ValueGramsCapitaWeek<- df_UK_landings_200920$ValueGramsCapitaYear/52
+# Rename columns 
+colnames(df_NS_UK_pop) <- c("Year", "UKPop")
+str(df_NS_UK_pop)
 
 ```
 
-```{r}
-# Number of seafood entries differ per year so need to create a pipe
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2020"] <- 67081000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2019"] <- 66796800
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2018"] <- 66435600
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2017"] <- 66040200
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2016"] <- 65648100
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2015"] <- 65110000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2014"] <- 64596800
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2013"] <- 64105700
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2012"] <- 63705000
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2011"] <- 63285100
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2010"] <- 62759500
-df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2009"] <- 62260500
 
-# Make popsize column numerical value
-df_trade_HMRC_data$popSize <- as.numeric(df_trade_HMRC_data$popSize)
+```{r Calculate grams available per capita}
+# Add in annual UK population data to the data frame as a new column. Duplicate population data for each year. 
 
-# Calculate grams/capita/year
-df_trade_HMRC_data$ValueGramsCapitaYear <- df_trade_HMRC_data$ValueGrams/df_trade_HMRC_data$popSize
+# Match population size per year to each year in the merged seafood data frame
+seafood_W_pop <- merge(UK_seafood_data, df_NS_UK_pop, by = "Year")
 
-# Calculate grams/capita/week
-df_trade_HMRC_data$ValueGramsCapitaWeek <- df_trade_HMRC_data$ValueGramsCapitaYear/52
+colnames(seafood_W_pop)
+
+# Convert grams/year to g/capita/year
+seafood_W_pop$ValueGramsCapitaYear <- seafood_W_pop$ValueGrams/seafood_W_pop$UKPop
+
+# Convert grams/year to g/capita/week
+seafood_W_pop$ValueGramsCapitaWeek<- seafood_W_pop$ValueGramsCapitaYear/52
+
+df_UKseafood_200918 <- seafood_W_pop
 
 ```
 
@@ -391,55 +365,6 @@ df_summedSACNTypes <- join_all(SACN_dfs, by = c("SACNType", "Year"))
 ```
 
 
-## Figure 5. Identify the top 5 produced (capture fisheries) seafood species in the UK
-
-```{r Idenitfying the most produced (capture fisheries) seafood species in the UK each year}
-capture09 <- subset(df_captProd_NS_data, Year == 2009)
-arrange(capture09, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
-
-capture10 <- subset(df_captProd_NS_data, Year == 2010)
-arrange(capture10, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
-
-capture11 <- subset(df_captProd_NS_data, Year == 2011)
-arrange(capture11, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
-
-capture12 <- subset(df_captProd_NS_data, Year == 2012)
-arrange(capture12, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
-
-capture13 <- subset(df_captProd_NS_data, Year == 2013)
-arrange(capture13, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, scallops, crabs
-
-capture14 <- subset(df_captProd_NS_data, Year == 2014)
-arrange(capture14, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, scallops, crabs 
-
-capture15 <- subset(df_captProd_NS_data, Year == 2015)
-arrange(capture15, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, crabs 
-
-capture16 <- subset(df_captProd_NS_data, Year == 2016)
-arrange(capture16, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, cod 
-
-capture17 <- subset(df_captProd_NS_data, Year == 2017)
-arrange(capture17, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, cod 
-
-capture18 <- subset(df_captProd_NS_data, Year == 2018)
-arrange(capture18, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, blue whiting 
-
-capture19 <- subset(df_captProd_NS_data, Year == 2019)
-arrange(capture19, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, nephrops whiting 
-
-capture20 <- subset(df_captProd_NS_data, Year == 2020)
-arrange(capture18, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, blue whiting 
-
-
-# Subset the most caught seafood species as identified from above
-top5Capture <- subset(df_captProd_NS_data, Species == "Mackerel" | Species == "Herring" | Species == "Haddock")
-
-# Plot capture production between 2009 and 2020
-plot(ValueGramsCapitaWeek ~ Year, data= top5Capture, pch= 20, col= c("blue", "green", "red"), cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood produced (g/capita/week)", xlab = "Year", ylim = c(0, 25))
-
-```
-
-
 
 ## Figure 6. Identify the top 5 produced (capture and aquculture fisheries) seafood species in the UK
 
@@ -495,7 +420,58 @@ plot(ValueGramsCapitaWeek ~ Year, data= top5TotProduction, pch= 20, col= c("blue
 ```
 
 
-## Figure 7. Mapping nutrient availability 
+
+
+
+## Calculate individual seafood commodities supplied to the UK between 2009 and 2019 
+
+```{r Calculate average seafood supplied to the UK by species}
+# Separate imports and export data
+seafoodImports <- subset(df_trade_HMRC_data, Commodity == "Imports")
+seafoodExports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+
+# Combine data frames by species name and year. Creates short and wide data frame
+# Create a list all data frames to join together. Only desired columns (4 to 6) selected.
+seafood_dfs <- list(df_captProd_NS_data[,4:6], df_aquaProd_Eurostat_data_omit[,4:6], seafoodImports[,4:6], seafoodExports[,4:6])
+
+# Join data frames by species and year
+df_UKseafood_200918 <- join_all(seafood_dfs, by = c("SpeciesNEW", "Year")) 
+
+# Rename columns in new data frame
+colnames(df_UKseafood_200918) <- c("SpeciesNEW", "Year", "ValueCapture", "ValueAqua", "ValueImport", "ValueExport")
+
+# Convert NA to zeros (otherwise availability cannot be calculated)  
+df_UKseafood_200918[is.na(df_UKseafood_200918)] <- 0
+
+# Create new column to calculate availability for each species
+df_UKseafood_200918$available <- (df_UKseafood_200918$ValueCapture + df_UKseafood_200918$ValueAqua + df_UKseafood_200918$ValueImport) - df_UKseafood_200918$ValueExport
+```
+
+
+## Figure 8. Boxplot of variability in individual seafood commodities supplied to the UK between 2009 and 2018
+
+```{r Plot boxplot of annual variability of individual seafood commodities supplied to the UK}
+
+# Plot variability in seafood supplied by species between 2009 and 2018
+order(df_UKseafood_200918$available)
+order_seafood <- df_UKseafood_200918 %>% arrange(available)
+boxplot(available ~ SpeciesNEW, data = order_seafood, col = "lightgray", 
+        ylab = "Seafood supplied (g/capita/week)", xlab = "", las = 3)
+
+
+# Plot box plot with most to least available seafood supplied
+# Reorder a predictor variable (species) by a function applied to the response variable (seafood availability)
+
+# For descending order simply add a minus sign in front of the response variable
+bymedian <- with(df_UKseafood_200918, reorder(SpeciesNEW, -available, median))
+
+# Plot re-order boxplot from most to least available seafood supplied
+boxplot(available ~ bymedian, data = df_UKseafood_200918, ylab= "seafood availability
+        (g/capita/week)", xlab= "", las= 2, col= "lightgrey")
+
+```
+
+## Figure 9. Mapping nutrient availability 
 
 Here we map the nutrient content of the 5 most produced fish species in the UK between 2009 and 2018. The nutrients mapped included omega-3, calcium, iron, selenium, and zinc. Estimated nutrient data was obtained from PHE. 
 
@@ -504,51 +480,79 @@ Here we map the nutrient content of the 5 most produced fish species in the UK b
 ```
 
 
-## Figure 8. Seafood availabilty by species and species type
+## Not needed 
 
-```{r Seafood availabilty by species and species type}
+## Figure 5. Identify the top 5 produced (capture fisheries) seafood species in the UK
 
-# Separate imports and export data
-seafoodImports <- subset(df_trade_HMRC_data, Commodity == "Imports")
-seafoodExports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+```{r Idenitfying the most produced (capture fisheries) seafood species in the UK each year}
+capture09 <- subset(df_captProd_NS_data, Year == 2009)
+arrange(capture09, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
 
-# Merge aggregated data by species name and year
-# List all data frames to join together 
-seafood_dfs <- list(df_captProd_NS_data, df_aquaProd_Eurostat_data_omit, seafoodImports, seafoodExports)
+capture10 <- subset(df_captProd_NS_data, Year == 2010)
+arrange(capture10, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
 
-# Join data frames by species and year
-df_UKseafood_200918 <- join_all(seafood_dfs, by = c("SpeciesNEW", "Year")) 
-str(df_summedSACNTypes)
+capture11 <- subset(df_captProd_NS_data, Year == 2011)
+arrange(capture11, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
+
+capture12 <- subset(df_captProd_NS_data, Year == 2012)
+arrange(capture12, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, nephrops, scallops
+
+capture13 <- subset(df_captProd_NS_data, Year == 2013)
+arrange(capture13, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, scallops, crabs
+
+capture14 <- subset(df_captProd_NS_data, Year == 2014)
+arrange(capture14, desc(ValueGramsCapitaWeek)) # mackerel, haddock, herring, scallops, crabs 
+
+capture15 <- subset(df_captProd_NS_data, Year == 2015)
+arrange(capture15, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, crabs 
+
+capture16 <- subset(df_captProd_NS_data, Year == 2016)
+arrange(capture16, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, cod 
+
+capture17 <- subset(df_captProd_NS_data, Year == 2017)
+arrange(capture17, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock scallops, cod 
+
+capture18 <- subset(df_captProd_NS_data, Year == 2018)
+arrange(capture18, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, blue whiting 
+
+capture19 <- subset(df_captProd_NS_data, Year == 2019)
+arrange(capture19, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, nephrops whiting 
+
+capture20 <- subset(df_captProd_NS_data, Year == 2020)
+arrange(capture18, desc(ValueGramsCapitaWeek)) # mackerel, herring, haddock, cod, blue whiting 
 
 
-## Up to here. Need to seclect specific column and make dataframe long and thin to succesfully aggregate apecies. 
+# Subset the most caught seafood species as identified from above
+top5Capture <- subset(df_captProd_NS_data, Species == "Mackerel" | Species == "Herring" | Species == "Haddock")
+
+# Plot capture production between 2009 and 2020
+plot(ValueGramsCapitaWeek ~ Year, data= top5Capture, pch= 20, col= c("blue", "green", "red"), cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood produced (g/capita/week)", xlab = "Year", ylim = c(0, 25))
 
 
-# Select desired columns from data frame
-wanted_seafoodCols <- df_summedSACNTypes[,c(1,2,3,4,5,6,9,14,15,22,25,30,33)]
 
-# Rename columns in data frame
-colnames(wanted_seafoodCols) <- c("...1", "SACN","SpeciesType", "SpeciesNEW", "Year", "ValueCapture","CommodityCapture", "ValueAqua","CommodityAqua", "ValueImport","CommodityImport", "ValueExport","CommodityExport")
+# Number of replicates dictated by number of rows in the short and narrow data set.
+UK_seafood_data$PopSize <- rep(c(df_NS_UK_pop_data$UKPOP), each = nrow(df_UK_landings_08_12_data))
 
-# Make data frame long and narrow
 
-# Calculate availability for each species
-wanted_seafoodCols$available <- (wanted_seafoodCols$ValueCapture + wanted_seafoodCols$ValueAqua + wanted_seafoodCols$ValueImport) - wanted_seafoodCols$ValueExport
+```{r}
+# Number of seafood entries differ per year so need to create a pipe
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2020"] <- 67081000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2019"] <- 66796800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2018"] <- 66435600
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2017"] <- 66040200
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2016"] <- 65648100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2015"] <- 65110000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2014"] <- 64596800
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2013"] <- 64105700
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2012"] <- 63705000
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2011"] <- 63285100
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2010"] <- 62759500
+df_trade_HMRC_data$popSize[df_trade_HMRC_data$Year %in% "2009"] <- 62260500
 
-str(wanted_seafoodCols)
+# Make popsize column numerical value
+#df_trade_HMRC_data$popSize <- as.numeric(df_trade_HMRC_data$popSize)
 
-# Aggregate data by species
-seafood_avg <- aggregate(wanted_seafoodCols$available, by = "SpeciesNEW", FUN = mean)
-
-seafood_avg_by_species <- aggregate(wanted_seafoodCols$available, by = 
-                      list(wanted_seafoodCols$SpeciesNEW, wanted_seafoodCols$Year),
-                      mean)
-
-boxplot(wanted_seafoodCols)
-
-SACN_captProd <- aggregate(df_captProd_NS_data$ValueGramsCapitaWeek, 
-                                      by = list(df_captProd_NS_data$SACN,
-                                                df_captProd_NS_data$Year), sum)
+```
 
 
 ```
