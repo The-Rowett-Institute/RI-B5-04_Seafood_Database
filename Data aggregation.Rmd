@@ -2,7 +2,7 @@
 ---
 title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '29/11/2022'
+date: '13/12/2022'
 output: html_document
 ---
 
@@ -136,6 +136,13 @@ df_UK_landings_09_20$SpeciesNEW <- str_replace_all(df_UK_landings_09_20$SpeciesN
                      "Other Pelagic" = "Other pelagics", "Scallops" = "Scallop",
                      "Other Shellfish" = "Other shellfish"))
 
+# str_replace_all() does not work with brackets
+
+# Use inner join 
+# Merge data sets by species
+
+
+
 # Identify unique species  
 unique(df_UK_landings_09_20$SpeciesNEW)
 ```
@@ -200,8 +207,7 @@ df_UK_landings_200920$CF[df_UK_landings_200920$CN == "Shellfish"] <- 0.28
 df_UK_landings_200920$CF[df_UK_landings_200920$CN == "Finfish"] <- 0.49
 
 # Create new column and apply conversion factors values
-df_UK_landings_200920$CFValue<-df_UK_landings_200920$Value*
-  df_UK_landings_200920$CF
+df_UK_landings_200920$CFValue <- df_UK_landings_200920$Value * df_UK_landings_200920$CF
 
 ```
 
@@ -210,7 +216,6 @@ df_UK_landings_200920$CFValue<-df_UK_landings_200920$Value*
 # Convert raw value from 000's tonnes to grams 
 df_UK_landings_200920$ValueGrams<- (df_UK_landings_200920$CFValue*1000)*1000000
 ```
-
 
 
 ```{r Add additional variables to data set}
@@ -268,7 +273,8 @@ df_EUROSTAT_UKFarmed$SpeciesNEW <-
                      "Marine crustaceans" = "Other crustaceans",
                      "Freshwater fishes" = "Other freshwater fish", 
                      "Salmonids" = "Other salmonids", "Marine fishes" = 
-                     "Other marine fishes", "Bream" = "Seabream"))
+                     "Other marine fish", "Bream" = "Seabream", 
+                     "Rainbow trout" = "Trout"))
 
 # Identify unique species  
 unique(df_EUROSTAT_UKFarmed$SpeciesNEW)
@@ -384,7 +390,7 @@ unique(df_trade_HMRC_data$SpeciesNEW)
 
 
 ```{r Calculate grams available}
-# Create new column converting values from 1000 tonnes to grams
+# Create new column converting values from '000 tonnes to grams
 df_trade_HMRC_data$ValueGrams <- (df_trade_HMRC_data$Value*1000)*1000000
 
 ```
@@ -520,6 +526,35 @@ dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaW
 ```{r Save cleaned data}
 
 ```
+
+## UK fish consumption (NDNS)
+
+```{r Load NDNS food level data}
+# Some columns had to be cleaned
+# read NDNS consumption data (.csv)
+df_NDNS_consumption_201719_data <- vroom(file=paste(filepath,"NDNS_UK_seafood_consumption-201719.csv", sep="/"))
+
+md.pattern(df_NDNS_consumption_201719_data)
+
+unique(df_NDNS_consumption_201719_data$MainFoodGroupCode)
+
+# Subset seafood consumed. Seafood commodities identified as values: 33, 34 and 35 in "main food group code column"
+df_NDNS_seafood_consumption_201719 <- subset(df_NDNS_consumption_201719_data, MainFoodGroupCode == 33 | df_NDNS_consumption_201719_data$MainFoodGroupCode == 34| df_NDNS_consumption_201719_data$MainFoodGroupCode == 35)
+
+# Identify unique seafood names and extract as a .csv file
+b <- unique(df_NDNS_seafood_consumption_201719$FoodName)
+write.csv(b,"uniqueNDNS_consumption.csv")
+
+# Subset consumption data by year
+df_NDNS_seafood_consump_201617 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 9")
+df_NDNS_seafood_consump_201718 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 10")
+df_NDNS_seafood_consump_201819 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 11")
+
+# Look at summary of the data set
+summary(df_NDNS_seafood_consump_201617)
+
+```
+
 
 
 

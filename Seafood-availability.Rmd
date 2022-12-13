@@ -107,9 +107,9 @@ unique(UK_seafood_data$SpeciesNEW)
 ```
 
 
-## Calculate edible portion of fish (grams) available per capita (g/capita/week)
+### Calculate edible portion of fish (grams) available per capita (g/capita/week)
 
-# A) by cohort 
+##### A) by cohort 
 
 ```{r UK population by cohort}
 # Adults are recommended to consume 2 portion of fish per week (not children) so calculate adult population size 
@@ -149,7 +149,7 @@ totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
 ```
 
 
-##  b) by total population size 
+#####  b) by total population size 
 
 ```{r Subset data}
 # Extract UK population data between 2009 onwards
@@ -239,8 +239,6 @@ exports <- aggregate(list(Exports = seafoodExports$ValueGramsCapitaWeek),
                       list(Year = seafoodExports$Year), sum)
 exports <- subset(exports, Year < 2019) # up to 2018
 
-#captProd <- aggregate(df_captProd_NS_data$ValueGramsCapitaWeek, 
-#                                       by = list(df_captProd_NS_data$Year), mean)
 ```
 
 
