@@ -220,7 +220,7 @@ df_UK_landings_200920$ValueGrams<- (df_UK_landings_200920$CFValue*1000)*1000000
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_landings_200920$DataSource <- "NationalStatistics"
+df_UK_landings_200920$DataSupplier <- "NationalStatistics"
 df_UK_landings_200920$DataSet <- "UK_SeaFisheries_Statistics"
 df_UK_landings_200920$Commodity <- "Production"
 df_UK_landings_200920$Flag <- "ConV1, ConV2"
@@ -230,7 +230,7 @@ df_UK_landings_200920$Flag <- "ConV1, ConV2"
 ```{r Select desired variables for the data set}
 # Identify column names
 colnames(df_UK_landings_200920)
-df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSupplier", "Commodity", "Flag")]
 
 ```
 
@@ -319,7 +319,7 @@ df_EUROSTAT_UKFarmed$ValueGrams <- (df_EUROSTAT_UKFarmed$CFValue*1000000)
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_EUROSTAT_UKFarmed$DataSource <- "Eurostat"
+df_EUROSTAT_UKFarmed$DataSupplier <- "Eurostat"
 df_EUROSTAT_UKFarmed$DataSet <- "Aquaculture"
 df_EUROSTAT_UKFarmed$Commodity <- "Production"
 df_EUROSTAT_UKFarmed$TempRes <- "Annual"
@@ -328,7 +328,7 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 
 ```{r Select desired variables for the data set}
 colnames(df_EUROSTAT_UKFarmed)
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSupplier", "DataSet", "Commodity", "Flag")]
 
 
 ```
@@ -409,9 +409,9 @@ df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Demersal"] <- "Lean"
 df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Pelagic"] <- "Oily"
 
 # Also state unknowns
-df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "OtherFishProducts"] <- "Unknown"
-df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Marine fish"] <- "Unknown"
-df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Invertebrate"] <- "Unknown"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "OtherFishProducts"] <- "NoData"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Marine fish"] <- "NoData"
+df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Invertebrate"] <- "NoData"
 
 ```
 
@@ -421,7 +421,7 @@ df_trade_HMRC_data$SACN[df_trade_HMRC_data$SpeciesType == "Invertebrate"] <- "Un
 colnames(df_trade_HMRC_data)
 
 # Select desired columns
-df_clean_trade_HMRC <- df_trade_HMRC_data[c("SACN", "SpeciesType", "SpeciesNEW","Year", "ValueGrams", "DataSource", "DataSet", "Commodity", "Flag")]
+df_clean_trade_HMRC <- df_trade_HMRC_data[c("SACN", "SpeciesType", "SpeciesNEW","Year", "ValueGrams", "DataSupplier", "DataSet", "Commodity", "Flag")]
 
 ```
 
