@@ -2,7 +2,7 @@
 ---
 title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '13/12/2022'
+date: '15/12/2022'
 output: html_document
 ---
 
@@ -40,10 +40,25 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 ```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods", sep="") 
+# note we are able to change this to another file e.g. saving the output
+
+```
+
+
+```{r Load master main commercial species commodities translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+
+```
+
+
+```{r Specify the desired file path}
 filepath <- paste(data_dir,"RawData/csv-files", sep="") 
 # note we are able to change this to another file e.g. saving the output
 
 ```
+
 
 
 
@@ -123,28 +138,11 @@ The spellings and grammar of some species are inconsistent between data sets e.g
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_UK_landings_09_20$SpeciesNEW <- df_UK_landings_09_20$Species
 
-# Replace all occurrences of a certain pattern i.e. the species names
-df_UK_landings_09_20$SpeciesNEW <- str_replace_all(df_UK_landings_09_20$SpeciesNEW, 
-                   c("Blue Whiting" = "Blue whiting", "Cockles" = "Cockle", 
-                     "Crabs" = "Crab", "Horse Mackerel" = "Horse mackerel",
-                     "Lobsters" = "Lobster", "Lemon sole" = "Sole", 
-                     "Monks or Anglers" = "Monks", "Mussels" = "Mussel", 
-                     "Pollack (Lythe)" = "Pollock", "Sand Eels" = "Sandeel",
-                     "Sardines" = "Sardine", "Shrimps and Prawns" = "Shrimp", 
-                     "Skates and Rays" = "Ray", "Whelks" = "Whelk", 
-                     "Bass" = "Seabass", "Other Demersal (b)" = "Other demersal",
-                     "Other Pelagic" = "Other pelagics", "Scallops" = "Scallop",
-                     "Other Shellfish" = "Other shellfish"))
+# Merge data frame with MCS data frame by species name
+df_UK_landings_09_20 <- df_UK_landings_09_20 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS'))
 
-# str_replace_all() does not work with brackets
+colnames(df_UK_landings_09_20)
 
-# Use inner join 
-# Merge data sets by species
-
-
-
-# Identify unique species  
-unique(df_UK_landings_09_20$SpeciesNEW)
 ```
 
 
@@ -176,18 +174,18 @@ df_UK_landings_200920 <- rbind(UK_finfishLandings_09_20, UK_shellfishLandings_09
 
 ```{r Allocate oily/lean/shellfish}
 # Identify unique SpeciesType entries
-unique(df_UK_landings_200920$SpeciesType)
+#unique(df_UK_landings_200920$SpeciesType)
 
 # Create a new column in the data frame and allocate oily/lean/shellfish classification
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Crustacean"] <- "Shellfish"
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Mollusc"] <- "Shellfish"
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Cephalopod"] <- "Shellfish"
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "OtherShellfish"] <- "Shellfish"
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Demersal"] <- "Lean"
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Pelagic"] <- "Oily"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Crustacean"] <- "Shellfish"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Mollusc"] <- "Shellfish"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Cephalopod"] <- "Shellfish"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "OtherShellfish"] <- #"Shellfish"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Demersal"] <- "Lean"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Pelagic"] <- "Oily"
 
 # No freshwater fish? 
-df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Freshwater"] <- "Oily"
+#df_UK_landings_200920$SACN[df_UK_landings_200920$SpeciesType == "Freshwater"] <- "Oily"
 
 ```
 
@@ -224,6 +222,7 @@ df_UK_landings_200920$DataSupplier <- "NationalStatistics"
 df_UK_landings_200920$DataSet <- "UK_SeaFisheries_Statistics"
 df_UK_landings_200920$Commodity <- "Production"
 df_UK_landings_200920$Flag <- "ConV1, ConV2"
+
 
 ```
 
@@ -1190,5 +1189,22 @@ df_trade_HMRC_data$ValueGramsCapitaYear <- df_trade_HMRC_data$ValueGrams/df_trad
 # Calculate grams/capita/week
 df_trade_HMRC_data$ValueGramsCapitaWeek <- df_trade_HMRC_data$ValueGramsCapitaYear/52
 
+
+
+# Replace all occurrences of a certain pattern i.e. the species names
+df_UK_landings_09_20$SpeciesNEW <- str_replace_all(df_UK_landings_09_20$SpeciesNEW, 
+                   c("Blue Whiting" = "Blue whiting", "Cockles" = "Cockle", 
+                     "Crabs" = "Crab", "Horse Mackerel" = "Horse mackerel",
+                     "Lobsters" = "Lobster", "Lemon sole" = "Sole", 
+                     "Monks or Anglers" = "Monks", "Mussels" = "Mussel", 
+                     "Pollack (Lythe)" = "Pollock", "Sand Eels" = "Sandeel",
+                     "Sardines" = "Sardine", "Shrimps and Prawns" = "Shrimp", 
+                     "Skates and Rays" = "Ray", "Whelks" = "Whelk", 
+                     "Bass" = "Seabass", "Other Demersal (b)" = "Other demersal",
+                     "Other Pelagic" = "Other pelagics", "Scallops" = "Scallop",
+                     "Other Shellfish" = "Other shellfish"))
+
+
+# str_replace_all() does not work with brackets
 ```
 
