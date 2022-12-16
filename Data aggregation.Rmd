@@ -134,7 +134,7 @@ df_UK_landings_09_20 <- rbind(df_UK_landings_200911_long, df_UK_landings_201216_
 The spellings and grammar of some species are inconsistent between data sets e.g. "Blue whiting" v.s. "Blue Whiting; "Crab" v.s. "Crabs". Need to make species names consistent. 
 
 
-```{r Rename selected individual species names}
+```{r Rename selected individual species names and provide species types}
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_UK_landings_09_20$SpeciesNEW <- df_UK_landings_09_20$Species
 
@@ -229,7 +229,8 @@ df_UK_landings_200920$Flag <- "ConV1, ConV2"
 ```{r Select desired variables for the data set}
 # Identify column names
 colnames(df_UK_landings_200920)
-df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSource", "DataSupplier", "Commodity", "Flag")]
+df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("RevisedMCS", "Year", "ValueGrams", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST",
+"WWF_2022_ST", "SACN","DataSet", "DataSupplier", "Commodity", "Flag")]
 
 ```
 
@@ -247,56 +248,63 @@ write.csv(df_cleaned_UK_landings_200920, file = paste(filepath,"ProductionData_N
 
 ```{r Load data (2009 to 2020)}
 # Read in .csv file 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920.csv", sep="/"),na = c(":"))
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918-edit.csv", sep="/"),na = c(":"))
 
 # Check for missing values
 md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
+
+colnames(df_EUROSTAT_UK_aquaculture_data)
 
 ```
 
 ```{r Transform data set (2009 to 2020)}
 # Change structure of the data set. id.vars states the number of columns not to be stacked
-df_EUROSTAT_UKFarmed <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("EUROSTATSpecies", "Species", "SimplifiedSpecies", "SpeciesType"), variable.name="Year", value.name="Value")
+df_EUROSTAT_UKFarmed <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
 ```
 
 
-```{r Rename selected individual species}
+```{r Rename selected individual species and provide species types}
+
 # Duplicate species name column (duplicated column entries to be duplicated)
-df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$SimplifiedSpecies
+df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$Species
+
+# Merge data frame with MCS data frame by species name
+df_EUROSTAT_UKFarmed <- df_EUROSTAT_UKFarmed %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS'))
+
+### 
+# Duplicate species name column (duplicated column entries to be duplicated)
+#df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$SimplifiedSpecies
 
 
 # Replace all occurrences of a certain pattern i.e. the species names
-df_EUROSTAT_UKFarmed$SpeciesNEW <- 
-  str_replace_all(df_EUROSTAT_UKFarmed$SpeciesNEW, 
-                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel", 
-                     "Marine crustaceans" = "Other crustaceans",
-                     "Freshwater fishes" = "Other freshwater fish", 
-                     "Salmonids" = "Other salmonids", "Marine fishes" = 
-                     "Other marine fish", "Bream" = "Seabream", 
-                     "Rainbow trout" = "Trout"))
-
-# Identify unique species  
-unique(df_EUROSTAT_UKFarmed$SpeciesNEW)
-unique(df_EUROSTAT_UKFarmed$Species)
-unique(df_EUROSTAT_UKFarmed$SimplifiedSpecies)
+#df_EUROSTAT_UKFarmed$SpeciesNEW <- 
+#  str_replace_all(df_EUROSTAT_UKFarmed$SpeciesNEW, 
+#                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel", 
+#                     "Marine crustaceans" = "Other crustaceans",
+#                     "Freshwater fishes" = "Other freshwater fish", 
+#                     "Salmonids" = "Other salmonids", "Marine fishes" = 
+#                     "Other marine fish", "Bream" = "Seabream", 
+#                     "Rainbow trout" = "Trout"))
 ```
 
 
 ```{r Allocate oily/lean/shellfish}
 # Create a new column with fish properties
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish" )]<- "Shellfish"
+#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish" )]<- "Shellfish"
 
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Lean"
-df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oily"
+#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
+#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Lean"
+#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oily"
 
 ```
 
 
 ```{r Apply conversion factor to calculate edible portion of seafood}
+
 # Classify species as finfish or shellfish. New column for conversion name
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc")] <- "Shellfish"
-df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Freshwater", "Demersal")] <- "Finfish"
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$FAO_ST %in% c("Crustaceans", "Molluscs", "Other molluscs and aquatic invertebrates")] <- "Shellfish"
+
+df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$FAO_ST %in% c("Freshwater fish", "Demersal fish", "Other marine fish")] <- "Finfish"
 
 # Conversion factors used to convert whole fish weight to edible weight
 # State average CF finfish: 0.49; shellfish: 0.28 
@@ -326,7 +334,10 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 ```
 
 ```{r Select desired variables for the data set}
+# Show column names in the data set
 colnames(df_EUROSTAT_UKFarmed)
+
+# Select desired variables in the data set
 df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSupplier", "DataSet", "Commodity", "Flag")]
 
 
