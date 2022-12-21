@@ -47,7 +47,7 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 
 ```{r Load UK capture production data}
 # Read in UK capture production data 
-df_captProd_NS_data <- vroom(file=paste(filepath,"ProductionData_NS_clean-edited.csv", sep="/"))
+df_captProd_NS_data <- vroom(file=paste(filepath,"CaptureData_NS_clean.csv", sep="/"))
 
 # Check for missing data
 # right column summed to be total number of rows in the data set
@@ -57,7 +57,7 @@ md.pattern(df_captProd_NS_data, rotate.names = TRUE)
 
 ```{r Load UK aqauculture production data}
 # Read in UK aquaculture data 
-df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"ProcessedDataFarmedData_Eurostat_clean.csv", sep="/"), na = c("NA"))
+df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat_clean.csv", sep="/"), na = c("NA"))
 
 # Check for missing data
 md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)

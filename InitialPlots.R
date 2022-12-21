@@ -53,6 +53,17 @@ df_summedSACNTypes
 
 # Ensure data needed for the figure is all in one data frame
 
+# Capture production 
+colnames(df_cleaned_UK_landings_200920)
 
+# Create a boxplot
+boxplot(ValueGrams ~ Year, data=df_cleaned_UK_landings_200920)
 
+# Subset mackerel 
+mac_capture <- subset(df_cleaned_UK_landings_200920, RevisedMCS == "Mackerel")
 
+plot(ValueGrams ~ Year, data = mac_capture)
+
+imports <- aggregate(list(Imports = seafoodImports$ValueGramsCapitaWeek), 
+                     list(Year = seafoodImports$Year), sum)
+imports <- subset(imports, Year < 2019) # up to 2018

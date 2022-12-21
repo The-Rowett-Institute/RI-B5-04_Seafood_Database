@@ -40,7 +40,7 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods", sep="") 
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="") 
 # note we are able to change this to another file e.g. saving the output
 
 ```
@@ -126,7 +126,8 @@ df_UK_landings_200911_long <- melt(df_UK_landings_09_11_data, id.vars = c("Speci
 
 ```{r Combine data sets: i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2021)}
 # Combine capture production data i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2021)
-df_UK_landings_09_20 <- rbind(df_UK_landings_200911_long, df_UK_landings_201216_long, 
+df_UK_landings_09_20 <- rbind(df_UK_landings_200911_long,
+                              df_UK_landings_201216_long, 
                               df_UK_landings_201720_long)
 ```
 
@@ -139,9 +140,10 @@ The spellings and grammar of some species are inconsistent between data sets e.g
 df_UK_landings_09_20$SpeciesNEW <- df_UK_landings_09_20$Species
 
 # Merge data frame with MCS data frame by species name
-df_UK_landings_09_20 <- df_UK_landings_09_20 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS'))
+df_UK_landings_09_20 <- df_UK_landings_09_20 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 
 colnames(df_UK_landings_09_20)
+colnames(MCS_translations)
 
 ```
 
@@ -269,32 +271,7 @@ df_EUROSTAT_UKFarmed <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Speci
 df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$Species
 
 # Merge data frame with MCS data frame by species name
-df_EUROSTAT_UKFarmed <- df_EUROSTAT_UKFarmed %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS'))
-
-### 
-# Duplicate species name column (duplicated column entries to be duplicated)
-#df_EUROSTAT_UKFarmed$SpeciesNEW <- df_EUROSTAT_UKFarmed$SimplifiedSpecies
-
-
-# Replace all occurrences of a certain pattern i.e. the species names
-#df_EUROSTAT_UKFarmed$SpeciesNEW <- 
-#  str_replace_all(df_EUROSTAT_UKFarmed$SpeciesNEW, 
-#                   c("Atlantic salmon" = "Salmon", "Sea mussels" = "Mussel", 
-#                     "Marine crustaceans" = "Other crustaceans",
-#                     "Freshwater fishes" = "Other freshwater fish", 
-#                     "Salmonids" = "Other salmonids", "Marine fishes" = 
-#                     "Other marine fish", "Bream" = "Seabream", 
-#                     "Rainbow trout" = "Trout"))
-```
-
-
-```{r Allocate oily/lean/shellfish}
-# Create a new column with fish properties
-#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType %in% c("Crustacean", "Mollusc", "Cephalopod", "OtherShellfish" )]<- "Shellfish"
-
-#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Freshwater"] <- "Oily"
-#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Demersal"] <- "Lean"
-#df_EUROSTAT_UKFarmed$SACN[df_EUROSTAT_UKFarmed$SpeciesType == "Pelagic"] <- "Oily"
+df_EUROSTAT_UKFarmed <- df_EUROSTAT_UKFarmed %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 
 ```
 
@@ -338,8 +315,8 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 colnames(df_EUROSTAT_UKFarmed)
 
 # Select desired variables in the data set
-df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("SACN", "SpeciesType", "SpeciesNEW", "Year", "ValueGrams", "DataSupplier", "DataSet", "Commodity", "Flag")]
-
+df_cleaned_UKFarmed <- df_EUROSTAT_UKFarmed[c("RevisedMCS", "Year", "ValueGrams", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST",
+"WWF_2022_ST", "SACN","DataSet", "DataSupplier", "Commodity", "Flag")]
 
 ```
 
