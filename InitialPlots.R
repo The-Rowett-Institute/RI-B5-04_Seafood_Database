@@ -53,16 +53,73 @@ df_summedSACNTypes
 
 # Ensure data needed for the figure is all in one data frame
 
-# Capture production 
-colnames(df_cleaned_UK_landings_200920)
+# Plot mackerel production data 
+colnames(df_captProd_NS_data)
+colnames(df_trade_HMRC_data)
 
-# Create a boxplot
-boxplot(ValueGrams ~ Year, data=df_cleaned_UK_landings_200920)
 
-# Subset mackerel 
-mac_capture <- subset(df_cleaned_UK_landings_200920, RevisedMCS == "Mackerel")
+unique(df_captProd_NS_data$RevisedMCS)
+df_captProd_NS_data <- subset(df_captProd_NS_data, Year < 2020)
+unique(df_captProd_NS_data$Year)
 
-plot(ValueGrams ~ Year, data = mac_capture)
+# Subset
+seafoodImports <- subset(df_trade_HMRC_data, Commodity == "Imports")
+seafoodExports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+
+# Subset mackerel production
+mac_capture <- subset(df_captProd_NS_data, RevisedMCS == "Mackerel")
+mac_capture$ValueKg <- mac_capture$ValueGrams / 1000
+
+plot(ValueKg ~ Year, data = mac_capture, cex.axis = 1.0, 
+     cex.lab = 1.0, ylab = "Mackerel production (Kg)", 
+     xlab = "Year", pch= 20)
+axis(side = 2)
+
+# Subset mackerel imports
+mac_imports <- subset(seafoodImports, Species == "Mackerel")
+mac_imports$ValueKg <- mac_imports$Value / 1000
+
+
+plot(ValueKg ~ Year, data = mac_imports, cex.axis = 1.0, 
+     cex.lab = 1.0, ylab = "Mackerel imports (Kg)", 
+     xlab = "Year", pch= 20)
+
+# Subset mackerel imports
+mac_exports <- subset(seafoodExports, Species == "Mackerel")
+mac_exports$ValueKg <- mac_exports$Value / 1000
+
+
+plot(ValueKg ~ Year, data = mac_exports, cex.axis = 1.0, 
+     cex.lab = 1.0, ylab = "Mackerel exports (Kg)", 
+     xlab = "Year", pch= 20)
+
+
+# Combine production and trade data
+mac_supplies <- cbind(mac_capture, mac_imports[12], mac_exports[12])
+str(mac_supplies)
+
+colnames(mac_supplies) <- c("...1", "RevisedMCS", "Year", "ValueGrams",
+"EUMOFA_ST", "FAO_ST","ISSCAAP_ST" , "Golden_2021_ST", "Bianchi_2022_ST", 
+"WWF_2022_ST", "SACN", "DataSet", "DataSupplier", "Commodity", 
+"Flag", "captureValueKg", "importsValueKg", "exportsValueKg")
+
+mac_supplies$supplied <- (mac_supplies$captureValueKg +
+                            mac_supplies$importsValueKg) - mac_supplies$exportsValueKg
+
+plot(supplied ~ Year, data = mac_supplies, cex.axis = 1.0, 
+     cex.lab = 1.0, ylab = "Mackerel supplied (Kg)", 
+     xlab = "Year", pch= 20)
+
+# Subset herring 
+herring_capture <- subset(df_captProd_NS_data, RevisedMCS == "Herring")
+herring_capture$ValueKg <- herring_capture$ValueGrams / 1000
+
+plot(ValueKg ~ Year, data = herring_capture, cex.axis = 1.0, 
+     cex.lab = 1.0, ylab = "Mackerel production (Kg)", 
+     xlab = "Year", pch= 20)
+axis(side = 2)
+
+# 
 
 imports <- aggregate(list(Imports = seafoodImports$ValueGramsCapitaWeek), 
                      list(Year = seafoodImports$Year), sum)
