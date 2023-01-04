@@ -1,8 +1,8 @@
 
 ---
-title: "Data-cleaning. RI-B5-04: UK seafood supply chains"
+title: "Part 1. Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '15/12/2022'
+date: '04/01/2023'
 output: html_document
 ---
 
@@ -11,13 +11,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Part 1: Cleaning data to map UK seafood supply chains 
+## Part 1: Cleaning data used to map UK seafood supply chains 
 
-This R Markdown document outlines how the data from the various data suppliers used to map UK seafood supply chains was cleaned. 
+This R markdown document outlines how the data compiled in the UK seafood database were cleaned. Data were cleaned before being added to the database as various data sets were used, often displayed in different structures and levels of granularity. 
 
-An overview and summary of the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R, the data was initially cleaned. Details describing this process can be found in the supporting excel document. We advice following this document.    
-
-The justification for the data included in this data set can be found in the supporting excel document.  
+Data on seafood production (both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2019 were sourced. A summary and justification for the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R,  data were initially cleaned to allow comparability with R. Details describing how the raw data was made to be "R-friendly" can be found in the supporting word document.    
+ 
 
 ## Preparation
 
@@ -34,37 +33,34 @@ library(stringr) # used to replace matched patterns in a string
 
 ```
 
+
 ```{r Load data, echo=TRUE}
 # Loading file path to the data into a value 
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
 ```
 
+
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="") 
 # note we are able to change this to another file e.g. saving the output
-
 ```
 
 
-```{r Load master main commercial species commodities translations}
+```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
 MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
-
 ```
 
 
 ```{r Specify the desired file path}
+# Select file path with raw data
 filepath <- paste(data_dir,"RawData/csv-files", sep="") 
-# note we are able to change this to another file e.g. saving the output
-
 ```
-
-
 
 
 ## Production
 
-UK fish production data includes data from capture fisheries and aquaculture production 
+UK seafood production data includes both data from capture fisheries and aquaculture production. 
 
 ### A) Capture fisheries (Office of National Statistics)
 
@@ -78,8 +74,8 @@ md.pattern(df_UK_landings_17_21_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2020)
 df_UK_landings_17_20_data <- df_UK_landings_17_21_data[c("SpeciesType","Species", "2017", "2018","2019", "2020")]
-
 ```
+
 
 ```{r Transform data set (2017 to 2021)}
 # Change structure of the data set 
@@ -351,6 +347,8 @@ unique(df_cleaned_UKFarmed$SpeciesNEW)
 
 ## Trade (HMRC)
 
+Trade data was sourced from the HMRC and includes both imports and exports. An updated script for cleaning the trade data can be found in a separate file. 
+
 ```{r Load data from processed data file}
 # Some edits are needed to ensure consistency with processed data sets
 
@@ -444,7 +442,9 @@ unique(df_clean_trade_HMRC$SpeciesNEW)
 
 
 
-## UK fish consumption (NDNS)
+## UK fish consumption (NDNS) OLD
+
+Below is code for cleaning an old fish consumption excel spreadsheet. This data set was not chosen due to a lack of granuality. 
 
 ```{r Load data}
 # Read in .csv file
@@ -510,22 +510,25 @@ dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaW
 ```
 
 
-```{r Save cleaned data}
-
-```
-
 ## UK fish consumption (NDNS)
+
+The fish consumption data cleaned below has greater granularity than above (consumption identified to species level). However, consumption data is only available for only three years (2017 to 2019) and the reporting year is from April to April so is not consistent with the other data sets, reported for every calendar year. 
 
 ```{r Load NDNS food level data}
 # Some columns had to be cleaned
 # read NDNS consumption data (.csv)
 df_NDNS_consumption_201719_data <- vroom(file=paste(filepath,"NDNS_UK_seafood_consumption-201719.csv", sep="/"))
 
+# Check for missing values
 md.pattern(df_NDNS_consumption_201719_data)
+```
 
+
+```{r Identify main food groups}
+# Identify unique main food groups
 unique(df_NDNS_consumption_201719_data$MainFoodGroupCode)
 
-# Subset seafood consumed. Seafood commodities identified as values: 33, 34 and 35 in "main food group code column"
+# Subset seafood commodities. Seafood commodities identified as values: 33, 34 and 35 in "main food group code column"
 df_NDNS_seafood_consumption_201719 <- subset(df_NDNS_consumption_201719_data, MainFoodGroupCode == 33 | df_NDNS_consumption_201719_data$MainFoodGroupCode == 34| df_NDNS_consumption_201719_data$MainFoodGroupCode == 35)
 
 # Identify unique seafood names and extract as a .csv file
@@ -537,19 +540,17 @@ df_NDNS_seafood_consump_201617 <- subset(df_NDNS_seafood_consumption_201719, Sur
 df_NDNS_seafood_consump_201718 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 10")
 df_NDNS_seafood_consump_201819 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 11")
 
-# Look at summary of the data set
+# Summary of data set
 summary(df_NDNS_seafood_consump_201617)
 
 ```
 
+```{r Save cleaned data}
+
+```
 
 
-
-## UK fish purchasing data (DEFRA and Kantar)
-
-### A) DEFRA family food data sets
-
-#### i) DEFRA UK purchases (both household and eating out)
+## UK fish purchases (DEFRA family food)
 
 ```{r Load data 2016 to 2020} 
 # *Error in raw data in 2015, so data from 2016 onwards used
@@ -579,7 +580,7 @@ df_DEFRA_household_201620 <- df_DEFRA_purchase_201620_data[df_DEFRA_purchase_201
 ```
 
 
-### i) Household purchases (DEFRA 2016 to 2020)
+### i) Household purchases (2016 to 2020)
 
 ```{r Allocate SpeciesType to food groups}
 # Identify unique major food groups descriptions 
@@ -624,7 +625,7 @@ dfc_DEFRA_household_201620 <- df_DEFRA_household_201620[c("SACN", "SpeciesType",
 ```
 
 
-### ii) Eating out (DEFRA 2016 to 2020)
+### ii) Eating out (2016 to 2020)
 
 ```{r Allocate SpeciesType to food groups}
 # Identify unique major food groups descriptions 
@@ -677,7 +678,7 @@ dfc_DEFRA_eatenOut_201620 <- df_DEFRA_eaten_out_201620[c("SACN", "SpeciesType", 
 ```
 
 
-#### iii) Household purchases (DEFRA 2009 to 2015)
+### iii) Household purchases (2009 to 2015)
 
 ```{r Load data (2009 to 2015)}
 # read DEFRA household data set (.csv)
@@ -787,7 +788,7 @@ unique(dfc_DEFRA_household_200920$Year)
 
 ```{r Add units and data source}
 # Create "cleaned" data frame, defining units and data source 
-dfc_DEFRA_household_200920$DataSource <- "DEFRA"
+dfc_DEFRA_household_200920$DataSupplier <- "DEFRA"
 dfc_DEFRA_household_200920$DataSet <- "Household"
 dfc_DEFRA_household_200920$Commodity <- "Purchase"
 dfc_DEFRA_household_200920$Flag <- "ConV2"
@@ -801,11 +802,10 @@ filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(dfc_DEFRA_household_200920, file =
             paste(filepath,"HouseholdPurchases_DEFRA_clean.csv", sep=""))
 
-
 ```
 
 
-#### ii) Eating out (DEFRA 2009 to 2015)
+### iv) Eating out (2009 to 2015)
 
 ```{r Load data (2009 to 2015)}
 # read DEFRA eaten out data set
@@ -911,6 +911,45 @@ write.csv(dfc_DEFRA_eatenOut_200920, file =
 
 ```
 
+## Nutrient composition data (Public Health England)
+
+Next we downloaded seafood nutrient composition data from Public Health England (PHE). This data includes the nutrient content (macro and micro nutrients) of commonly consumed fish in the UK. Composition analyses were conducted on raw and cooked fish samples.
+
+Composition analyses were conducted in 2004. Temporal changes in nutrient composition is unlikely.
+
+
+```{r Load data}
+# Read in .csv file 
+df_PHE_composition_data <- vroom(file=paste(filepath,"PHE_SeafoodNutrientContent-editedAgainAgain.csv", sep="/"), na = c("N/A", "Tr")) # Both N/A and Tr different 
+# Note that .csv file is saved as a UT8 (otherwise an error appears. Check with Bernhard the differences in the file types)
+
+# Check for missing values
+md.pattern(df_PHE_composition_data, rotate.names = TRUE)
+
+# Identify column names
+colnames(df_PHE_composition_data)
+
+```
+
+
+```{r Rename selected individual species and provide species types}
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_PHE_composition_data$SpeciesNEW <- df_PHE_composition_data$SampleDescription
+
+# Merge data frame with MCS data frame by species name
+df_PHE_composition_data <- df_PHE_composition_data %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+
+# Check data frames have merged correctly
+colnames(df_PHE_composition_data)
+unique(df_PHE_composition_data$`Data supplier`)
+
+```
+
+
+# Text below is for when the cleaned data sets are merged together
+Only species with corresponding production and trade data were extracted from the PHE data set. 
+
+Data were arranged such that each entry has corresponding nutrient data, thus nutrient composition data are replicated. 
 
 
 #### END
