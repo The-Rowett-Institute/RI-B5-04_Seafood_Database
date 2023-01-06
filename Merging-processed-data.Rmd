@@ -1,7 +1,7 @@
 ---
 title: "Merging-processed-data"
 author: "A.Lofstedt"
-date: "2022-11-01"
+date: "2023-01-06"
 output: html_document
 ---
 
@@ -18,11 +18,14 @@ This R Markdown document (part 2) outlines how the data processed is merged toge
 
 ```{r Load libraries, include=FALSE}
 # Load packages
-library(tidyr)
-library(dplyr)
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
 library(vroom) # for loading and transforming data
-library(tidyverse)
-library(reshape2)
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
 
 ```
 
@@ -31,88 +34,81 @@ library(reshape2)
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
 ```
 
+
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"ProcessedData", sep="") 
 # note we are able to change this to another file e.g. saving the output
-
 ```
 
-## Merge processed data sheets
 
-```{r Load data}
-# Read in UK capture production data 
-df_wildProd_NS_data <- vroom(file=paste(filepath,"ProductionData_NS-edit.csv", sep="/"))
-str(df_wildProd_NS_data)
+```{r Load cleaned data}
+# Load UK capture production data 
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"CaptureProductionData_NS_clean-editAgain.csv", sep="/"))
 
-# Read in UK aquaculture data 
-df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat.csv", sep="/"))
-str(df_aquaProd_Eurostat_data)
+# Load UK aquaculture data 
+df_aquaProd_Eurostat_clean_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat_clean-editAgain.csv", sep="/"))
 
-# Read in UK trade data--- further processed 
-df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC-edits.csv", sep="/"))
-str(df_trade_HMRC_data)
+# Load UK trade data (further processed)
+df_trade_HMRC_clean_data <- vroom(file=paste(filepath,"Trade_HMRC_clean.csv", sep="/"))
 
-# Read in UK household purchasing data 
-df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_edit.csv", sep="/"))
+# Load UK household purchasing data 
+df_housePurch_DEFRA_clean_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_edit.csv", sep="/"))
 str(df_housePurch_DEFRA_data)
 
-# Read in UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
-str(df_eatenOutPurch_DEFRA_data)
+# Load UK eating out purchasing data 
+df_eatenOutPurch_DEFRA_clean_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
 
-# Read in UK population size data 
-df_popSize_NS_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
-str(df_popSize_NS_data)
+# Load UK consumption data 
+df_consumption_NDNS_clean_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
+
+# Load UK population data 
+df_popSize_NS_clean_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
 
 ```
+
+
+## Merge cleaned data sheets
 
 ```{r Check structure of data frames}
-# See individual column names
-colnames(df_wildProd_NS_data)
-colnames(df_housePurch_DEFRA_data)
-colnames(df_eatenOutPurch_DEFRA_data)
-colnames(df_trade_HMRC_data)
-
-# Rename species coulmn in aquculture dataset 
-df_aquaProd_Eurostat_data <- rename(df_aquaProd_Eurostat_data, Species= SimplifiedSpecies)
-
-```
-
-```{r Identify unique species names in the data set}
-# Identify unique species in the data set 
-captureFish_NS <- as.data.frame(sort(unique(df_wildProd_NS_data$Species)))
-farmedFish_Eurostat <- as.data.frame(sort(unique(df_aquaProd_Eurostat_data$SimplifiedSpecies)))
-trade_HMRC <- as.data.frame(sort(unique(df_trade_HMRC_data$Species)))
-checkSpeciesNames <- cbind(trade_HMRC, farmedFish_Eurostat, captureFish_NS)
-
-write.csv(captureFish_NS, file= "NS_speciesNames")
-write.csv(farmedFish_Eurostat, file= "Eurostat_speciesNames")
-write.csv(trade_HMRC, file= "HMRC_speciesNames")
+# Check structure of the data frames- should all have the same structure
+colnames(df_captureProd_NS_clean_data)
+colnames(df_aquaProd_Eurostat_clean_data)
+colnames(df_trade_HMRC_clean_data)
+colnames(df_housePurch_DEFRA_clean_data)
+colnames(df_eatenOutPurch_DEFRA_clean_data)
+colnames(df_consumption_NDNS_clean_data)
+colnames(df_popSize_NS_clean_data)
 
 ```
 
 
-```{r Merge data set by column names}
-# Merge dataframes
-UK_seafood_data <- rbind(df_wildProd_NS_data, df_aquaProd_Eurostat_data, df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data, df_trade_HMRC_data)
+```{r Create df of seafood supplies}
+# Rbind() data frames by column names
+df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data)
 
+# Allocate population size to each year
+df_UKSeafoodSupplies$popsize <- df_popSize_NS_clean_data
+
+# Calculate g/capita/week
+df_UKSeafoodSupplies$value_gweek <- (df_UKSeafoodSupplies$Value / df_UKSeafoodSupplies$popsize) * 7 
+
+# Merge all cleaned data frames together
+UK_seafood_data <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
+
+# Check structure of new data set
 str(UK_seafood_data)
 
 ```
-
-
 
 
 ## Exploratory figures
 
 ```{r Figure 1. UK fish production (capture and aqaucualture data)}
 # Plot UK seafood production (merge capture and aquaculture data together) 
-UK_production_data <- rbind(df_wildProd_NS_data, df_aquaProd_Eurostat_data)
-range(df_wildProd_NS_data$Year)
-range(df_aquaProd_Eurostat_data$Year) # data only till 2018
+UK_production_data <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data)
 
 # Calculate fish produced per week 
-UK_production_data$ValueGramsCapitaWeek <- UK_production_data$ValueGramsCapitaDay*7
+UK_production_data$ValueGramsCapitaWeek <- UK_production_data$ValueGramsCapitaDay * 7
 
 # Plot UK fisheries production data between 2009 and 2020
 plot(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_production_data, FUN = sum), xlim = c(2009, 2018), type= "l", lwd= 1.5, ylab = "UK seafood production (g/capita/week)")
@@ -193,5 +189,26 @@ plot(aggregate(ValueGramsCapitaDay ~ Year, data = prod_lean, mean), ylim= c(0, 0
 
 
 plot(aggregate(ValueGramsCapitaDay ~ Year, data = prod_oily, mean))
+
+```
+
+### END
+
+```{r}
+# Rename species coulmn in aquculture dataset 
+df_aquaProd_Eurostat_data <- rename(df_aquaProd_Eurostat_data, Species= SimplifiedSpecies)
+```
+
+
+```{r Identify unique species names in the data set}
+# Identify unique species in the data set 
+captureFish_NS <- as.data.frame(sort(unique(df_wildProd_NS_data$Species)))
+farmedFish_Eurostat <- as.data.frame(sort(unique(df_aquaProd_Eurostat_data$SimplifiedSpecies)))
+trade_HMRC <- as.data.frame(sort(unique(df_trade_HMRC_data$Species)))
+checkSpeciesNames <- cbind(trade_HMRC, farmedFish_Eurostat, captureFish_NS)
+
+write.csv(captureFish_NS, file= "NS_speciesNames")
+write.csv(farmedFish_Eurostat, file= "Eurostat_speciesNames")
+write.csv(trade_HMRC, file= "HMRC_speciesNames")
 
 ```

@@ -1,4 +1,3 @@
-
 ---
 title: "Part 1. Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
@@ -132,8 +131,8 @@ df_UK_landings_200911_long <- melt(df_UK_landings_09_11_data, id.vars = c("Speci
 df_UK_landings_09_20 <- rbind(df_UK_landings_200911_long,
                               df_UK_landings_201216_long, 
                               df_UK_landings_201720_long)
-
 ```
+
 
 Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Value. 
 
@@ -154,82 +153,57 @@ colnames(df_UK_landings_09_20)
 ```
 
 
-AL to check code below to see if needed. Code provides greater granularity to SpeciesType allocation as provided by the Office of National Statistics. 
-
-```{r Provide greater granularity in the SpeciesType column OLD}
-# Provide greater granularity in the "SpeciesType" column for shellfish
-UK_shellfishLandings_09_20 <- subset(df_UK_landings_09_20, SpeciesType == "Shellfish") 
-# Default "SpeciesType" to "Mollusc"
-UK_shellfishLandings_09_20$SpeciesType <- "Mollusc"
-
-# Allocate crustaceans 
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Crab", "Lobster", "Nephrops", "Shrimp")] <- "Crustacean"
-
-# Allocate cephalopods
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
-
-# Allocate other shellfish
-UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% "Other Shellfish"] <- "OtherShellfish"
-
-# Combine with data set 
-# Subset finfish landings 
-UK_finfishLandings_09_20 <- df_UK_landings_09_20[(df_UK_landings_09_20$SpeciesType == "Pelagic") | (df_UK_landings_09_20$SpeciesType == "Demersal"),]
-
-# Combine shellfish and finfish landings 
-df_UK_landings_200920 <- rbind(UK_finfishLandings_09_20, UK_shellfishLandings_09_20)
-
-```
-
 
 Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. Converstion factors taken from Lofstedt et al 2021. 
 
 ```{r Apply conversion factors to calculate edible portion of seafood}
 # Classify species as finfish or shellfish. New column for conversion name
+unique(df_UK_landings_09_20$FAO_ST)
+
 # Specify shellfish
-df_UK_landings_200920$CN[df_UK_landings_200920$FAO_ST %in% c("Crustaceans", "Molluscs", "Other molluscs and aquatic invertebrates")] <- "Shellfish"
+df_UK_landings_09_20$CN[df_UK_landings_09_20$FAO_ST %in% c("Crustaceans", "Molluscs", "Cephalopods", "Other molluscs and aquatic invertebrates", "Other shellfish")] <- "Shellfish"
 
 # Specify finfish
-df_UK_landings_200920$CN[df_UK_landings_200920$FAO_ST %in% c("Freshwater fish", "Demersal fish", "Other marine fish")] <- "Finfish"
+df_UK_landings_09_20$CN[df_UK_landings_09_20$FAO_ST %in% c("Freshwater fish", "Demersal fish", "Other marine fish", "Pelagic fish")] <- "Finfish"
 
 # Create a new column stating the conversion factor. Conversion factors used to convert whole fish weight to edible weight
 # Average conversion factors for finfish: 0.49; shellfish: 0.28 (Lofstedt et al., 2021)
 
 # State average CF finfish: 0.49; shellfish: 0.28 
-df_UK_landings_200920$CF[df_UK_landings_200920$CN == "Shellfish"] <- 0.28
-df_UK_landings_200920$CF[df_UK_landings_200920$CN == "Finfish"] <- 0.49
+df_UK_landings_09_20$CF[df_UK_landings_09_20$CN == "Shellfish"] <- 0.28
+df_UK_landings_09_20$CF[df_UK_landings_09_20$CN == "Finfish"] <- 0.49
 
 # Create new column and apply conversion factors values
-df_UK_landings_200920$CFValue <- df_UK_landings_200920$Value * df_UK_landings_200920$CF
+df_UK_landings_09_20$CFValue <- df_UK_landings_09_20$Value * df_UK_landings_09_20$CF
 
 ```
 
 
 ```{r Convert from 1000 tonnes to grams}
 # Convert raw value from 000's tonnes to grams 
-df_UK_landings_200920$ValueGrams<- (df_UK_landings_200920$CFValue * 1000) * 1000000
+df_UK_landings_09_20$Value <- (df_UK_landings_09_20$CFValue * 1000) * 1000000
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_landings_200920$DataSupplier <- "NationalStatistics"
-df_UK_landings_200920$DataSet <- "UK_SeaFisheriesStatistics"
-df_UK_landings_200920$Commodity <- "CaptureProduction"
-df_UK_landings_200920$Flag <- "ConV1, ConV2"
+df_UK_landings_09_20$Units <- "Grams"
+df_UK_landings_09_20$DataSupplier <- "NationalStatistics"
+df_UK_landings_09_20$DataSet <- "UK_SeaFisheriesStatistics"
+df_UK_landings_09_20$Commodity <- "CaptureProduction"
+df_UK_landings_09_20$Flag <- "ConV1, ConV2"
+df_UK_landings_09_20$TemporalResolution <- "Annual"
 
 ```
 
 
 ```{r Select desired variables for the cleaned data set}
 # Identify column names
-colnames(df_UK_landings_200920)
+colnames(df_UK_landings_09_20)
 
-# Select desired columns for cleaned data set
-df_cleaned_UK_landings_200920 <- df_UK_landings_200920[c("RevisedMCS", "Year", "ValueGrams", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
-
-# Add column stating the units 
-df_cleaned_UK_landings_200920$Units <- "Grams"
+# Select desired columns for cleaned data set-- 16  variables
+df_cleaned_UK_landings_200920 <- df_UK_landings_09_20[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "TemporalResolution")]
 
 ```
 
@@ -278,6 +252,10 @@ df_EUROSTAT_UKFarmed <- df_EUROSTAT_UKFarmed %>% inner_join(., MCS_translations,
 ```{r Apply conversion factor to calculate edible portion of seafood}
 # Classify species as finfish or shellfish using FAO species type columm. New column for conversion name
 
+# Check unique FAO species type commodities 
+unique(df_EUROSTAT_UKFarmed$FAO_ST)
+
+
 # Specify shellfish
 df_EUROSTAT_UKFarmed$CN[df_EUROSTAT_UKFarmed$FAO_ST %in% c("Crustaceans", "Molluscs", "Other molluscs and aquatic invertebrates")] <- "Shellfish"
 
@@ -297,7 +275,7 @@ df_EUROSTAT_UKFarmed$CFValue <- df_EUROSTAT_UKFarmed$Value * df_EUROSTAT_UKFarme
 
 ```{r Convert from tonnes to grams}
 # Convert raw value from tonnes to grams 
-df_EUROSTAT_UKFarmed$ValueGrams <- (df_EUROSTAT_UKFarmed$CFValue * 1000000)
+df_EUROSTAT_UKFarmed$Value <- df_EUROSTAT_UKFarmed$CFValue * 1000000
 
 ```
 
@@ -308,6 +286,8 @@ df_EUROSTAT_UKFarmed$DataSupplier <- "Eurostat"
 df_EUROSTAT_UKFarmed$DataSet <- "Aquaculture"
 df_EUROSTAT_UKFarmed$Commodity <- "Production"
 df_EUROSTAT_UKFarmed$Flag <- "Conv2"
+df_EUROSTAT_UKFarmed$Units <- "Grams"
+
 ```
 
 
@@ -316,10 +296,7 @@ df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 colnames(df_EUROSTAT_UKFarmed)
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_aquaculture_200918 <- df_EUROSTAT_UKFarmed[c("RevisedMCS", "Year", "ValueGrams", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
-
-# Add column stating the units 
-df_cleaned_UK_aquaculture_200918$Units <- "Grams"
+df_cleaned_UK_aquaculture_200918 <- df_EUROSTAT_UKFarmed[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
 
 ```
 
@@ -366,7 +343,7 @@ str(df_trade_HMRC_data)
 
 ```
 
-```{r OLD Rename selected individuial species}
+```{r Rename selected individuial species}
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_trade_HMRC_data$SpeciesNEW <- df_trade_HMRC_data$Species
 
@@ -508,7 +485,11 @@ df_NDNS_seafood_consump_201617 <- subset(df_NDNS_seafood_consumption_201719, Sur
 df_NDNS_seafood_consump_201718 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 10")
 df_NDNS_seafood_consump_201819 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 11")
 
+
+df_NDNS_seafood_consump_201718$DiaryDate
 ### Check structure of the data. Need to melt()
+
+df_
 
 ```
 
@@ -522,7 +503,7 @@ write.csv(df_consumption_NDNS_cleaned_201719, file = paste(filepath,"Consumption
 
 
 
-## UK fish purchases (DEFRA family food)
+## UK seafood purchases (DEFRA family food)
 
 ```{r Load data 2016 to 2020} 
 # *Error in raw data in 2015, so data from 2016 onwards used
@@ -1349,5 +1330,33 @@ df_clean_NDNS$Species <- "Unknown"
 
 ```{r Select desired variables for the data set}
 dfc_UK_NDNS <- df_clean_NDNS[c("SACN", "SpeciesType", "Year", "ValueGramsCapitaWeek", "DataSupplier", "DataSet", "Commodity", "flag")]
+
+```
+
+
+
+AL to check code below to see if needed. Code provides greater granularity to SpeciesType allocation as provided by the Office of National Statistics. 
+
+```{r Provide greater granularity in the SpeciesType column OLD}
+# Provide greater granularity in the "SpeciesType" column for shellfish
+UK_shellfishLandings_09_20 <- subset(df_UK_landings_09_20, SpeciesType == "Shellfish") 
+# Default "SpeciesType" to "Mollusc"
+UK_shellfishLandings_09_20$SpeciesType <- "Mollusc"
+
+# Allocate crustaceans 
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Crab", "Lobster", "Nephrops", "Shrimp")] <- "Crustacean"
+
+# Allocate cephalopods
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% c("Cuttlefish", "Squid")] <- "Cephalopod"
+
+# Allocate other shellfish
+UK_shellfishLandings_09_20$SpeciesType[UK_shellfishLandings_09_20$SpeciesNEW %in% "Other Shellfish"] <- "OtherShellfish"
+
+# Combine with data set 
+# Subset finfish landings 
+UK_finfishLandings_09_20 <- df_UK_landings_09_20[(df_UK_landings_09_20$SpeciesType == "Pelagic") | (df_UK_landings_09_20$SpeciesType == "Demersal"),]
+
+# Combine shellfish and finfish landings 
+df_UK_landings_200920 <- rbind(UK_finfishLandings_09_20, UK_shellfishLandings_09_20)
 
 ```
