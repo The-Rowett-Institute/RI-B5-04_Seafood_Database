@@ -1,7 +1,7 @@
 ---
 title: "Part 1. Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '04/01/2023'
+date: '10/01/2023'
 output: html_document
 ---
 
@@ -503,32 +503,45 @@ write.csv(df_consumption_NDNS_cleaned_201719, file = paste(filepath,"Consumption
 
 ## UK seafood consumption- food level consumption  
 
-UK seafood consumption data is collected on a biannual basis i.e. participants provide food diary entries every two years. Although food diary entry dates are provided, yearly consumption per calendar year cannot be calculated due to the nature of the data collection. Therefore, over a 10-year period, there will be five seafood consumption estimates. NDNS data is freely available from 2008 to 2019 (i.e. resporting years 1 to 11). Data, to food level consumption can be downloaded as txt files from the UK data service.
+UK seafood consumption data is collected on a biannual basis i.e. participants provide food diary entries every two years. Although food diary entry dates are provided, yearly consumption per calendar year cannot be calculated due to the nature of the data collection. Therefore, over a 10-year period, there will be five seafood consumption estimates. NDNS data is freely available from 2008 to 2019 (i.e. reporting years 1 to 11). Data, to food level consumption can be downloaded as txt files from the UK data service.
 
-```{r Load food level consumption txt. files}
+Convert all tab files to .csv before loading into R
+
+```{r Load food level consumption .csv files}
 # Note change in file types
 # Load NDNS yrs 1 - 4
-df_NDNS_foodlevel_yr1_4_data <- vroom(file=paste(filepath,"NDNsDEFRA_UK_purchases-201620.csv", sep="/"))
+df_NDNS_foodlevel_yr1_4_data <- vroom(file=paste(filepath,"NDNS_Yr1_4FoodLevelDietaryData.csv", sep="/"))
 
 # Load NDNS yrs 5 - 6 
-df_NDNS_foodlevel_yr5_6_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+df_NDNS_foodlevel_yr5_6_data <- vroom(file=paste(filepath,"NDNS_Yr5_6FoodLevelDietaryData.csv", sep="/"))
 
 # Load NDNS yrs 7 - 8 
-df_NDNS_foodlevel_yr7_8_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+df_NDNS_foodlevel_yr7_8_data <- vroom(file=paste(filepath,"NDNS_Yr7_8FoodLevelDietaryData.csv", sep="/"))
 
 # Load NDNS yrs 9
-df_NDNS_foodlevel_yr9_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+df_NDNS_foodlevel_yr9_data <- vroom(file=paste(filepath,"NDNS_Yr9_FoodLevelDietrayData.csv", sep="/"))
 
 # Load NDNS yrs 10
-df_NDNS_foodlevel_yr10_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+df_NDNS_foodlevel_yr10_data <- vroom(file=paste(filepath,"NDNS_Yr10_FoodLevelDietrayData.csv", sep="/"))
 
 # Load NDNS yrs 11
-df_NDNS_foodlevel_yr11_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
-
-
+df_NDNS_foodlevel_yr11_data <- vroom(file=paste(filepath,"NDNS_Yr11_FoodLevelDietrayData.txt", sep="/"))
 
 ```
 
+```{r Join food level NDNS data together in one data frame}
+
+# colnames
+
+colnames(df_NDNS_foodlevel_yr1_4_data)
+colnames(df_NDNS_foodlevel_yr5_6_data)
+colnames(df_NDNS_foodlevel_yr7_8_data)
+
+# Join data frames
+NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data, df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr7_8_data, df_NDNS_foodlevel_yr9_data )
+
+
+```
 
 
 
