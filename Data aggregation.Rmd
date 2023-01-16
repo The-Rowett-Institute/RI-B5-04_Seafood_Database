@@ -468,7 +468,11 @@ df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupC
 # Check structure of seafood data frame
 str(df_NDNS_seafood_consumption_Yr1_11)
 
-unique(df_NDNS_seafood_consumption_Yr1_11$FoodName)
+# Create list of unique seafood items consumed
+seafoodItems_Yr1_11 <- unique(df_NDNS_seafood_consumption_Yr1_11$FoodName)
+
+# Export as .csv
+write.csv(seafoodItems_Yr1_11, file = paste(filepath,"UniqueSeafoodItems.csv", sep = ""))
 
 ```
 
