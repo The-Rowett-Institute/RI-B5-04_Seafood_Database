@@ -1,7 +1,7 @@
 ---
 title: "Part 1. Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '11/01/2023'
+date: '17/01/2023'
 output: html_document
 ---
 
@@ -12,10 +12,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Part 1: Cleaning data used to map UK seafood supply chains 
 
-This R markdown document outlines how the data compiled in the UK seafood database were cleaned. Data were cleaned before being added to the database as various data sets were used, often displayed in different structures and levels of granularity. 
+This R markdown document outlines how the data compiled in the UK seafood database were cleaned. Data on seafood production (both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2018 were sourced. 
 
-Data on seafood production (both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2019 were sourced. A summary and justification for the data sources used, and their links, can be found in the supporting excel document. Prior to loading the data into R,  data were initially cleaned to allow comparability with R. Details describing how the raw data was made to be "R-friendly" can be found in the supporting word document.    
- 
+Justification for the data sources used can be found in the supporting excel document. Prior to loading the data into R, data were preliminary cleaned to allow compatibility with R. Details describing this process can be foundd in the supporting word document. 
 
 ## Preparation
 
@@ -81,7 +80,7 @@ df_UK_landings_17_20_data <- df_UK_landings_17_21_data[c("SpeciesType","Species"
 
 ```{r Transform data set (2017 to 2020)}
 # Change structure of the data set 
-df_UK_landings_201720_long <- melt(df_UK_landings_17_20_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
+df_UK_landings_201720_long <- melt(df_UK_landings_17_20_data, id.vars = c("SpeciesType", "Species"), variable.name = "Year", value.name = "Value")
 ```
 
 
@@ -98,7 +97,7 @@ md.pattern(df_UK_landings_12_16_data, rotate.names = TRUE)
 
 ```{r Transform data set (2012 to 2016)}
 # Change structure of the data set 
-df_UK_landings_201216_long <- melt(df_UK_landings_12_16_data, id.vars = c("SpeciesType", "Species"), variable.name="Year", value.name="Value")
+df_UK_landings_201216_long <- melt(df_UK_landings_12_16_data, id.vars = c("SpeciesType", "Species"), variable.name = "Year", value.name = "Value")
 ```
 
 
@@ -210,8 +209,8 @@ df_cleaned_UK_landings_200920 <- df_UK_landings_09_20[c("RevisedMCS", "Year", "V
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(df_cleaned_UK_landings_200920, file = paste(filepath,"CaptureProductionData_NS_clean.csv", sep=""))
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_cleaned_UK_landings_200920, file = paste(filepath,"CaptureProductionData_NS_clean.csv", sep = ""))
 
 ```
 
@@ -287,6 +286,7 @@ df_EUROSTAT_UKFarmed$DataSet <- "Aquaculture"
 df_EUROSTAT_UKFarmed$Commodity <- "Production"
 df_EUROSTAT_UKFarmed$Flag <- "Conv2"
 df_EUROSTAT_UKFarmed$Units <- "Grams"
+df_EUROSTAT_UKFarmed$TemporalResolution <- "Annual"
 
 ```
 
@@ -411,19 +411,19 @@ Convert all tab files to .csv before loading into R
 
 ```{r Load data}
 # Load NDNS yrs 1 - 4
-df_NDNS_foodlevel_yr1_4_data <- vroom(file=paste(filepath,"NDNS_UK_FoodLevel-Y1-4.csv", sep="/"))
+df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4.csv", sep = "/"))
 
 # Load NDNS yrs 5 - 6 
 df_NDNS_foodlevel_yr5_6_data <-
-  vroom(file=paste(filepath,"NDNS_UK_FoodLevel-Y5-6.csv", sep="/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6.csv", sep = "/"))
 
 # Load NDNS yrs 7 - 8 
 df_NDNS_foodlevel_yr7_8_data <-
-  vroom(file=paste(filepath,"NDNS_UK_FoodLevel-Y7-8.csv", sep="/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8.csv", sep = "/"))
 
 # Load NDNS yrs 9-11
 df_NDNS_foodlevel_yr9_11_data <- 
-  vroom(file=paste(filepath,"NDNS_UK_FoodLevel_Y9-11.csv", sep="/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-11.csv", sep = "/"))
 
 ```
 
@@ -469,10 +469,16 @@ df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupC
 str(df_NDNS_seafood_consumption_Yr1_11)
 
 # Create list of unique seafood items consumed
-seafoodItems_Yr1_11 <- unique(df_NDNS_seafood_consumption_Yr1_11$FoodName)
+#seafoodItems_Yr1_11 <- unique(df_NDNS_seafood_consumption_Yr1_11$FoodName)
 
 # Export as .csv
-write.csv(seafoodItems_Yr1_11, file = paste(filepath,"UniqueSeafoodItems.csv", sep = ""))
+#write.csv(seafoodItems_Yr1_11, file = paste(filepath,"UniqueSeafoodItems.csv", sep = ""))
+```
+
+
+```{r Calculate total grams of seafood consummed}
+# Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
+df_NDNS_seafood_consumption_Yr1_11$Value <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
 
 ```
 
@@ -484,9 +490,36 @@ df_NDNS_seafood_consumption_Yr1_11$SpeciesNEW <- df_NDNS_seafood_consumption_Yr1
 # Join data frame with MCS data frame by species name
 df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+```
 
-# Check column names of the updated data frame
+
+```{r Check survey year data and data frame column names}
+# Identify the survey years
+unique(df_NDNS_seafood_consumption_Yr1_11$SurveyYear)
+
+# Rename survey years to numerical values 
+200809, 201011, 201213, 201415, 201617, 201819  
+
+# Ensure column names are consistent between data sets
+# Change "SurveyYear" to "Year"
+
+# Change "TotalGrams" to "Value"
+
+
+
+```
+
+
+
+
+```{r Select desired variables}
+# Identify columns in data frame
 colnames(df_NDNS_seafood_consumption_Yr1_11)
+
+# Select desired columns for cleaned data set
+df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11[c("RevisedMCS", "Year", "Value",  "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
+
+# Check what variable we need- all fish "WhiteFishg","OilyFishg", "CannedTunag","Shellfishg"?
 
 ```
 
@@ -497,40 +530,11 @@ df_NDNS_seafood_consumption_Yr1_11$DataSupplier <- "NDNS"
 df_NDNS_seafood_consumption_Yr1_11$DataSet <- "FoodDiaries"
 df_NDNS_seafood_consumption_Yr1_11$Commodity <- "Consumption"
 df_NDNS_seafood_consumption_Yr1_11$Flag <- "ConV1, ConV2"
+df_NDNS_seafood_consumption_Yr1_11$TemporalResolution <- "Biennial"
+df_NDNS_seafood_consumption_Yr1_11$Units <- "Grams"
 
 ```
 
-
-```{r Select desired variables}
-# Identify columns in data frame
-colnames(df_NDNS_seafood_consumption_Yr1_11)
-
-# Select desired columns for cleaned data set
-df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11[c("RevisedMCS", "SurveyYear", "TotalGrams",  "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
-
-# Add in unit variable
-df_NDNS_seafood_consumption_Yr1_11_cleaned$Unit <- "Grams"
-
-```
-
-
-```{r Subset NDNS data by calendar year (i.e. Jan to December)}
-# Allocate year by calendar year, not NDNS reporting period (May to April)
-
-# Up to here......
-
-# Use grepl()?
-
-# Below won't work because data is a character
-#df_NDNS_seafood_consump_2018 <- 
-#  df_NDNS_seafood_consumption_201719[df_NDNS_seafood_consumption_201719$DiaryDate > "05/01/2018" & df_NDNS_seafood_consumption_201719$DiaryDate > "31/12/2018",]
-
-# Subset consumption data by year
-#df_NDNS_seafood_consump_201617 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 9")
-#df_NDNS_seafood_consump_201718 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 10")
-#df_NDNS_seafood_consump_201819 <- subset(df_NDNS_seafood_consumption_201719, SurveyYear == "NDNS Year 11")
-
-```
 
 
 ```{r Save cleaned data}
@@ -539,8 +543,6 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = ""))
 
 ```
-
-## UK seafood consumption- food level consumption  
 
 
 

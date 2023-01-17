@@ -36,33 +36,32 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep="") 
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
 
 ```{r Load cleaned data}
 # Load UK capture production data 
-df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"CaptureProductionData_NS_clean-editAgain.csv", sep="/"))
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"CaptureProductionData_NS_clean.csv", sep = "/"))
 
-# Load UK aquaculture data 
-df_aquaProd_Eurostat_clean_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat_clean-editAgain.csv", sep="/"))
+# Load UK aquaculture production data 
+df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = "/"))
 
 # Load UK trade data (further processed)
-df_trade_HMRC_clean_data <- vroom(file=paste(filepath,"Trade_HMRC_clean.csv", sep="/"))
+df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"Trade_HMRC_clean.csv", sep = "/"))
 
 # Load UK household purchasing data 
-df_housePurch_DEFRA_clean_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_edit.csv", sep="/"))
-str(df_housePurch_DEFRA_data)
+df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA.csv", sep = "/"))
 
 # Load UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_clean_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
+df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA.csv", sep = "/"))
 
 # Load UK consumption data 
-df_consumption_NDNS_clean_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA.csv", sep="/"))
+df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = "/"))
 
 # Load UK population data 
-df_popSize_NS_clean_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
+df_popSize_NS_clean_data <- vroom(file = paste(filepath,"PopSize_NS.csv", sep = "/"))
 
 ```
 
