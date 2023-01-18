@@ -1,7 +1,7 @@
 ---
-title: "UK_seafood-availability"
-author: "Lofstedt, A"
-date: "2022-11-17"
+title: "Part 3. Initial exploration. RI-B5-04: UK seafood supply chains"
+author: "A.Lofstedt"
+date: "18/01/2023"
 output: html_document
 ---
 
@@ -9,12 +9,9 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Result 1: UK net seafood availability 
+## Part 3: Initial exploration of the data set
 
-UK seafood supplies between 2009 and 2019 were derived from data on imports and production (from both capture fisheries and aquaculture), accounting for exports. UK fish dietary recommendations were compared with national seafood supplies. 
-
-The data set created from the RESAS B5 project was used to calculate UK seafood availability. 
-Seafood production (aquaculture, capture), trade (imports and exports), consumption and purchasing data were collated from separate data sources. Appropriate conversion factors were previously applied (live weight to processed weight). Data are provided in grams. grams/capita/day.
+This R markdown document shows the initial exploration of the data set.  Initial exploration includes calculating net seafood supplies for the UK over the past 9 years. UK seafood supplies between 2009 and 2018 were derived from data on imports and production (from both capture fisheries and aquaculture), accounting for exports. UK fish dietary recommendations were compared with national seafood supplies. Seafood supplies were then compared to UK seafood purchasing and consumption data. Analyses were calculated in both kilograms and g per capita per week, to facilitate comparisons with dietary guidelines.   
 
 ### Preparation 
 
@@ -28,7 +25,6 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(plyr) # joins multiple data frames together
-
 ```
 
 ```{r Load file path, echo=TRUE}
@@ -39,171 +35,6 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"ProcessedData", sep="") 
 # note we are able to change this to another file e.g. saving the output
-
-```
-
-
-### Load in cleaned data
-
-```{r Load UK capture production data}
-# Read in UK capture production data 
-df_captProd_NS_data <- vroom(file=paste(filepath,"CaptureData_NS_clean.csv", sep="/"))
-
-# Check for missing data
-# right column summed to be total number of rows in the data set
-md.pattern(df_captProd_NS_data, rotate.names = TRUE)
-```
-
-
-```{r Load UK aqauculture production data}
-# Read in UK aquaculture data 
-df_aquaProd_Eurostat_data <- vroom(file=paste(filepath,"AquacultureData_Eurostat_clean.csv", sep="/"), na = c("NA"))
-
-# Check for missing data
-md.pattern(df_aquaProd_Eurostat_data, rotate.names = TRUE)
-
-# Some rows with no data- omit rows with NA from the data set so omit rows with NA 
-df_aquaProd_Eurostat_data_omit <- na.omit(df_aquaProd_Eurostat_data)
-md.pattern(df_aquaProd_Eurostat_data_omit, rotate.names = TRUE)
-
-```
-
-
-```{r Load UK trade data}
-# Read in UK trade data (further cleaned)
-df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep="/"))
-md.pattern(df_trade_HMRC_data, rotate.names =  TRUE)
-```
-
-
-```{r Load UK fish purchases}
-# Read in UK household purchasing data 
-df_housePurch_DEFRA_data <- vroom(file=paste(filepath,"HouseholdPurchases_DEFRA_clean.csv", sep="/"))
-md.pattern(df_housePurch_DEFRA_data, rotate.names = TRUE)
-
-# Read in UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_data <- vroom(file=paste(filepath,"EatenOutPurchases_DEFRA_clean.csv", sep="/"))
-md.pattern(df_eatenOutPurch_DEFRA_data, rotate.names = TRUE)
-
-```
-
-
-```{r Merge data sets}
-# Merge production, trade, purchasing and consumption data 
-UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data_omit,
-                         df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data,
-                         df_trade_HMRC_data)
-
-# Check for missing values
-md.pattern(UK_seafood_data, rotate.names = T)
-
-# Check coulmn names match
-colnames(df_captProd_NS_data)
-colnames(df_aquaProd_Eurostat_data)
-colnames(df_trade_HMRC_data)
-
-# Merge production and trade data
-UK_seafood_data <- rbind(df_captProd_NS_data, df_aquaProd_Eurostat_data_omit,
-                         df_trade_HMRC_data)
-
-# Identify unique fish species
-unique(UK_seafood_data$SpeciesNEW)
-
-```
-
-
-### Calculate edible portion of fish (grams) available per capita (g/capita/week)
-
-##### A) by cohort 
-
-```{r UK population by cohort}
-# Adults are recommended to consume 2 portion of fish per week (not children) so calculate adult population size 
-
-# Population size > 65. 
-pop65_above <- read.csv("WB_pop_65.plus.csv")
-str(pop65_above)
-
-# Population size 15 to 64. 
-pop15_64 <- read.csv("WB_pop_15.64.csv")
-str(pop15_64)
-
-# Population size 0 to 14.
-# Children advised to consume half the dietary recommendation -> less than 15. 
-pop0_14 <- read.csv("WB_pop_0.14.csv")
-str(pop0_14)
-```
-
-
-```{r Average population size for each cohort between 2009 and 2019}
-# Calculate average pop size over past 10 years for all age cohorts. New column with mean pop size
-pop65_above$meanpop <- rowMeans(subset(pop65_above, select = c(X2007:X2017)), na.rm = TRUE)
-pop15_64$meanpop <- rowMeans(subset(pop15_64, select = c(X2007:X2017)), na.rm = TRUE)
-pop0_14$meanpop <- rowMeans(subset(pop0_14, select = c(X2007:X2017)), na.rm = TRUE)
-
-# Combine all population cohorts
-totalpop <- cbind.data.frame(pop65_above$?..Country.Name, pop65_above$meanpop, pop15_64$meanpop, pop0_14$meanpop)
-
-# Rename dataframe columns 
-names(totalpop)<-c("Country", "pop65", "pop15", "pop0")
-
-# Create columns for adults and child pops
-totalpop$adultpop<- totalpop$pop65+ totalpop$pop15
-totalpop$childpop<- totalpop$pop0
-totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
-
-```
-
-
-#####  b) by total population size 
-
-```{r Subset data}
-# Extract UK population data between 2009 onwards
-df_UK_pop <- subset(df_NS_UK_pop_data, 
-                      CDID > 2008, select= c(CDID, UKPOP))
-
-```
-
-```{r Add units and data source}
-# Create "cleaned" data frame, defining units and data source 
-df_clean_UK_pop <- df_UK_pop
-df_clean_UK_pop$Units <- "UK-total-pop"
-df_clean_UK_pop$Data_source <- "National-statistics"
-```
-
-Processed here:
-
-```{r Load data}
-# Read in UK population data 
-df_NS_UK_pop_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
-colnames(df_NS_UK_pop_data)
-
-# Select desired columns from data set
-df_NS_UK_pop <- df_NS_UK_pop_data[c("CDID", "UKPOP")]
-
-# Rename columns 
-colnames(df_NS_UK_pop) <- c("Year", "UKPop")
-str(df_NS_UK_pop)
-
-```
-
-
-```{r Calculate grams available per capita}
-# Add in annual UK population data to the data frame as a new column. Duplicate population data for each year. 
-
-# Match population size per year to each year in the merged seafood data frame
-seafood_W_pop <- merge(UK_seafood_data, df_NS_UK_pop, by = "Year")
-
-colnames(seafood_W_pop)
-
-# Convert grams/year to g/capita/year
-seafood_W_pop$ValueGramsCapitaYear <- seafood_W_pop$ValueGrams/seafood_W_pop$UKPop
-
-# Convert grams/year to g/capita/week
-seafood_W_pop$ValueGramsCapitaWeek<- seafood_W_pop$ValueGramsCapitaYear/52
-
-df_UKseafood_200918 <- seafood_W_pop
-
-# Separate g/capita/week data. Plan to 
 
 ```
 
@@ -638,3 +469,163 @@ seafood_dfs <- list(df_captProd_NS_data[,4:6], df_aquaProd_Eurostat_data_omit[,4
 df_UKseafood_200918 <- join_all(seafood_dfs, by = c("SpeciesNEW", "Year"), match = "all") 
 
 ```
+
+
+
+## Exploratory figures
+
+```{r Figure 1. UK fish production (capture and aqaucualture data)}
+# Plot UK seafood production (merge capture and aquaculture data together) 
+UK_production_data <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data)
+
+# Calculate fish produced per week 
+UK_production_data$ValueGramsCapitaWeek <- UK_production_data$ValueGramsCapitaDay * 7
+
+# Plot UK fisheries production data between 2009 and 2020
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_production_data, FUN = sum), xlim = c(2009, 2018), type= "l", lwd= 1.5, ylab = "UK seafood production (g/capita/week)")
+```
+
+```{r Figure 2. UK farmed salmon production}
+# UK farmed salmon production
+# Calculate fish produced per week
+farmed_salmon <- subset(df_aquaProd_Eurostat_data, Species == "Atlantic salmon")
+farmed_salmon$ValueGramsCapitaWeek <- farmed_salmon$ValueGramsCapitaDay*7
+
+# Plot UK farmed salmon production
+plot(ValueGramsCapitaWeek ~ Year, data = farmed_salmon, xlim = c(2009, 2018), type= "l",lwd= 1.5, ylab = "UK salmon production (edible portion g/capita/week)")
+
+```
+
+```{r Figure 3. UK cod capture production}
+# UK capture cod production
+# Calculate fish produced per week
+wild_cod <- subset(df_wildProd_NS_data, Species == "Cod")
+wild_cod$ValueGramsCapitaWeek <- wild_cod$ValueGramsCapitaDay*7
+
+# Reorder data set according to Year
+wild_cod2 <- wild_cod[order(wild_cod$Year), ]
+
+# Plot UK farmed salmon production
+plot(ValueGramsCapitaWeek ~ Year, data = wild_cod2, xlim = c(2009, 2020), type= "l", lwd= 1.5, ylab = "UK cod production (edible portion g/capita/week)")
+
+```
+
+```{r Figure 4. UK seafood trade}
+# Subset trade data in to separate commodities 
+UK_imports <- subset(df_trade_HMRC_data, Commodity == "Imports")
+UK_exports <- subset(df_trade_HMRC_data, Commodity == "Exports")
+
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_imports, FUN = sum), xlim = c(2009, 2019), type= "l", lwd= 1.5, ylab = "UK fish imports (g/capita/week)")
+
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_exports, FUN = sum), xlim = c(2009, 2019), type= "l", lwd= 1.5, ylab = "UK fish exports (g/capita/week)")
+
+
+# Plot on same graph
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_exports, FUN = sum), ylim= c(0,16), xlim = c(2009, 2019), type= "l", lwd= 1.5, ylab = "UK fish traded (g/capita/week)", col= "red") +
+  lines(aggregate(ValueGramsCapitaWeek ~ Year, data = UK_imports, FUN = sum), col= "blue") + legend("topright", legend =  c("Import", "Export"), fill = c("blue", "red"))
+
+
+```
+
+```{r Figure 5. UK fish purchases (houshold and eaten out)}
+# Create data frame combining fish purchase data
+fish_purchases <- rbind(df_housePurch_DEFRA_data, df_eatenOutPurch_DEFRA_data)
+
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = df_housePurch_DEFRA_data, FUN = sum))
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = df_eatenOutPurch_DEFRA_data, FUN = sum))
+
+# Calculate fish purchased per week
+fish_purchases$ValueGramsCapitaWeek <- fish_purchases$ValueGramsCapitaDay*7
+
+plot(aggregate(ValueGramsCapitaWeek ~ Year, data = fish_purchases, FUN = sum), xlim = c(2009, 2020), type= "l", lwd= 1.5, ylab = "UK fish purchases (g/capita/week)")
+
+# Interesting with 2020 data- reduction in fish purchases
+
+```
+
+
+
+```{r Figure 6. Plot average lean fish capture production (g/capita/day) between 2009 and 2020}
+
+# Subset lean capture fishery production in the UK
+prod_lean <- subset(df_wildProd_NS_data, SACN == "Lean", select = c(Year, ValueGramsCapitaDay))
+
+# Subset lean capture fishery production in the UK
+prod_oily <- subset(df_wildProd_NS_data, SACN == "Oily", select = c(Year, ValueGramsCapitaDay))
+
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = df_wildProd_NS_data, mean)) # all fish produced 
+
+# Plot lean fish only 
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = prod_lean, mean), ylim= c(0, 0.65), col= "red") + points(aggregate(ValueGramsCapitaDay ~ Year, data = prod_oily, mean), col = "blue")
+
+
+plot(aggregate(ValueGramsCapitaDay ~ Year, data = prod_oily, mean))
+
+```
+
+### END
+
+
+
+### Load in cleaned data
+
+### Calculate edible portion of fish (grams) available per capita (g/capita/week)
+
+##### A) by cohort 
+
+```{r UK population by cohort}
+# Adults are recommended to consume 2 portion of fish per week (not children) so calculate adult population size 
+
+# Population size > 65. 
+pop65_above <- read.csv("WB_pop_65.plus.csv")
+str(pop65_above)
+
+# Population size 15 to 64. 
+pop15_64 <- read.csv("WB_pop_15.64.csv")
+str(pop15_64)
+
+# Population size 0 to 14.
+# Children advised to consume half the dietary recommendation -> less than 15. 
+pop0_14 <- read.csv("WB_pop_0.14.csv")
+str(pop0_14)
+```
+
+
+```{r Average population size for each cohort between 2009 and 2019}
+# Calculate average pop size over past 10 years for all age cohorts. New column with mean pop size
+pop65_above$meanpop <- rowMeans(subset(pop65_above, select = c(X2007:X2017)), na.rm = TRUE)
+pop15_64$meanpop <- rowMeans(subset(pop15_64, select = c(X2007:X2017)), na.rm = TRUE)
+pop0_14$meanpop <- rowMeans(subset(pop0_14, select = c(X2007:X2017)), na.rm = TRUE)
+
+# Combine all population cohorts
+totalpop <- cbind.data.frame(pop65_above$?..Country.Name, pop65_above$meanpop, pop15_64$meanpop, pop0_14$meanpop)
+
+# Rename dataframe columns 
+names(totalpop)<-c("Country", "pop65", "pop15", "pop0")
+
+# Create columns for adults and child pops
+totalpop$adultpop<- totalpop$pop65+ totalpop$pop15
+totalpop$childpop<- totalpop$pop0
+totalpop$totpop<-totalpop$adultpop +(totalpop$childpop*0.5)
+
+```
+
+
+#####  b) by total population size 
+
+```{r Subset data}
+# Extract UK population data between 2009 onwards
+df_UK_pop <- subset(df_NS_UK_pop_data, 
+                      CDID > 2008, select= c(CDID, UKPOP))
+
+```
+
+```{r Add units and data source}
+# Create "cleaned" data frame, defining units and data source 
+df_clean_UK_pop <- df_UK_pop
+df_clean_UK_pop$Units <- "UK-total-pop"
+df_clean_UK_pop$Data_source <- "National-statistics"
+```
+
+
+

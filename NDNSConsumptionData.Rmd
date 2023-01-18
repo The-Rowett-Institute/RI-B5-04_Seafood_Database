@@ -1,0 +1,185 @@
+---
+title: "NDNSConsumptionData"
+author: "Lofstedt, A"
+date: "18/01/23"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Estimating UK consumption of selected species in 2018
+
+This R markdown document outlines how UK consumption of anchovies, herring, mackerel, sprat and whiting, in their various forms were estimated. the most recent year we have available).
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a value 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+
+# Check structure of the translation document
+str(MCS_translations)
+```
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+
+## UK seafood consumption (to food level) (NDNS)
+
+UK consumption data were sourced from the National Diet and Nutrition Survey (NDNS), a continuous survey, designed to assess the diet, nutrient intake and nutritional status of the general population aged 1.5 years and over living in private households in the UK. A representiaive sample of 1000 people take part. As part of the survey, participants complete a 4-day diet diary. This food-level dietary data is freely available from the UK data service (https://ukdataservice.ac.uk/). 
+
+UK consumption data is collected on a biannual basis i.e. participants provide food diary entries every two years. Although food diary entry dates are provided, yearly consumption per calendar year cannot be calculated due to the nature of the data collection. 
+
+
+```{r Load data}
+# Data recorded biennially per financial year. Equivalent to April 2018 to June 2018
+# Load NDNS year 10  (April 2017 to June 2018)
+df_NDNS_foodlevel_yr10_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y10.csv", sep = "/"))
+
+# Check for missing values
+md.pattern(df_NDNS_foodlevel_yr10_data)
+
+# Load NDNS year 11 (April 2018 to June 2019)
+df_NDNS_foodlevel_yr11_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y11-edit.csv", sep = "/"))
+
+# Check for missing values
+md.pattern(df_NDNS_foodlevel_yr11_data)
+
+```
+
+Note to JR: Consider the data as a snapshot. NDNS data are recorded for every financial year. 
+
+
+```{r Merge NDNS data (years 10 and 11) in to one data frame}
+# rbind data frames
+NDNS_UK_Yr10_11_data <- rbind(df_NDNS_foodlevel_yr10_data,
+                             df_NDNS_foodlevel_yr11_data)
+                             
+```
+
+
+Downloaded NDNS data for all food groups. Need to select just those rows related to seafood consumption. Entries numbered 33, 34 and 35 "Main food group code" column related to seafood consumption.
+
+```{r Subset seafood commodities from consumption data}
+# Identify unique main food groups
+unique(NDNS_UK_Yr10_11_data$MainFoodGroupCode)
+
+# Subset seafood commodities. Seafood commodities identified as values: 33, 34 and 35 in "main food group code" column
+df_NDNS_seafood_Yr10_11 <- subset(NDNS_UK_Yr10_11_data, MainFoodGroupCode == 33 | NDNS_UK_Yr10_11_data$MainFoodGroupCode == 34| NDNS_UK_Yr10_11_data$MainFoodGroupCode == 35)
+
+```
+
+
+```{r Calculate total grams of seafood consummed over four day period}
+# Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
+df_NDNS_seafood_Yr10_11$fourDayValue <- df_NDNS_seafood_Yr10_11$WhiteFishg + df_NDNS_seafood_Yr10_11$OilyFishg + df_NDNS_seafood_Yr10_11$CannedTunag + df_NDNS_seafood_Yr10_11$Shellfishg
+
+```
+
+```{r Scale up consumption}
+
+```
+
+
+
+```{r Correct for differences in species spellings}
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_NDNS_seafood_Yr10_11$SpeciesNEW <- df_NDNS_seafood_Yr10_11$FoodName
+
+# Join data frame with MCS data frame by species name
+df_NDNS_seafood_Yr10_11 <- df_NDNS_seafood_Yr10_11 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+```
+
+
+```{r Subset desired species }
+# Create new data frame sub-setting desired species: anchovies, herring, mackerel, sprat and whiting
+
+desiredNDNSSpecies_Yr10_11 <- subset(df_NDNS_seafood_Yr10_11, RevisedMCS == "Anchovy" | df_NDNS_seafood_Yr10_11$RevisedMCS == "Herring" | df_NDNS_seafood_Yr10_11$RevisedMCS == "Mackerel" | df_NDNS_seafood_Yr10_11$RevisedMCS == "Sprat" | df_NDNS_seafood_Yr10_11$RevisedMCS == "Whiting")
+
+```
+
+
+```{r State whether adult or child}
+# State whether participant is a child (ages 1.5 to 18) or adult (ages 19 to 65+). By creating a new column, we keep the individual ages 
+# If age is < 19 then allocate child 
+desiredNDNSSpecies_Yr10_11$Demographic <- 
+  ifelse(desiredNDNSSpecies_Yr10_11$AgeR < 19, "Child", "Adult")
+
+```
+
+
+```{r Allocate numerical values to survey years}
+# Create new data frame with survey years and corresponding numerical values
+SurveyYear <- unique(df_NDNS_seafood_Yr10_11$SurveyYear)
+Year <- c(201718, 201819)  
+
+# Create new data frame
+df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
+
+# Create new data frame allocate numerical values by merging data frames
+df_NDNS_seafood_Yr10_11Num <- merge(df_NDNS_seafood_Yr10_11, df_NDNSYearData, by = "SurveyYear")
+
+```
+
+
+```{r Add additional variables to data set}
+# Create "cleaned" data frame, defining units and data source 
+desiredNDNSSpecies_Yr10_11$DataSupplier <- "NDNS"
+desiredNDNSSpecies_Yr10_11$DataSet <- "FoodDiaries"
+desiredNDNSSpecies_Yr10_11$Commodity <- "Consumption"
+desiredNDNSSpecies_Yr10_11$Units <- "Grams"
+
+```
+
+
+```{r Select desired variables}
+# Identify columns in data frame
+colnames(desiredNDNSSpecies_Yr10_11)
+
+# Select desired columns for cleaned data set
+desiredNDNSSpecies_Yr10_11_clean <- desiredNDNSSpecies_Yr10_11[c("SurveyYear", "FoodName", "RevisedMCS", "Value", "Units", "Commodity", "DataSupplier", "DataSet")]
+
+```
+
+
+```{r Save cleaned data}
+# Save cleaned data as .csv
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_NDNS_seafood_consumption_Yr10_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = ""))
+
+```
+

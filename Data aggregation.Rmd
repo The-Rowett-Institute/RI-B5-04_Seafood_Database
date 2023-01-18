@@ -1,7 +1,7 @@
 ---
 title: "Part 1. Data cleaning. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt, B.Scheliga"
-date: '17/01/2023'
+date: '18/01/2023'
 output: html_document
 ---
 
@@ -70,7 +70,7 @@ UK seafood production data includes both data from capture fisheries and aquacul
 # Read in .csv file
 df_UK_landings_17_21_data <- vroom(file=paste(filepath,"NS_UK_landings-201721.csv", sep="/"))
 
-# Check for missing values
+# Check for missing values. Right column summed to be total number of rows in the data set
 md.pattern(df_UK_landings_17_21_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2020)
@@ -202,7 +202,7 @@ df_UK_landings_09_20$TemporalResolution <- "Annual"
 colnames(df_UK_landings_09_20)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_cleaned_UK_landings_200920 <- df_UK_landings_09_20[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "TemporalResolution")]
+df_cleaned_UK_landings_200920 <- df_UK_landings_09_20[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
 
 ```
 
@@ -220,7 +220,7 @@ write.csv(df_cleaned_UK_landings_200920, file = paste(filepath,"CaptureProductio
 
 ```{r Load data (2009 to 2018)}
 # Read in .csv file 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918-edit.csv", sep="/"),na = c(":"))
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918.csv", sep="/"),na = c(":"))
 
 # Check for missing values
 md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
@@ -249,7 +249,7 @@ df_EUROSTAT_UKFarmed <- df_EUROSTAT_UKFarmed %>% inner_join(., MCS_translations,
 
 
 ```{r Apply conversion factor to calculate edible portion of seafood}
-# Classify species as finfish or shellfish using FAO species type columm. New column for conversion name
+# Classify species as finfish or shellfish using FAO species type column. New column for conversion name
 
 # Check unique FAO species type commodities 
 unique(df_EUROSTAT_UKFarmed$FAO_ST)
@@ -284,7 +284,7 @@ df_EUROSTAT_UKFarmed$Value <- df_EUROSTAT_UKFarmed$CFValue * 1000000
 df_EUROSTAT_UKFarmed$DataSupplier <- "Eurostat"
 df_EUROSTAT_UKFarmed$DataSet <- "Aquaculture"
 df_EUROSTAT_UKFarmed$Commodity <- "Production"
-df_EUROSTAT_UKFarmed$Flag <- "Conv2"
+df_EUROSTAT_UKFarmed$Flag <- "ConV1, ConV2"
 df_EUROSTAT_UKFarmed$Units <- "Grams"
 df_EUROSTAT_UKFarmed$TemporalResolution <- "Annual"
 
@@ -296,7 +296,7 @@ df_EUROSTAT_UKFarmed$TemporalResolution <- "Annual"
 colnames(df_EUROSTAT_UKFarmed)
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_aquaculture_200918 <- df_EUROSTAT_UKFarmed[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
+df_cleaned_UK_aquaculture_200918 <- df_EUROSTAT_UKFarmed[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
 
 ```
 
@@ -493,48 +493,40 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inn
 ```
 
 
-```{r Check survey year data and data frame column names}
-# Identify the survey years
-unique(df_NDNS_seafood_consumption_Yr1_11$SurveyYear)
+```{r Allocate numerical values to survey years}
+# Create new data frame with survey years and corresponding numerical values
+SurveyYear <- unique(df_NDNS_seafood_consumption_Yr1_11$SurveyYear)
+Year <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
 
-# Rename survey years to numerical values 
-200809, 201011, 201213, 201415, 201617, 201819  
+# Create new data frame
+df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
 
-# Ensure column names are consistent between data sets
-# Change "SurveyYear" to "Year"
-
-# Change "TotalGrams" to "Value"
-
-
-
-```
-
-
-
-
-```{r Select desired variables}
-# Identify columns in data frame
-colnames(df_NDNS_seafood_consumption_Yr1_11)
-
-# Select desired columns for cleaned data set
-df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11[c("RevisedMCS", "Year", "Value",  "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag")]
-
-# Check what variable we need- all fish "WhiteFishg","OilyFishg", "CannedTunag","Shellfishg"?
+# Create new data frame allocate numerical values by merging data frames
+df_NDNS_seafood_consumption_Yr1_11_num <- merge(df_NDNS_seafood_consumption_Yr1_11, df_NDNSYearData, by = "SurveyYear")
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_NDNS_seafood_consumption_Yr1_11$DataSupplier <- "NDNS"
-df_NDNS_seafood_consumption_Yr1_11$DataSet <- "FoodDiaries"
-df_NDNS_seafood_consumption_Yr1_11$Commodity <- "Consumption"
-df_NDNS_seafood_consumption_Yr1_11$Flag <- "ConV1, ConV2"
-df_NDNS_seafood_consumption_Yr1_11$TemporalResolution <- "Biennial"
-df_NDNS_seafood_consumption_Yr1_11$Units <- "Grams"
+df_NDNS_seafood_consumption_Yr1_11_num$DataSupplier <- "NDNS"
+df_NDNS_seafood_consumption_Yr1_11_num$DataSet <- "FoodDiaries"
+df_NDNS_seafood_consumption_Yr1_11_num$Commodity <- "Consumption"
+df_NDNS_seafood_consumption_Yr1_11_num$Flag <- "ConV3"
+df_NDNS_seafood_consumption_Yr1_11_num$TemporalResolution <- "Biennial"
+df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams"
 
 ```
 
+
+```{r Select desired variables}
+# Identify columns in data frame
+colnames(df_NDNS_seafood_consumption_Yr1_11_num)
+
+# Select desired columns for cleaned data set
+df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+
+```
 
 
 ```{r Save cleaned data}
