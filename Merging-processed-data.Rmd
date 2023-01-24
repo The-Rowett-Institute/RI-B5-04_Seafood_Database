@@ -1,7 +1,7 @@
 ---
 title: "Part 2. Merging cleaned data. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt"
-date: "18/01/2023"
+date: "24/01/2023"
 output: html_document
 ---
 
@@ -41,9 +41,13 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 ```
 
 
+Note to AL: check the time series of the data set- should be between 2009 to 2018. Do this step now.  
+
+
+
 ```{r Load cleaned data}
 # Load UK capture production data 
-df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"CaptureProductionData_NS_clean.csv", sep = "/"))
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsUKProductionData_MMO_clean.csv", sep = "/"))
 
 # Load UK aquaculture production data 
 df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = "/"))
@@ -80,11 +84,16 @@ colnames(df_eatenOutPurch_DEFRA_clean_data)
 colnames(df_consumption_NDNS_clean_data)
 colnames(df_popSize_NS_clean_data)
 
+df_trade_HMRC_clean_data$TemporalResolution <- "Annual"
+
 ```
 
 ```{r Combine data frames}
 # rbind() cleaned data frames by column names
 df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
+
+df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data)
+
 
 # Check structure of new data frame
 str(df_UKSeafoodSupplies)
