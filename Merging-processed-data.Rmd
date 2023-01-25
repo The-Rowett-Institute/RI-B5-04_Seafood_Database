@@ -1,7 +1,7 @@
 ---
 title: "Part 2. Merging cleaned data. RI-B5-04: UK seafood supply chains"
 author: "A.Lofstedt"
-date: "24/01/2023"
+date: "25/01/2023"
 output: html_document
 ---
 
@@ -46,8 +46,14 @@ Note to AL: check the time series of the data set- should be between 2009 to 201
 
 
 ```{r Load cleaned data}
-# Load UK capture production data 
-df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsUKProductionData_MMO_clean.csv", sep = "/"))
+# Load UK capture production data (UK landings into UK only)
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"UKLandingsinUKOnly_MMO_clean.csv", sep = "/"))
+
+# Load UK capture production data (UK and foreign vessels landings into the UK)
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = "/"))
+
+# Load UK capture production data (UK landings into the UK and abroad)
+df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"LandingsUKAndAbroad_MMO_clean.csv", sep = "/"))
 
 # Load UK aquaculture production data 
 df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = "/"))
@@ -70,52 +76,31 @@ df_popSize_NS_clean_data <- vroom(file = paste(filepath,"PopSize_NS.csv", sep = 
 ```
 
 
-## UK seafood supplies (g) 
+## UK seafood supplies (grams)
 
-Here, the cleaned data sheets are merged together.
+Create a data frame calculating UK seafood supplies per year. Units are displayed as grams.
 
-```{r Check structure of individual data frames}
-# Check column names of the data frames- should all be the same
-colnames(df_captureProd_NS_clean_data)
-colnames(df_aquaProd_Eurostat_clean_data)
-colnames(df_trade_HMRC_clean_data)
-colnames(df_housePurch_DEFRA_clean_data)
-colnames(df_eatenOutPurch_DEFRA_clean_data)
-colnames(df_consumption_NDNS_clean_data)
-colnames(df_popSize_NS_clean_data)
-
-df_trade_HMRC_clean_data$TemporalResolution <- "Annual"
-
-```
-
-```{r Combine data frames}
+```{r Combine all data frames}
 # rbind() cleaned data frames by column names
 df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
 
-df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data)
+```
 
 
-# Check structure of new data frame
-str(df_UKSeafoodSupplies)
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UKSeafoodSupplies, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
 
 ```
 
 
-## UK seafood supplies (g/capita/ week)
 
-The current data frame is displayed in grams. Create a new data frame where units are in grams/ capita/ week.
+## UK Seafood supplies per capita (g/capita/ week)
 
-```{r UK seafood supplies per capita}
-# Allocate population size to each year-- check
-df_UKSeafoodSupplies$popsize <- df_popSize_NS_clean_data
+Create a new data frame calculating UK seafood supplies per capita per week. Units are displayed as grams per capita per week.
 
-# Calculate g/capita/week
-df_UKSeafoodSupplies$value_gweek <- (df_UKSeafoodSupplies$Value / df_UKSeafoodSupplies$popsize) * 7 
-
-```
-
-
-Processed here:
+Download and clean UK population data. 
 
 ```{r Load data}
 # Read in UK population data 
@@ -132,25 +117,28 @@ str(df_NS_UK_pop)
 ```
 
 
-
-
 ```{r Calculate grams available per capita}
 # Add in annual UK population data to the data frame as a new column. Duplicate population data for each year. 
 
 # Match population size per year to each year in the merged seafood data frame
-seafood_W_pop <- merge(UK_seafood_data, df_NS_UK_pop, by = "Year")
-
-colnames(seafood_W_pop)
+df_UKSeafoodPerCapita <- merge(df_UKSeafoodSupplies, df_NS_UK_pop, by = "Year")
 
 # Convert grams/year to g/capita/year
-seafood_W_pop$ValueGramsCapitaYear <- seafood_W_pop$ValueGrams/seafood_W_pop$UKPop
+df_UKSeafoodPerCapita$ValueGramsCapitaYear <- df_UKSeafoodPerCapita$ValueGrams / df_UKSeafoodPerCapita$UKPop
 
 # Convert grams/year to g/capita/week
-seafood_W_pop$ValueGramsCapitaWeek<- seafood_W_pop$ValueGramsCapitaYear/52
+df_UKSeafoodPerCapita$Value <- df_UKSeafoodPerCapita$ValueGramsCapitaYear / 52
 
-df_UKseafood_200918 <- seafood_W_pop
+# Add additional column stating the units
+df_UKSeafoodPerCapita$Units <- "GramsCapitaWeek"
 
-# Separate g/capita/week data. Plan to 
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UKSeafoodPerCapita, file = paste(filepath,"UKSeafoodPerCapita.csv", sep = ""))
 
 ```
 
