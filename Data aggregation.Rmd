@@ -369,7 +369,7 @@ df_UK_AllUKLandings_200819_clean <- df_UK_AllUKLandings_200819[c("RevisedMCS", "
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_AllUKLandings_200819_clean, file = paste(filepath,"AllLandingsUKProductionData_MMO_clean.csv", sep = ""))
+write.csv(df_UK_AllUKLandings_200819_clean, file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = ""))
 
 ```
 
@@ -506,6 +506,25 @@ df_UKLandingsAndAbroad_200918$Flag <- "ConV1, ConV2"
 df_UKLandingsAndAbroad_200918$TemporalResolution <- "Annual"
 
 ```
+
+
+```{r Select desired variables for the cleaned data set}
+# Identify column names
+colnames(df_UKLandingsAndAbroad_200918)
+
+# Select desired columns for cleaned data set-- 16  variables
+df_UKLandingsAndAbroad_200918_clean <- df_UKLandingsAndAbroad_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UKLandingsAndAbroad_200918_clean, file = paste(filepath,"LandingsUKAndAbroad_MMO_clean.csv", sep = ""))
+
+```
+
 
 
 
