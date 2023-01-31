@@ -89,7 +89,7 @@ We use the EUMOFA data as a help to facilitate the classification and translatio
 ############### EUMOFA-file
 
 # Filepath to EUMOFA-file with complete CN-8 codes
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="")
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification/", sep="")
 # reading the EUMOFA-file
 df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 ## Note: the CN8 codes are related to the respective year, and have change over time.
@@ -100,8 +100,7 @@ df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 df_EUMOFA_CN8_MCS_CG <- vroom(file=paste(filepath,"EUMOFA_Annex4.csv", sep="/"))
 
 # loading Species classification - translation from EUMOFA MCS & CG to the classification we want to use.
-filepath <- paste(data_dir,"Methods/", sep="")
-df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep=""))
 
 
 ```
