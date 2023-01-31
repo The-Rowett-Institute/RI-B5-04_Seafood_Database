@@ -89,7 +89,7 @@ We use the EUMOFA data as a help to facilitate the classification and translatio
 ############### EUMOFA-file
 
 # Filepath to EUMOFA-file with complete CN-8 codes
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep="")
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification/", sep="")
 # reading the EUMOFA-file
 df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 ## Note: the CN8 codes are related to the respective year, and have change over time.
@@ -100,9 +100,9 @@ df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 df_EUMOFA_CN8_MCS_CG <- vroom(file=paste(filepath,"EUMOFA_Annex4.csv", sep="/"))
 
 # loading Species classification - translation from EUMOFA MCS & CG to the classification we want to use.
-filepath <- paste(data_dir,"Methods/", sep="")
-df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep=""))
 
+df_Species_Class$CF_value <- as.numeric(df_Species_Class$CF_value) # forcing numeric-class for calculation later and to turn the NoData values into NA 
 
 ```
 
@@ -184,7 +184,11 @@ df_HMRC_4DB <-df_HRMC.sum
 df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
 
 # Mapping our desired Species Species Type classification
-df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'MCS'))
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'MCS (DO NOT TOUCH)'))
+
+## converting the whole fishing weight into its edible weight
+## When "CF == 1", then it is the whole fish
+df_HMRC_4DB$`Net Mass (g)` <- ifelse(df_HMRC_4DB$CF==1,df_HMRC_4DB$`Net Mass (g)`*df_HMRC_4DB$CF_value,df_HMRC_4DB$`Net Mass (g)`)
 
 # We will now need to aggregated the weight values for some species again. As we have aggregate some some of the species and species type e.g. atlantic & pacific salmon as just salmon
 
@@ -214,7 +218,7 @@ df_HMRC_4DB$FlagDescription <- "EXAMPLES:Units changed, Species & Species Type a
 df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Species, SpeciesType, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
 
 # Removing Non-food uses im- & exports
-df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!SpeciesType %in% "OtherNFU")
+df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!Species %in% "Other non-food use")
 
 filepath <- paste(data_dir,"ProcessedData", sep="")
 
