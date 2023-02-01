@@ -68,7 +68,7 @@ UK seafood production data includes both data from capture fisheries and aquacul
 ```{r Load data (2017 to 2018)}
 # i) Landings into the UK by UK vessels: 2017 to 2021
 # Read in .csv file
-df_UK_landings_201721_data <- vroom(file=paste(filepath,"NS_UK_landings-201721.csv", sep="/"))
+df_UK_landings_201721_data <- vroom(file=paste(filepath,"MMO_UK_landings-201721.csv", sep="/"))
 
 # Check for missing values. Right column summed to be total number of rows in the data set
 md.pattern(df_UK_landings_201721_data, rotate.names = TRUE)
@@ -296,14 +296,14 @@ We need to ensure species are spelled the same across all data sets, otherwise d
 
 ```{r Join data frame with translation document- ensures consistent spelling across data sets}
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_UK_AllUKLandings_200819$SpeciesNEW <- df_UK_AllUKLandings_200819$Species
+df_UK_AllUKLandings_200918$SpeciesNEW <- df_UK_AllUKLandings_200918$Species
 
 # Join data frame with MCS data frame by species name
-df_UK_AllUKLandings_200819 <- df_UK_AllUKLandings_200819 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_UK_AllUKLandings_200918 <- df_UK_AllUKLandings_200918 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
-colnames(df_UK_AllUKLandings_200819)
+colnames(df_UK_AllUKLandings_200918)
 
 ```
 
@@ -312,56 +312,56 @@ Landings provided as whole weight. Need to apply conversion factors estimate edi
 
 ```{r Apply conversion factors to calculate edible portion of seafood}
 # Classify species as finfish or shellfish. New column for conversion name
-unique(df_UK_AllUKLandings_200819$FAO_ST)
+unique(df_UK_AllUKLandings_200918$FAO_ST)
 
 # Specify shellfish
-df_UK_AllUKLandings_200819$CN[df_UK_AllUKLandings_200819$FAO_ST %in% c("Crustaceans", "Molluscs", "Cephalopods", "Other molluscs and aquatic invertebrates", "Other shellfish")] <- "Shellfish"
+df_UK_AllUKLandings_200918$CN[df_UK_AllUKLandings_200918$FAO_ST %in% c("Crustaceans", "Molluscs", "Cephalopods", "Other molluscs and aquatic invertebrates", "Other shellfish")] <- "Shellfish"
 
 # Specify finfish
-df_UK_AllUKLandings_200819$CN[df_UK_AllUKLandings_200819$FAO_ST %in% c("Freshwater fish", "Demersal fish", "Other marine fish", "Pelagic fish")] <- "Finfish"
+df_UK_AllUKLandings_200918$CN[df_UK_AllUKLandings_200918$FAO_ST %in% c("Freshwater fish", "Demersal fish", "Other marine fish", "Pelagic fish")] <- "Finfish"
 
 # Create a new column stating the conversion factor. Conversion factors used to convert whole fish weight to edible weight
 # Average conversion factors for finfish: 0.49; shellfish: 0.28 (Lofstedt et al., 2021)
 
 # State average CF finfish: 0.49; shellfish: 0.28 
-df_UK_AllUKLandings_200819$CF[df_UK_AllUKLandings_200819$CN == "Shellfish"] <- 0.28
-df_UK_AllUKLandings_200819$CF[df_UK_AllUKLandings_200819$CN == "Finfish"] <- 0.49
+df_UK_AllUKLandings_200918$CF[df_UK_AllUKLandings_200918$CN == "Shellfish"] <- 0.28
+df_UK_AllUKLandings_200918$CF[df_UK_AllUKLandings_200918$CN == "Finfish"] <- 0.49
 
-unique(df_UK_AllUKLandings_200819$CF)
-unique(df_UK_AllUKLandings_200819$CN)
-str(df_UK_AllUKLandings_200819)
+unique(df_UK_AllUKLandings_200918$CF)
+unique(df_UK_AllUKLandings_200918$CN)
+str(df_UK_AllUKLandings_200918)
 
 # Create new column and apply conversion factors values
-df_UK_AllUKLandings_200819$CFValue <- df_UK_AllUKLandings_200819$Value * df_UK_AllUKLandings_200819$CF
+df_UK_AllUKLandings_200918$CFValue <- df_UK_AllUKLandings_200918$Value * df_UK_AllUKLandings_200918$CF
 
 ```
 
 
 ```{r Convert from 1000 tonnes to grams}
 # Convert raw value from 000's tonnes to grams 
-df_UK_AllUKLandings_200819$Value <- (df_UK_AllUKLandings_200819$CFValue * 1000) * 1000000
+df_UK_AllUKLandings_200918$Value <- (df_UK_AllUKLandings_200918$CFValue * 1000) * 1000000
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_AllUKLandings_200819$Units <- "Grams"
-df_UK_AllUKLandings_200819$DataSupplier <- "MMO"
-df_UK_AllUKLandings_200819$DataSet <- "UK_SeaFisheriesStatistics"
-df_UK_AllUKLandings_200819$Commodity <- "CaptureProduction"
-df_UK_AllUKLandings_200819$Flag <- "ConV1, ConV2"
-df_UK_AllUKLandings_200819$TemporalResolution <- "Annual"
+df_UK_AllUKLandings_200918$Units <- "Grams"
+df_UK_AllUKLandings_200918$DataSupplier <- "MMO"
+df_UK_AllUKLandings_200918$DataSet <- "UK_SeaFisheriesStatistics"
+df_UK_AllUKLandings_200918$Commodity <- "CaptureProduction"
+df_UK_AllUKLandings_200918$Flag <- "ConV1, ConV2"
+df_UK_AllUKLandings_200918$TemporalResolution <- "Annual"
 
 ```
 
 
 ```{r Select desired variables for the cleaned data set}
 # Identify column names
-colnames(df_UK_AllUKLandings_200819)
+colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200819_clean <- df_UK_AllUKLandings_200819[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
 
 ```
 
@@ -369,7 +369,7 @@ df_UK_AllUKLandings_200819_clean <- df_UK_AllUKLandings_200819[c("RevisedMCS", "
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_AllUKLandings_200819_clean, file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = ""))
+write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = ""))
 
 ```
 
@@ -388,7 +388,7 @@ df_UKLandingsAndAbroad_201721_data <- vroom(file=paste(filepath,"MMO_UKV_landing
 md.pattern(df_UKLandingsAndAbroad_201721_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2018)
-df_UKLandingsAndAbroad_201718_data <- df_UKLandingsAndAbroad_201721_data[c("Species", "2017", "2018",)]
+df_UKLandingsAndAbroad_201718_data <- df_UKLandingsAndAbroad_201721_data[c("Species", "2017", "2018")]
 ```
 
 

@@ -318,23 +318,23 @@ df_UK_seafoodSupplyCapita$ValueGramsCapitaWeek<-
 Boxplot of individual seafood commodities
 
 ```{r Boxplot of variability of individual seafood commodities supplied to the UK}
+# Remove Rays Bream from the data set
+df_UK_seafoodSupply_new <- df_UK_seafoodSupply[!grepl ("Ray\x92s bream",df_UK_seafoodSupply$RevisedMCS),]
 
 # Plot variability in seafood supplied by species between 2009 and 2018
 boxplot(Available ~ RevisedMCS, data = df_UK_seafoodSupply_new, col = "lightgray", 
         ylab = "Seafood supplied (T)", xlab = "", las = 3, cex.axis = 1.0)
 
-# Remove  'Ray�s bream'
-
-df_UK_seafoodSupply_new <- df_UK_seafoodSupply[!grepl ("Ray\x92s bream",df_UK_seafoodSupply$RevisedMCS),]
-
-str(df_UK_seafoodSupply_new)
-
+# Subset mackerel from the data set
 mackerel  <- subset(df_UK_seafoodSupply_new, RevisedMCS == "Mackerel")
 
+# Create a boxplot with mackerel availability
 boxplot(Available ~ RevisedMCS, data = mackerel, col = "lightgray", 
         ylab = "Seafood supplied (T)", xlab = "", las = 3, cex.axis = 1.0)
+```
 
 
+```{r Boxplot of variability of individual seafood commodities supplied to the UK}
 #Drop line
 
 
@@ -343,11 +343,11 @@ boxplot(Available ~ RevisedMCS, data = mackerel, col = "lightgray",
 # Reorder a predictor variable (species) by a function applied to the response variable (seafood availability)
 
 # For descending order simply add a minus sign in front of the response variable
-bymedian <- with(df_UK_seafoodSupplyCapita, reorder(SpeciesNEW, -ValueGramsCapitaWeek, median))
+bymedian <- with(df_UK_seafoodSupply_new, reorder(RevisedMCS, -Available, median))
 
 # Plot re-order boxplot from most to least available seafood supplied
-boxplot(ValueGramsCapitaWeek ~ bymedian, 
-        data = df_UK_seafoodSupplyCapita, ylab= "seafood availability (g/capita/week)", 
+boxplot(Available ~ bymedian, 
+        data = df_UK_seafoodSupply_new, ylab= "seafood availability (g/capita/week)", 
         xlab= "", las= 2, col= "lightgrey")
 
 ```
