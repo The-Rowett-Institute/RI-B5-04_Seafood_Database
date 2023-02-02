@@ -255,9 +255,11 @@ plot(ValueGramsCapitaWeek ~ Year, data= top5TotProduction, pch= 20, col= c("blue
 
 
 
+
+
 ### Figure 8. Boxplot of variability in individual seafood commodities supplied to the UK between 2009 and 2018
 
-## Calculate availability of each species supplied to the UK between 2009 and 2019 
+Calculate seafood supplied in the UK, by species level between 2009 and 2018. 
 
 ```{r Merge production and trade data sets together}
 # Separate imports and export data
@@ -266,7 +268,7 @@ seafoodExports <- subset(df_trade_HMRC_clean_data, Commodity == "Exports")
 
 # Join together all data sets
 # Join capture and aquaculture production together
-df_UK_seafoodProduction <- df_captureProd_NS_clean_data[,2:4] %>% 
+df_UK_seafoodProduction <- df_allLandingsintoUK_NS_clean_data[,2:4] %>% 
   full_join(df_aquaProd_Eurostat_clean_data[,2:4], by = c("RevisedMCS", "Year"))
 
 # Join production and imports data
@@ -282,6 +284,7 @@ colnames(df_UK_seafoodSupply) <- c( "RevisedMCS", "Year", "ValueCapture",  "Valu
 ```
 
 
+
 ```{r Calculate availability of each species}
 # Convert NA to zeros (otherwise availability cannot be calculated)  
 df_UK_seafoodSupply[is.na(df_UK_seafoodSupply)] <- 0
@@ -289,33 +292,8 @@ df_UK_seafoodSupply[is.na(df_UK_seafoodSupply)] <- 0
 # Create new column to calculate availability for each species
 df_UK_seafoodSupply$Available <- (df_UK_seafoodSupply$ValueCapture + df_UK_seafoodSupply$ValueAqua + df_UK_seafoodSupply$ValueImport) - df_UK_seafoodSupply$ValueExport
 
-# Change units of seafood supplied
-# Calculate amount of seafood available (kg) for each species 
-#df_UK_seafoodSupply$available_Kg<-df_UK_seafoodSupply$available / 1000
-
-# Calculate amount of seafood available (tonnes) for each species 
-#df_UK_seafoodSupply$available_T<-df_UK_seafoodSupply$available / 1000000
-
-
 ```
 
-
-```{r Calculate seafood availability in grams/capita/ week}
-# Create new column in data frame with total UK population data
-# Match annual population size with years in the merged seafood data frame
-df_UK_seafoodSupplyCapita <- merge(df_UK_seafoodSupply, df_NS_UK_pop, by = "Year")
-
-# Convert grams/year to g/capita/year
-df_UK_seafoodSupplyCapita$ValueGramsCapitaYear <-
-  df_UK_seafoodSupplyCapita$available/df_UK_seafoodSupplyCapita$UKPop
-
-# Convert grams/year to g/capita/week
-df_UK_seafoodSupplyCapita$ValueGramsCapitaWeek<-
-  df_UK_seafoodSupplyCapita$ValueGramsCapitaYear/52
-
-```
-
-Boxplot of individual seafood commodities
 
 ```{r Boxplot of variability of individual seafood commodities supplied to the UK}
 # Remove Rays Bream from the data set
@@ -323,34 +301,49 @@ df_UK_seafoodSupply_new <- df_UK_seafoodSupply[!grepl ("Ray\x92s bream",df_UK_se
 
 # Plot variability in seafood supplied by species between 2009 and 2018
 boxplot(Available ~ RevisedMCS, data = df_UK_seafoodSupply_new, col = "lightgray", 
-        ylab = "Seafood supplied (T)", xlab = "", las = 3, cex.axis = 1.0)
+        ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
 
-# Subset mackerel from the data set
-mackerel  <- subset(df_UK_seafoodSupply_new, RevisedMCS == "Mackerel")
-
-# Create a boxplot with mackerel availability
-boxplot(Available ~ RevisedMCS, data = mackerel, col = "lightgray", 
-        ylab = "Seafood supplied (T)", xlab = "", las = 3, cex.axis = 1.0)
 ```
 
 
-```{r Boxplot of variability of individual seafood commodities supplied to the UK}
-#Drop line
 
 
-
+```{r Order species by decending seafood supplied}
 # Plot box plot with most to least available seafood supplied
-# Reorder a predictor variable (species) by a function applied to the response variable (seafood availability)
 
+# Reorder a predictor variable (species) by a function applied to the response variable (seafood availability)
 # For descending order simply add a minus sign in front of the response variable
 bymedian <- with(df_UK_seafoodSupply_new, reorder(RevisedMCS, -Available, median))
 
 # Plot re-order boxplot from most to least available seafood supplied
 boxplot(Available ~ bymedian, 
-        data = df_UK_seafoodSupply_new, ylab= "seafood availability (g/capita/week)", 
+        data = df_UK_seafoodSupply_new, ylab= "Seafood supplied to the UK (grams)", 
         xlab= "", las= 2, col= "lightgrey")
 
 ```
+
+
+
+Now create new data frames, subsetting species of interest
+
+```{r Boxplot of variability of specific seafood species }
+
+# Subset mackerel
+df_UK_mackerelSupplies <- subset(df_UK_seafoodSupply_new, RevisedMCS == "Mackerel")
+plot(Available ~ Year, data = df_UK_mackerelSupplies, ylab = "Supplies(g)", xlab= "", las = 1)
+
+# Subset blue whiting
+df_UK_bWhitingSupplies <- subset(df_UK_seafoodSupply_new, RevisedMCS == "Blue whiting")
+plot(Available ~ Year, data = df_UK_bWhitingSupplies, ylab = "Supplies(g)", xlab= "", las = 1)
+
+# Subset herring whiting
+df_UK_herringSupplies <- subset(df_UK_seafoodSupply_new, RevisedMCS == "Herring")
+plot(Available ~ Year, data = df_UK_herringSupplies, ylab = "Supplies(g)", xlab= "", las = 1)
+
+```
+
+
+
 
 
 Plot a boxplot of individual seafood commodities grouped by SACN classification
@@ -372,20 +365,6 @@ boxplot(ValueGramsCapitaWeek ~ SpeciesNEW, data = df_UK_SupplyCapita_Oily, col =
 # Plot variability in SHELLFISH seafood supplied by species between 2009 and 2018
 boxplot(ValueGramsCapitaWeek ~ SpeciesNEW, data = df_UK_SupplyCapita_Shellfish, 
         col = "lightgray", ylab = "Seafood supplies", xlab = "", las = 3)
-```
-
-Plot a box plot my species of interest
-
-```{r Boxplot of variability of specific seafood species }
-
-df_UK_SupplyCapita_Mackerel <- subset(df_UK_seafoodSupplyCapita, SpeciesNEW == "Mackerel")
-plot(ValueGramsCapitaWeek ~ Year, data = df_UK_SupplyCapita_Mackerel, ylab = "Supplied (g/capita/week)", xlab= "", las = 1)
-
-
-df_UK_SupplyCapita_BlueWhiting <- subset(df_UK_seafoodSupplyCapita, SpeciesNEW == "Blue whiting")
-plot(ValueGramsCapitaWeek ~ Year, data = df_UK_SupplyCapita_BlueWhiting, ylab = "Supplied (g/capita/week)", xlab= "", las = 1)
-
-
 ```
 
 
