@@ -59,7 +59,7 @@ df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsin
 df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = "/"))
 
 # Load UK trade data (further processed)
-df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = "/"))
+df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_clean.csv", sep = "/"))
 
 # Load UK household purchasing data 
 df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA.csv", sep = "/"))
@@ -68,7 +68,7 @@ df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchase
 df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA.csv", sep = "/"))
 
 # Load UK consumption data 
-df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_clean-edited.csv", sep = "/"))
+df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = "/"))
 
 # Load UK population data 
 df_popSize_NS_clean_data <- vroom(file = paste(filepath,"PopSize_NS.csv", sep = "/"))
@@ -84,6 +84,13 @@ Create a data frame calculating UK seafood supplies per year. Units are displaye
 ```{r Combine all data frames}
 # rbind() cleaned data frames by column names
 df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
+
+df_UKSeafoodSupplies <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_consumption_NDNS_clean_data)
+
+colnames(df_allLandingsintoUK_NS_clean_data)
+colnames(df_aquaProd_Eurostat_clean_data)
+colnames(df_consumption_NDNS_clean_data)
+colnames(df_trade_HMRC_clean_data)
 
 ```
 
