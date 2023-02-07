@@ -1,5 +1,5 @@
 ---
-title: "Part 2. Merging cleaned data. RI-B5-04: UK seafood supply chains"
+title: "RI-B5-04: UK seafood supply chains. Part 2. Merging cleaned data. "
 author: "A.Lofstedt"
 date: "25/01/2023"
 output: html_document
@@ -41,37 +41,85 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 ```
 
 
-Note to AL: check the time series of the data set- should be between 2009 to 2018. Do this step now.  
+## UK population data (ONS) 
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
 
 
+```{r Load data (1971 to 2020)}
+# Load data (1971 to 2020)
+df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
+
+str(df_UK_ONS_population_data)
+
+```
+
+
+```{r Subset data for desired years}
+# Subset UK population data between 2009 and 2018
+df_UK_pop_200918 <- subset(df_UK_ONS_population_data, 
+                      CDID > 2008 & CDID < 2019 , select= c(CDID, UKPOP))
+
+# Check years
+unique(df_UK_pop_200918$CDID)
+
+```
+
+
+```{r Add additional variables to data set}
+# Rename the "CDID" column to "value"
+names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Value"
+
+# Create "cleaned" data frame, defining units and data source 
+df_UK_pop_200918$DataSupplier <- "ONS"
+df_UK_pop_200918$DataSet <- "TotalUKPopulation"
+df_UK_pop_200918$Commodity <- "Population"
+df_UK_pop_200918$Flag <- "ConV3"
+df_UK_pop_200918$Units <- "Capita"
+df_UK_pop_200918$TemporalResolution <- "CalendarYear"
+
+# Identify column names
+colnames(df_UK_pop_200918)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""))
+
+```
+
+
+
+
+## Aggregating the cleaned data sets 
 
 ```{r Load cleaned data}
-# Load UK capture production data (UK landings into UK only)
-#df_captureProd_NS_clean_data <- vroom(file = paste(filepath,"UKLandingsinUKOnly_MMO_clean.csv", sep = "/"))
-
 # Load UK capture production data (UK and foreign vessels landings into the UK)
-df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = "/"))
-
-# Load UK capture production data (UK landings into the UK and abroad)
-#df_LandingsUKAbroad_NS_clean_data <- vroom(file = paste(filepath,"LandingsUKAndAbroad_MMO_clean.csv", sep = "/"))
+df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK aquaculture production data 
-df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = "/"))
+df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK trade data (further processed)
 df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_clean.csv", sep = "/"))
 
 # Load UK household purchasing data 
-df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA.csv", sep = "/"))
+df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA.csv", sep = "/"))
+df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK consumption data 
-df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = "/"))
+df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK population data 
-df_popSize_NS_clean_data <- vroom(file = paste(filepath,"PopSize_NS.csv", sep = "/"))
+df_popSize_NS_clean_data <- vroom(file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = "/"))
 
 ```
 
@@ -82,15 +130,21 @@ df_popSize_NS_clean_data <- vroom(file = paste(filepath,"PopSize_NS.csv", sep = 
 Create a data frame calculating UK seafood supplies per year. Units are displayed as grams.
 
 ```{r Combine all data frames}
-# rbind() cleaned data frames by column names
-df_UKSeafoodSupplies <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
-
-df_UKSeafoodSupplies <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_consumption_NDNS_clean_data)
-
+# Check strucure of all dataframs prior to combining
 colnames(df_allLandingsintoUK_NS_clean_data)
 colnames(df_aquaProd_Eurostat_clean_data)
-colnames(df_consumption_NDNS_clean_data)
 colnames(df_trade_HMRC_clean_data)
+colnames(df_eatenOutPurch_DEFRA_clean_data)
+colnames(df_housePurch_DEFRA_clean_data)
+colnames(df_consumption_NDNS_clean_data)
+colnames(df_consumption_NDNS_clean_data)
+colnames(df_popSize_NS_clean_data)
+
+
+# combine cleaned data sets 
+df_UKSeafoodSuppliesDatabase <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
+
+df_UKSeafoodSupplies <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_consumption_NDNS_clean_data)
 
 ```
 
@@ -98,31 +152,16 @@ colnames(df_trade_HMRC_clean_data)
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UKSeafoodSupplies, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
+write.csv(df_UKSeafoodSuppliesDatabase, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
 
 ```
+
 
 
 
 ## UK Seafood supplies per capita (g/capita/ week)
 
 Create a new data frame calculating UK seafood supplies per capita per week. Units are displayed as grams per capita per week.
-
-Download and clean UK population data. 
-
-```{r Load data}
-# Read in UK population data 
-df_NS_UK_pop_data <- vroom(file=paste(filepath,"PopSize_NS.csv", sep="/"))
-colnames(df_NS_UK_pop_data)
-
-# Select desired columns from data set
-df_NS_UK_pop <- df_NS_UK_pop_data[c("CDID", "UKPOP")]
-
-# Rename columns 
-colnames(df_NS_UK_pop) <- c("Year", "UKPop")
-str(df_NS_UK_pop)
-
-```
 
 
 ```{r Calculate grams available per capita}
@@ -139,14 +178,6 @@ df_UKSeafoodPerCapita$Value <- df_UKSeafoodPerCapita$ValueGramsCapitaYear / 52
 
 # Add additional column stating the units
 df_UKSeafoodPerCapita$Units <- "GramsCapitaWeek"
-
-```
-
-
-```{r Save cleaned data}
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UKSeafoodPerCapita, file = paste(filepath,"UKSeafoodPerCapita.csv", sep = ""))
 
 ```
 
