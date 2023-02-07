@@ -878,6 +878,9 @@ df_DEFRA_eaten_out_201618$SACN[df_DEFRA_eaten_out_201618$codecat %in% c("eo12020
 #df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Unknown")]<-"Unknown"
 #df_DEFRA_EO_200915_clean$SACN[df_DEFRA_EO_200915_clean$SpeciesType %in% c("Shellfish")]<-"Shellfish"
 
+## Could be useful later
+FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF), by= list(Year = FAO_food_balance$Year,  Element = FAO_food_balance$Element), FUN=sum)
+
 ```
 
 

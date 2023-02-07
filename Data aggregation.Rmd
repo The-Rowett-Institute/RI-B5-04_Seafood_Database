@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '06/02/2023'
+date: '07/02/2023'
 output: html_document
 ---
 
@@ -46,7 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations-edited.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -175,10 +175,10 @@ df_UK_AllUKLandings_200918$Value <- (df_UK_AllUKLandings_200918$apply_CF * 1000)
 # Create "cleaned" data frame, defining units and data source 
 df_UK_AllUKLandings_200918$Units <- "Grams"
 df_UK_AllUKLandings_200918$DataSupplier <- "MMO"
-df_UK_AllUKLandings_200918$DataSet <- "UK_SeaFisheriesStatistics"
-df_UK_AllUKLandings_200918$Commodity <- "CaptureProduction"
+df_UK_AllUKLandings_200918$DataSet <- "Capture_SeaFisheriesStatistics"
+df_UK_AllUKLandings_200918$Commodity <- "Production"
 df_UK_AllUKLandings_200918$Flag <- "ConV1, ConV2"
-df_UK_AllUKLandings_200918$TemporalResolution <- "Annual"
+df_UK_AllUKLandings_200918$TemporalResolution <- "CalendarYear"
 
 ```
 
@@ -199,13 +199,20 @@ colnames(df_UK_AllUKLandings_200918_clean)
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_clean.csv", sep = ""))
+write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""))
 
 ```
 
 
 
 ### B) Aquaculture production (EUROSTAT)
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
 
 ```{r Load data (2009 to 2018)}
 # Read in .csv file 
@@ -258,7 +265,7 @@ df_UKFarmed_200918$DataSet <- "Aquaculture"
 df_UKFarmed_200918$Commodity <- "Production"
 df_UKFarmed_200918$Flag <- "ConV1, ConV2"
 df_UKFarmed_200918$Units <- "Grams"
-df_UKFarmed_200918$TemporalResolution <- "Annual"
+df_UKFarmed_200918$TemporalResolution <- "CalendarYear"
 ```
 
 
@@ -276,7 +283,7 @@ df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("RevisedMCS", "Year", "Value", 
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep = "")
 write.csv(df_UK_aquaculture_200918, file = 
-            paste(filepath,"AquacultureData_Eurostat_clean.csv", sep = ""))
+            paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = ""))
 
 ```
 
@@ -329,7 +336,14 @@ write.csv(df_cleaned_UK_HMRC_200919, file = paste(filepath,"Trade_HMRC_clean-edi
 
 UK fish consumption data was sourced from the National Diet and Nutrition Survey (NDNS). Food diaries show the amount of seafood and often species consumed in the UK. It has greater granularity compared to other data sources (consumption identified to species level).
 
-UK seafood consumption data is collected on a biannual basis i.e. participants provide food diary entries every two years. Although food diary entry dates are provided, yearly consumption per calendar year cannot be calculated due to the nature of the data collection. Therefore, over a 10-year period, there will be five seafood consumption estimates. NDNS data is freely available from 2008 to 2019 (i.e. reporting years 1 to 11). Data, to food level consumption can be downloaded as txt files from the UK data service. Convert all tab files to .csv before loading into R. 
+UK seafood consumption data is collected every financial year. Although food diary entry dates are provided, yearly consumption per calendar year cannot be calculated due to the nature of the data collection. Therefore, over a 10-year period, there will be five seafood consumption estimates. NDNS data is freely available from 2008 to 2019 (i.e. reporting years 1 to 11). Data, to food level consumption can be downloaded as txt files from the UK data service. Convert all tab files to .csv before loading into R. 
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
 
 ```{r Load data (2008 to 2019)}
 # Load NDNS yrs 1 - 4
@@ -345,7 +359,7 @@ df_NDNS_foodlevel_yr7_8_data <-
 
 # Load NDNS yrs 9-11
 df_NDNS_foodlevel_yr9_11_data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-11-edit.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-11.csv", sep = "/"))
 
 ```
 
@@ -359,9 +373,6 @@ colnames(df_NDNS_foodlevel_yr9_11_data)
 
 # Rename "AgeR"
 colnames(df_NDNS_foodlevel_yr9_11_data)[colnames(df_NDNS_foodlevel_yr9_11_data) == 'AgeR'] <- 'Age'
-
-# Check column was omitted 
-colnames(df_NDNS_foodlevel_yr9_11_data)
 
 # Join data frames
 NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
@@ -446,7 +457,7 @@ df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_clean.csv", sep = ""))
+write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""))
 
 ```
 
@@ -455,6 +466,8 @@ write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"Con
 ## Purchases (DEFRA family food) UK seafood purchses
 
 Load the UK seafood purchasing data. Purchasing data between 2016 and 2018 is composed of purchases at a household and eaten out level. The two data sets need to be separated. 
+
+
 
 ```{r Specify the desired file path}
 # Select file path with raw data
@@ -652,7 +665,7 @@ df_DEFRA_household_200918_cleaned <- rbind(df_DEFRA_household_200915_cleaned, df
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_DEFRA_household_200918_cleaned, file =
-            paste(filepath,"HouseholdPurchases_DEFRA_clean.csv", sep=""))
+            paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""))
 
 ```
 
@@ -702,7 +715,7 @@ colnames(df_DEFRA_eatenOut_200915_long)
 # Add additional variables
 df_DEFRA_eatenOut_200915_long$DataSupplier <- "DEFRA"
 df_DEFRA_eatenOut_200915_long$DataSet <- "FamilyFoods_eatenOut"
-df_DEFRA_eatenOut_200915_long$Commodity <- "Purchases"
+df_DEFRA_eatenOut_200915_long$Commodity <- "Purchase"
 df_DEFRA_eatenOut_200915_long$Flag <- "ConV4, ConV5"
 df_DEFRA_eatenOut_200915_long$TemporalResolution <- "CalendarYear"
 df_DEFRA_eatenOut_200915_long$Units <- "Grams/Capita/Week"
@@ -724,7 +737,7 @@ Now combine eating out data sets from years 2009 to 2018
 
 ```{r Combine DEFRA eating out data i) 2009 to 2015; ii) 2016 to 2018}
 # Convert "Year" to a factor value
-df_DEFRA_eatenOut_200915_cleaned$Year_no <- as.numeric(df_DEFRA_eatenOut_200915_cleaned$Year)
+df_DEFRA_eatenOut_200915_cleaned$Year <- as.factor(df_DEFRA_eatenOut_200915_cleaned$Year)
 df_DEFRA_eatenOut_201618_cleaned$Year <- as.factor(df_DEFRA_eatenOut_201618_cleaned$Year)
 
 # Combine DEFRA eating out data between 2009 to 2015 and 2016 to 2018
@@ -737,7 +750,7 @@ df_DEFRA_eatenOut_200918 <- rbind(df_DEFRA_eatenOut_200915_cleaned, df_DEFRA_eat
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_DEFRA_eatenOut_200918, file =
-            paste(filepath,"EatenOutPurchases_DEFRA_clean.csv", sep=""))
+            paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""))
 
 ```
 
@@ -750,9 +763,15 @@ Next we downloaded seafood nutrient composition data from Public Health England 
 Composition analyses were conducted in 2004. Temporal changes in nutrient composition is unlikely.
 
 
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
 ```{r Load data (2004)}
 # Read in .csv file 
-df_PHE_composition_data <- vroom(file=paste(filepath,"PHE_SeafoodNutrientContent-edit.csv", sep="/"), na = c("N/A", "Tr")) # Both N/A and Tr different 
+df_PHE_composition_data <- vroom(file=paste(filepath,"PHE_SeafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) # Both N/A and Tr different 
 # Note that .csv file is saved as a UT8 (otherwise an error appears. Check with Bernhard the differences in the file types)
 
 # Check for missing values
@@ -765,45 +784,65 @@ colnames(df_PHE_composition_data)
 
 
 ```{r Join data frame with translation document}
+# Cleaned data set does not consider the status of the sample e.g. raw/ cooked. So new column created with such information.
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_PHE_composition_data$SpeciesNEW <- df_PHE_composition_data$SampleDescription
 
 # Merge data frame with MCS data frame by species name
 df_PHE_composition_data <- df_PHE_composition_data %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 
+# Check the structure
+str(df_PHE_composition_data)
 ```
 
-Cleaned dataset does not consider the status of the sample e.g. raw/ cooked. Need to create a new column with such infomation. 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
 df_PHE_composition_data$DataSupplier <- "PHE"
 df_PHE_composition_data$DataSet <- "NutrientAnalysis"
-df_PHE_composition_data$Commodity <- "Composition"
-df_PHE_composition_data$Flag <- "Con41"
+df_PHE_composition_data$Commodity <- "NutrientComposition"
+df_PHE_composition_data$Flag <- "ConV4"
 
 ```
 
+
+The main nutrients in fish are calcium, iron, selenium, zinc, vitamin D and omega-3 fatty acids. 
 
 ```{r Select desired variables}
 # Identify columns in data frame
 colnames(df_PHE_composition_data)
 
 # Select desired columns for cleaned data set
-df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g" )]
+df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("SampleDescription", "RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g", "VitaminD-µg100g" )]
+
+# Here the main nutrients have been selected but his list can be easily changed.
 
 ```
 
+
 Calculate nutrient density score of each seafood product. Nutrient density defines as the combined contribution of a 100g portion for recommended daily intakes of all five nutrients based on nutrient reference point for adults.
 
+Nutrient-dense foods are often high in dietary fiber, vitamin D, calcium, iron and potassium and lower in saturated fat, added sugars and sodium
+
 ```{r Calculate nutrient density score of each fish species}
+
+# Note to AL: this may be more Cathrine's area of work.
 # Create new column calculating nutrient density score
+
+# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
+
+# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
+
+# Divide the RDA calculation by the calorie calculation 
+
 
 ```
 
 
 ```{r Save cleaned data}
+# Change file path to "ProcessedData"
+filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_nutcomp_PHE_cleaned, file =
-            paste(filepath,"NutrientComposition_PHE_clean.csv", sep=""))
+            paste(filepath,"NutrientComposition_PHE_PreliminaryCleaned.csv", sep=""))
 
 ```
