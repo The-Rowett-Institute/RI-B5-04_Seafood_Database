@@ -14,7 +14,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This is a document describs the methods and data used to create the UK Seafood supply chain database. 
 
 **[CHECK below if correct]**
-This project was part of the RESAS - Project from the Rowett Insitute at the University of Aberdeen.
+This project was part of the RESAS - Project from the Rowett Institute at the University of Aberdeen.
 
 ## Method
 
@@ -36,7 +36,7 @@ source("Data_filepath.R")
 
 # Only selecting the cleaned dataset, which are annotate with the "_cleaned_sfdb". There might be other processed files in the folder, which we don't want
 filepath <- paste(data_dir,"ProcessedData/", sep="")# we are storing the file path here, because we'll need it later
-vec_filenames_sfdb <- list.files(filepath, pattern = "_cleaned_sfdb.csv", full.names = TRUE)
+vec_filenames_sfdb <- list.files(filepath, pattern = "Cleaned", full.names = TRUE)
 
 
 
@@ -53,6 +53,16 @@ for(f in vec_filenames_sfdb){
 }
 rm(i)
 
+
+```
+```{r Creating the Seafood database}
+
+
+df_Seafood_DB <- rbind(df_Trade_, df_AllLan) # Note df_Trade_ is the edited one
+df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
+
+df_Seafood_CoPu_DB <- rbind(df_Consum,df_EatenO)
+df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
 
 ```
 
