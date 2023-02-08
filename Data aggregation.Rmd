@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '07/02/2023'
+date: '08/02/2023'
 output: html_document
 ---
 
@@ -177,8 +177,9 @@ df_UK_AllUKLandings_200918$Units <- "Grams"
 df_UK_AllUKLandings_200918$DataSupplier <- "MMO"
 df_UK_AllUKLandings_200918$DataSet <- "Capture_SeaFisheriesStatistics"
 df_UK_AllUKLandings_200918$Commodity <- "Production"
-df_UK_AllUKLandings_200918$Flag <- "ConV1, ConV2"
+df_UK_AllUKLandings_200918$Flag <- "ConV1"
 df_UK_AllUKLandings_200918$TemporalResolution <- "CalendarYear"
+df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the data"
 
 ```
 
@@ -188,7 +189,7 @@ df_UK_AllUKLandings_200918$TemporalResolution <- "CalendarYear"
 colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
@@ -263,9 +264,10 @@ df_UKFarmed_200918$Value <- df_UKFarmed_200918$apply_CF * 1000000
 df_UKFarmed_200918$DataSupplier <- "Eurostat"
 df_UKFarmed_200918$DataSet <- "Aquaculture"
 df_UKFarmed_200918$Commodity <- "Production"
-df_UKFarmed_200918$Flag <- "ConV1, ConV2"
+df_UKFarmed_200918$Flag <- "ConV1"
 df_UKFarmed_200918$Units <- "Grams"
 df_UKFarmed_200918$TemporalResolution <- "CalendarYear"
+df_UKFarmed_200918$FlagDescription <- "CF applied to all or part of the data"
 ```
 
 
@@ -274,7 +276,7 @@ df_UKFarmed_200918$TemporalResolution <- "CalendarYear"
 colnames(df_UKFarmed_200918)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -317,8 +319,13 @@ df_trade_HMRC_data <- df_trade_HMRC_data %>% inner_join(., MCS_translations, by 
 # Identify columns in data frame
 colnames(df_trade_HMRC_data)
 
+# Change variable entries in the trade data
+df_trade_HMRC_data$Flag <- "ConV1"
+df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
+df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
+
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "TemporalResolution")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier.y", "DataSet", "Commodity", "Flag", "TemporalResolution", "FlagDescription")]
 
 ```
 
@@ -437,9 +444,10 @@ df_NDNS_seafood_consumption_Yr1_11_num <- merge(df_NDNS_seafood_consumption_Yr1_
 df_NDNS_seafood_consumption_Yr1_11_num$DataSupplier <- "NDNS"
 df_NDNS_seafood_consumption_Yr1_11_num$DataSet <- "FoodDiaries"
 df_NDNS_seafood_consumption_Yr1_11_num$Commodity <- "Consumption"
-df_NDNS_seafood_consumption_Yr1_11_num$Flag <- "ConV3, ConV4"
+df_NDNS_seafood_consumption_Yr1_11_num$Flag <- "ConV2"
 df_NDNS_seafood_consumption_Yr1_11_num$TemporalResolution <- "FinancialYear"
 df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams"
+df_NDNS_seafood_consumption_Yr1_11_num$FlagDescription <- "Units changed to g/country/year"
 
 ```
 
@@ -449,7 +457,7 @@ df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams"
 colnames(df_NDNS_seafood_consumption_Yr1_11_num)
 
 # Select desired columns for cleaned data set
-df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription" )]
 
 ```
 
@@ -533,9 +541,10 @@ names(df_DEFRA_household_201618)[names(df_DEFRA_household_201618)=="estimate"] <
 df_DEFRA_household_201618$DataSupplier <- "DEFRA"
 df_DEFRA_household_201618$DataSet <- "FamilyFoods_household"
 df_DEFRA_household_201618$Commodity <- "Purchases"
-df_DEFRA_household_201618$Flag <- "ConV4, ConV5"
+df_DEFRA_household_201618$Flag <- "ConV2"
 df_DEFRA_household_201618$TemporalResolution <- "CalendarYear"
 df_DEFRA_household_201618$Units <- "Grams/Capita/Week"
+df_DEFRA_household_201618$FlagDescription <- "Units changed to g/country/year"
 
 ```
 
@@ -545,7 +554,7 @@ df_DEFRA_household_201618$Units <- "Grams/Capita/Week"
 colnames(df_DEFRA_household_201618)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_201618_cleaned <- df_DEFRA_household_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_DEFRA_household_201618_cleaned <- df_DEFRA_household_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -564,6 +573,7 @@ df_DEFRA_eatenOut_201618$Commodity <- "Purchases"
 df_DEFRA_eatenOut_201618$Flag <- "ConV4, ConV5"
 df_DEFRA_eatenOut_201618$TemporalResolution <- "CalendarYear"
 df_DEFRA_eatenOut_201618$Units <- "Grams/Capita/Week"
+df_DEFRA_eatenOut_201618$FlagDescription <- "Units changed to g/country/year"
 
 ```
 
@@ -573,7 +583,7 @@ df_DEFRA_eatenOut_201618$Units <- "Grams/Capita/Week"
 colnames(df_DEFRA_eatenOut_201618)
 
 # Select desired columns for cleaned data set
-df_DEFRA_eatenOut_201618_cleaned <- df_DEFRA_eatenOut_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_DEFRA_eatenOut_201618_cleaned <- df_DEFRA_eatenOut_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -630,6 +640,7 @@ df_DEFRA_household_200915_long$Commodity <- "Purchases"
 df_DEFRA_household_200915_long$Flag <- "ConV4, ConV5"
 df_DEFRA_household_200915_long$TemporalResolution <- "CalendarYear"
 df_DEFRA_household_200915_long$Units <- "Grams/Capita/Week"
+df_DEFRA_household_200915_long$FlagDescription <- "Units changed to g/country/year"
 
 ```
 
@@ -639,7 +650,7 @@ df_DEFRA_household_200915_long$Units <- "Grams/Capita/Week"
 colnames(df_DEFRA_household_200915_long)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_200915_cleaned <- df_DEFRA_household_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_DEFRA_household_200915_cleaned <- df_DEFRA_household_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -672,6 +683,13 @@ write.csv(df_DEFRA_household_200918_cleaned, file =
 
 
 ### iv) Eating out (2009 to 2015)
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
 
 ```{r Load data (2009 to 2015)}
 # read DEFRA eaten out data set
@@ -719,6 +737,7 @@ df_DEFRA_eatenOut_200915_long$Commodity <- "Purchase"
 df_DEFRA_eatenOut_200915_long$Flag <- "ConV4, ConV5"
 df_DEFRA_eatenOut_200915_long$TemporalResolution <- "CalendarYear"
 df_DEFRA_eatenOut_200915_long$Units <- "Grams/Capita/Week"
+df_DEFRA_eatenOut_200915_long$FlagDescription <- "Units changed to g/country/year"
 
 ```
 
@@ -728,7 +747,7 @@ df_DEFRA_eatenOut_200915_long$Units <- "Grams/Capita/Week"
 colnames(df_DEFRA_eatenOut_200915_long)
 
 # Select desired columns for cleaned data set
-df_DEFRA_eatenOut_200915_cleaned <- df_DEFRA_eatenOut_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag")]
+df_DEFRA_eatenOut_200915_cleaned <- df_DEFRA_eatenOut_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -801,7 +820,8 @@ str(df_PHE_composition_data)
 df_PHE_composition_data$DataSupplier <- "PHE"
 df_PHE_composition_data$DataSet <- "NutrientAnalysis"
 df_PHE_composition_data$Commodity <- "NutrientComposition"
-df_PHE_composition_data$Flag <- "ConV4"
+df_PHE_composition_data$Flag <- "NA"
+df_PHE_composition_data$FlagDescription <- "NA"
 
 ```
 
@@ -813,7 +833,8 @@ The main nutrients in fish are calcium, iron, selenium, zinc, vitamin D and omeg
 colnames(df_PHE_composition_data)
 
 # Select desired columns for cleaned data set
-df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("SampleDescription", "RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g", "VitaminD-µg100g" )]
+df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("SampleDescription", "RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g", "VitaminD-µg100g", 
+                                                    "FlagDescription", "Flag")]
 
 # Here the main nutrients have been selected but his list can be easily changed.
 
