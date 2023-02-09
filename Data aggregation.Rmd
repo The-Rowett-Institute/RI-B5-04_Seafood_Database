@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '08/02/2023'
+date: '09/02/2023'
 output: html_document
 ---
 
@@ -189,7 +189,7 @@ df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the 
 colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
@@ -200,7 +200,9 @@ colnames(df_UK_AllUKLandings_200918_clean)
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""))
+
+# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
+write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -276,7 +278,7 @@ df_UKFarmed_200918$FlagDescription <- "CF applied to all or part of the data"
 colnames(df_UKFarmed_200918)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -285,7 +287,7 @@ df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("RevisedMCS", "Year", "Value", 
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep = "")
 write.csv(df_UK_aquaculture_200918, file = 
-            paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = ""))
+            paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -325,7 +327,7 @@ df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
 df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("RevisedMCS", "Year", "Value", "Units", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier.y", "DataSet", "Commodity", "Flag", "TemporalResolution", "FlagDescription")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -333,7 +335,7 @@ df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("RevisedMCS", "Year", "Value",
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_cleaned_UK_HMRC_200919, file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = ""))
+write.csv(df_cleaned_UK_HMRC_200919, file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -358,15 +360,23 @@ df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1
 
 # Load NDNS yrs 5 - 6 
 df_NDNS_foodlevel_yr5_6_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6-edit.csv", sep = "/"))
 
 # Load NDNS yrs 7 - 8 
 df_NDNS_foodlevel_yr7_8_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8-edited.csv", sep = "/"))
 
-# Load NDNS yrs 9-11
-df_NDNS_foodlevel_yr9_11_data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-11.csv", sep = "/"))
+# Load NDNS yrs 9
+df_NDNS_foodlevel_yr9data <- 
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-edit.csv", sep = "/"))
+
+# Load NDNS yrs 10
+df_NDNS_foodlevel_yr10_data <- 
+  vroom(file = paste(filepath,"NDNS_FoodLevelData_Yr10.csv", sep = "/"))
+
+# Load NDNS yrs 11
+df_NDNS_foodlevel_yr11_data <- 
+  vroom(file = paste(filepath,"NDNS_FoodLevel-Y11.csv", sep = "/"))
 
 ```
 
@@ -376,7 +386,15 @@ df_NDNS_foodlevel_yr9_11_data <-
 colnames(df_NDNS_foodlevel_yr1_4_data)
 colnames(df_NDNS_foodlevel_yr5_6_data)
 colnames(df_NDNS_foodlevel_yr7_8_data)
-colnames(df_NDNS_foodlevel_yr9_11_data)
+colnames(df_NDNS_foodlevel_yr9data)
+colnames(df_NDNS_foodlevel_yr10_data)
+colnames(df_NDNS_foodlevel_yr11_data)
+
+all_equal(df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr9data)
+
+# Remove columns 
+
+WhereOther 
 
 # Rename "AgeR"
 colnames(df_NDNS_foodlevel_yr9_11_data)[colnames(df_NDNS_foodlevel_yr9_11_data) == 'AgeR'] <- 'Age'
@@ -410,7 +428,7 @@ str(df_NDNS_seafood_consumption_Yr1_11)
 
 ```{r Calculate total grams of seafood consummed}
 # Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
-df_NDNS_seafood_consumption_Yr1_11$Value <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
+df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
 
 ```
 
@@ -423,6 +441,48 @@ df_NDNS_seafood_consumption_Yr1_11$SpeciesNEW <- df_NDNS_seafood_consumption_Yr1
 df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 ```
+
+
+```{r}
+colnames()
+# Sum seafood consumption per person per species
+df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + ser, data =
+                                                df_NDNS_seafood_consumption_Yr1_11, sum)
+
+```
+
+
+```{r Calculate the averge amount of each spc}
+# Calculate daily fish consumption
+df_NDNS_seafood_consumption_Yr1_11$gDay <- df_NDNS_seafood_consumption_Yr1_11$totfishperprod/ 4
+
+# Calculate weekly consumption
+df_NDNS_seafood_consumption_Yr1_11$gWeek <- df_NDNS_seafood_consumption_Yr1_11$gDay* 7
+
+colnames(df_NDNS_seafood_consumption_Yr1_11)
+```
+
+
+
+
+
+Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year.   
+
+```{r Aggregate seafood species per year}
+# Aggregate grams by species and year 
+df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(Value ~ Species + SurveyYear, data =
+                                                df_NDNS_seafood_consumption_Yr1_11, sum)
+
+```
+
+
+All cleaned data sets should be in the same units. Convert grams/capita/week to grams/UK/year
+
+
+```{r Convert grams/capita/week to grams/UK/year}
+df_NDNS_seafood_aggregate_Yr1_11$Value
+```
+
 
 
 ```{r Allocate numerical values to survey years}
@@ -446,7 +506,7 @@ df_NDNS_seafood_consumption_Yr1_11_num$DataSet <- "FoodDiaries"
 df_NDNS_seafood_consumption_Yr1_11_num$Commodity <- "Consumption"
 df_NDNS_seafood_consumption_Yr1_11_num$Flag <- "ConV2"
 df_NDNS_seafood_consumption_Yr1_11_num$TemporalResolution <- "FinancialYear"
-df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams"
+df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams/Capita/Week"
 df_NDNS_seafood_consumption_Yr1_11_num$FlagDescription <- "Units changed to g/country/year"
 
 ```
@@ -457,7 +517,7 @@ df_NDNS_seafood_consumption_Yr1_11_num$FlagDescription <- "Units changed to g/co
 colnames(df_NDNS_seafood_consumption_Yr1_11_num)
 
 # Select desired columns for cleaned data set
-df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription" )]
+df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -465,7 +525,7 @@ df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""))
+write.csv(df_NDNS_seafood_consumption_Yr1_11_cleaned, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -554,7 +614,7 @@ df_DEFRA_household_201618$FlagDescription <- "Units changed to g/country/year"
 colnames(df_DEFRA_household_201618)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_201618_cleaned <- df_DEFRA_household_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_household_201618_cleaned <- df_DEFRA_household_201618[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -583,7 +643,7 @@ df_DEFRA_eatenOut_201618$FlagDescription <- "Units changed to g/country/year"
 colnames(df_DEFRA_eatenOut_201618)
 
 # Select desired columns for cleaned data set
-df_DEFRA_eatenOut_201618_cleaned <- df_DEFRA_eatenOut_201618[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_eatenOut_201618_cleaned <- df_DEFRA_eatenOut_201618[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -650,7 +710,7 @@ df_DEFRA_household_200915_long$FlagDescription <- "Units changed to g/country/ye
 colnames(df_DEFRA_household_200915_long)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_200915_cleaned <- df_DEFRA_household_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_household_200915_cleaned <- df_DEFRA_household_200915_long[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -676,7 +736,7 @@ df_DEFRA_household_200918_cleaned <- rbind(df_DEFRA_household_200915_cleaned, df
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_DEFRA_household_200918_cleaned, file =
-            paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""))
+            paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
 
@@ -747,7 +807,7 @@ df_DEFRA_eatenOut_200915_long$FlagDescription <- "Units changed to g/country/yea
 colnames(df_DEFRA_eatenOut_200915_long)
 
 # Select desired columns for cleaned data set
-df_DEFRA_eatenOut_200915_cleaned <- df_DEFRA_eatenOut_200915_long[c("RevisedMCS", "Year", "Value", "Units", "Commodity", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_eatenOut_200915_cleaned <- df_DEFRA_eatenOut_200915_long[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -769,7 +829,7 @@ df_DEFRA_eatenOut_200918 <- rbind(df_DEFRA_eatenOut_200915_cleaned, df_DEFRA_eat
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_DEFRA_eatenOut_200918, file =
-            paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""))
+            paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
 
@@ -836,6 +896,9 @@ colnames(df_PHE_composition_data)
 df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("SampleDescription", "RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g", "VitaminD-µg100g", 
                                                     "FlagDescription", "Flag")]
 
+
+#"DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription"
+
 # Here the main nutrients have been selected but his list can be easily changed.
 
 ```
@@ -864,6 +927,6 @@ Nutrient-dense foods are often high in dietary fiber, vitamin D, calcium, iron a
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_nutcomp_PHE_cleaned, file =
-            paste(filepath,"NutrientComposition_PHE_PreliminaryCleaned.csv", sep=""))
+            paste(filepath,"NutrientComposition_PHE_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
