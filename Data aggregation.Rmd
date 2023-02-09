@@ -55,8 +55,25 @@ str(MCS_translations)
 
 ```{r Specify the desired file path}
 # Select file path with raw data
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+```
+
+
+```{r Load UK population data (2009 to 2018)}
+# UK population data 2009 to 2018
+# Read in .csv file
+UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c(".."))
+
+```
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
 filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
 ```
+
+
+
 
 
 ## Production
@@ -356,27 +373,27 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load data (2008 to 2019)}
 # Load NDNS yrs 1 - 4
-df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4.csv", sep = "/"))
+df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4_short.csv", sep = "/"))
 
 # Load NDNS yrs 5 - 6 
 df_NDNS_foodlevel_yr5_6_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6-edit.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6_short.csv", sep = "/"))
 
 # Load NDNS yrs 7 - 8 
 df_NDNS_foodlevel_yr7_8_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8-edited.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8_short.csv", sep = "/"))
 
 # Load NDNS yrs 9
 df_NDNS_foodlevel_yr9data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel_Y9-edit.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y9_short.csv", sep = "/"))
 
 # Load NDNS yrs 10
 df_NDNS_foodlevel_yr10_data <- 
-  vroom(file = paste(filepath,"NDNS_FoodLevelData_Yr10.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y10_short.csv", sep = "/"))
 
 # Load NDNS yrs 11
 df_NDNS_foodlevel_yr11_data <- 
-  vroom(file = paste(filepath,"NDNS_FoodLevel-Y11.csv", sep = "/"))
+  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y11_short.csv", sep = "/"))
 
 ```
 
@@ -390,20 +407,20 @@ colnames(df_NDNS_foodlevel_yr9data)
 colnames(df_NDNS_foodlevel_yr10_data)
 colnames(df_NDNS_foodlevel_yr11_data)
 
+# Check if columns match up
 all_equal(df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr9data)
 
-# Remove columns 
-
-WhereOther 
 
 # Rename "AgeR"
-colnames(df_NDNS_foodlevel_yr9_11_data)[colnames(df_NDNS_foodlevel_yr9_11_data) == 'AgeR'] <- 'Age'
+#colnames(df_NDNS_foodlevel_yr9_11_data)[colnames(df_NDNS_foodlevel_yr9_11_data) == 'AgeR'] <- 'Age'
 
 # Join data frames
 NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
                              df_NDNS_foodlevel_yr5_6_data,
                              df_NDNS_foodlevel_yr7_8_data,
-                             df_NDNS_foodlevel_yr9_11_data)
+                             df_NDNS_foodlevel_yr9data, 
+                             df_NDNS_foodlevel_yr10_data,
+                             df_NDNS_foodlevel_yr11_data)
 
 # Check for missing values
 md.pattern(NDNS_UK_Yr1_11_data)
@@ -443,30 +460,56 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inn
 ```
 
 
-```{r}
-colnames()
+Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year.  
+
+```{r Sum seafood consumption per person per species}
 # Sum seafood consumption per person per species
-df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + ser, data =
+df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + seriali, data =
                                                 df_NDNS_seafood_consumption_Yr1_11, sum)
 
 ```
 
 
-```{r Calculate the averge amount of each spc}
+```{r Calculate the average amount reportedly consumed per day}
 # Calculate daily fish consumption
-df_NDNS_seafood_consumption_Yr1_11$gDay <- df_NDNS_seafood_consumption_Yr1_11$totfishperprod/ 4
+df_NDNS_seafood_aggregate_person_Yr1_11$gDay <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ 4
 
-# Calculate weekly consumption
-df_NDNS_seafood_consumption_Yr1_11$gWeek <- df_NDNS_seafood_consumption_Yr1_11$gDay* 7
-
-colnames(df_NDNS_seafood_consumption_Yr1_11)
 ```
 
 
+```{r Sum seafood consumption per species per year}
+# Sum seafood consumption per person per species
+df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(gDay ~ Species + SurveyYear, data =
+                                                df_NDNS_seafood_aggregate_person_Yr1_11, mean)
+
+```
 
 
+```{r Scale up NDNS consumption data with UK population data}
+# Create data frame with NDNS survey year respondents 
+respondersPerYear <- df_NDNS_seafood_consumption_Yr1_11 %>%
+    group_by(SurveyYear) %>%
+    summarise(Count = n())   
 
-Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year.   
+# Merge NDNS responses with consumption data 
+df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_Yr1_11, respondersPerYear, by = "SurveyYear")
+
+# Divide seafood consumption by NDNS respondents 
+df_NDNS_seafoodReported_Yr1_11$avgEaten <- df_NDNS_seafoodReported_Yr1_11$gDay / df_NDNS_seafoodReported_Yr1_11$Count
+
+
+# Note that NDNS is per financial year and is stated as "NDNS year 1"
+
+# Merge population with consumption data 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- merge(df_NDNS_seafoodReported_Yr1_11, UK_population_200918, by = "Year")
+
+# Multiply NDNS total (i.e. reported and non-reporters) by UK population for each year 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- df_NDNS_seafoodUKEstimate_Yr1_11$ /df_NDNS_seafoodUKEstimate_Yr1_11
+
+
+```
+
+
 
 ```{r Aggregate seafood species per year}
 # Aggregate grams by species and year 
