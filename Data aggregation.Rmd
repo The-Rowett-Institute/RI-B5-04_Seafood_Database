@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '09/02/2023'
+date: '10/02/2023'
 output: html_document
 ---
 
@@ -638,7 +638,7 @@ df_DEFRA_eatenOut_201618 <- subset(df_DEFRA_purchase_201618_data, DataSupplier =
 
 ```{r Add additional variables to data set}
 # Rename estimate column to "Value"
-names(df_DEFRA_household_201618)[names(df_DEFRA_household_201618)=="estimate"] <- "Value"
+#names(df_DEFRA_household_201618)[names(df_DEFRA_household_201618)=="estimate"] <- "Value"
 
 # Create "cleaned" data frame, defining units and data source 
 df_DEFRA_household_201618$DataSupplier <- "DEFRA"
@@ -719,6 +719,28 @@ md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
 df_DEFRA_household_200915_long <- melt(df_DEFRA_household_200915, id.vars = c("Minor Food Code", "Units"), variable.name ="Year", value.name = "Value")
 
 ```
+```{r Join DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2018}
+# Subset the columns we need 
+colnames(df_DEFRA_household_201618)
+
+df_DEFRA_household_201618_to_join <- df_DEFRA_household_201618[c("Year", "codeDESCRIPTION", "estimate")]
+
+
+
+
+
+
+# Rename variable. Rename "minor foof code"
+colnames(df_DEFRA_household_200915_long)
+colnames(df_DEFRA_household_201618)
+colnames(df_DEFRA_household_201618_to_join)
+
+unique(df_DEFRA_household_200915_long$`Minor Food Code`)
+
+df_DEFRA_household_200918 <- rbind(df_DEFRA_household_201618, df_DEFRA_household_200915_long)
+```
+
+
 
 
 ```{r Join data frame with translation document}
@@ -733,6 +755,81 @@ df_DEFRA_household_200915_long <- df_DEFRA_household_200915_long %>% inner_join(
 colnames(df_DEFRA_household_200915_long)
 
 ```
+
+
+Combine household data sets between 2009 and 2018
+
+```{r Combine household data sets i) 2009 to 2015;  ii) 2016 to 2018}
+# Combine household data (2009 to 2015 and 2016 to 2018)
+colnames(df_DEFRA_household_200915_long)
+colnames(df_DEFRA_household_201618)
+
+# Ensure "Year" column is as a factor value
+df_DEFRA_household_200915_cleaned$Year <- as.factor(df_DEFRA_household_200915_cleaned$Year)
+df_DEFRA_household_201618_cleaned$Year <- as.factor(df_DEFRA_household_201618_cleaned$Year)
+
+# Row bind data frames (2009 to 2018)
+df_DEFRA_household_200918_cleaned <- rbind(df_DEFRA_household_200915_cleaned, df_DEFRA_household_201618_cleaned)
+
+```
+
+
+```{r Sum seafood consumption per person per species}
+# Sum seafood consumption per person per species
+df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + seriali, data =
+                                                df_NDNS_seafood_consumption_Yr1_11, sum)
+
+```
+
+
+```{r Calculate the average amount reportedly consumed per day}
+# Calculate daily fish consumption
+df_NDNS_seafood_aggregate_person_Yr1_11$gDay <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ 4
+
+```
+
+
+```{r Sum seafood consumption per species per year}
+# Sum seafood consumption per person per species
+df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(gDay ~ Species + SurveyYear, data =
+                                                df_NDNS_seafood_aggregate_person_Yr1_11, mean)
+
+```
+
+
+```{r Scale up NDNS consumption data with UK population data}
+# Create data frame with NDNS survey year respondents 
+respondersPerYear <- df_NDNS_seafood_consumption_Yr1_11 %>%
+    group_by(SurveyYear) %>%
+    summarise(Count = n())   
+
+# Merge NDNS responses with consumption data 
+df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_Yr1_11, respondersPerYear, by = "SurveyYear")
+
+# Divide seafood consumption by NDNS respondents 
+df_NDNS_seafoodReported_Yr1_11$avgEaten <- df_NDNS_seafoodReported_Yr1_11$gDay / df_NDNS_seafoodReported_Yr1_11$Count
+
+
+# Note that NDNS is per financial year and is stated as "NDNS year 1"
+
+# Merge population with consumption data 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- merge(df_NDNS_seafoodReported_Yr1_11, UK_population_200918, by = "Year")
+
+# Multiply NDNS total (i.e. reported and non-reporters) by UK population for each year 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- df_NDNS_seafoodUKEstimate_Yr1_11$ /df_NDNS_seafoodUKEstimate_Yr1_11
+
+
+```
+
+
+
+```{r Aggregate seafood species per year}
+# Aggregate grams by species and year 
+df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(Value ~ Species + SurveyYear, data =
+                                                df_NDNS_seafood_consumption_Yr1_11, sum)
+
+```
+
 
 
 ```{r Add additional variables to data set}
@@ -758,21 +855,8 @@ df_DEFRA_household_200915_cleaned <- df_DEFRA_household_200915_long[c("DataSuppl
 ```
 
 
-Combine household data sets between 2009 and 2018
 
-```{r Combine household data sets i) 2009 to 2015;  ii) 2016 to 2018}
-# Combine household data (2009 to 2015 and 2016 to 2018)
-colnames(df_DEFRA_household_200915_cleaned)
-colnames(df_DEFRA_household_201618_cleaned)
 
-# Ensure "Year" column is as a factor value
-df_DEFRA_household_200915_cleaned$Year <- as.factor(df_DEFRA_household_200915_cleaned$Year)
-df_DEFRA_household_201618_cleaned$Year <- as.factor(df_DEFRA_household_201618_cleaned$Year)
-
-# Row bind data frames (2009 to 2018)
-df_DEFRA_household_200918_cleaned <- rbind(df_DEFRA_household_200915_cleaned, df_DEFRA_household_201618_cleaned)
-
-```
 
 
 ```{r Save cleaned data}
@@ -782,6 +866,10 @@ write.csv(df_DEFRA_household_200918_cleaned, file =
             paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
+
+
+
+
 
 
 
