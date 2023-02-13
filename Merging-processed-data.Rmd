@@ -91,7 +91,7 @@ colnames(df_UK_pop_200918)
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""))
+write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 

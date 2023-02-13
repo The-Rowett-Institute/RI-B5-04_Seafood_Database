@@ -884,3 +884,38 @@ FAO_food_balance_year<-aggregate(list(Amount_1k_t = FAO_food_balance$applied_CF)
 ```
 
 
+```{r}
+# Note that NDNS is per financial year and is stated as "NDNS year 1"
+
+# Merge population with consumption data 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- merge(df_NDNS_seafoodReported_Yr1_11, UK_population_200918, by = "Year")
+
+# Multiply NDNS total (i.e. reported and non-reporters) by UK population for each year 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- df_NDNS_seafoodUKEstimate_Yr1_11$ /df_NDNS_seafoodUKEstimate_Yr1_11
+
+```
+
+
+```{r Scale up NDNS consumption data with UK population data}
+# Create data frame with NDNS survey year respondents 
+#respondersPerYear <- df_NDNS_seafood_consumption_Yr1_11 %>%
+    group_by(SurveyYear) %>%
+    summarise(Count = n())   
+
+# Merge NDNS responses with consumption data 
+#df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_Yr1_11, respondersPerYear, by = "SurveyYear")
+
+# Divide seafood consumption by NDNS respondents 
+#df_NDNS_seafoodReported_Yr1_11$avgEaten <- df_NDNS_seafoodReported_Yr1_11$gDay / df_NDNS_seafoodReported_Yr1_11$Count
+
+
+# Note that NDNS is per financial year and is stated as "NDNS year 1"
+
+# Merge population with consumption data 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- merge(df_NDNS_seafoodReported_Yr1_11, UK_population_200918, by = "Year")
+
+# Multiply NDNS total (i.e. reported and non-reporters) by UK population for each year 
+#df_NDNS_seafoodUKEstimate_Yr1_11 <- df_NDNS_seafoodUKEstimate_Yr1_11$ /df_NDNS_seafoodUKEstimate_Yr1_11
+
+
+```
