@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '10/02/2023'
+date: '14/02/2023'
 output: html_document
 ---
 
@@ -62,7 +62,7 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 ```{r Load UK population data (2009 to 2018)}
 # UK population data 2009 to 2018
 # Read in .csv file
-df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned-edited.csv", sep="/"), na = c(".."))
+df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c(".."))
 
 ```
 
