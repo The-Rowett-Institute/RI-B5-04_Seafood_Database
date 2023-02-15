@@ -71,7 +71,7 @@ unique(df_UK_pop_200918$CDID)
 
 ```{r Add additional variables to data set}
 # Rename the "CDID" column to "value"
-names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Value"
+names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "UKPop"
 
 # Create "cleaned" data frame, defining units and data source 
 df_UK_pop_200918$DataSupplier <- "ONS"

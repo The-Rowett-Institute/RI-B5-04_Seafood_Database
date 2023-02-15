@@ -62,7 +62,12 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 ```{r Load UK population data (2009 to 2018)}
 # UK population data 2009 to 2018
 # Read in .csv file
-df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c(".."))
+df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned-edited.csv", sep="/"), na = c(".."))
+
+
+# UK population data. Mid year estimates 2001910 to 201819
+# Read in .csv file
+df_UK_MidYearpopulation <- vroom(file=paste(filepath,"ONS_UK_MidYearPopulation-20091018.csv", sep="/"), na = c(".."))
 
 ```
 
@@ -206,7 +211,7 @@ df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the 
 colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
@@ -295,7 +300,7 @@ df_UKFarmed_200918$FlagDescription <- "CF applied to all or part of the data"
 colnames(df_UKFarmed_200918)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
@@ -443,6 +448,8 @@ str(df_NDNS_seafood_consumption_Yr1_11)
 ```
 
 
+Calculate total grams of seafood consumed. Seafood intakes are spread across 4 columns. 
+
 ```{r Calculate total grams of seafood consummed}
 # Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
 df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
@@ -460,100 +467,91 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inn
 ```
 
 
-Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year.  
+Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year. So aggregate seafood consumption data, per species, per year. 
 
-```{r Sum seafood consumption per person per species}
-# Sum seafood consumption per person per species
-df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + seriali, data =
+```{r Sum seafood consumption over 4-day diet recall, by species, by year}
+# Sum seafood consumption per species per year
+df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ Species + SurveyYear + SpeciesType + SACN, data =
                                                 df_NDNS_seafood_consumption_Yr1_11, sum)
 
 ```
 
 
-```{r Calculate the average amount reportedly consumed per day}
-# Calculate daily fish consumption
-df_NDNS_seafood_aggregate_person_Yr1_11$gDay <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ 4
+```{r Calculate the annual seafood intake, by species}
+# Divide summed seafood consumption by 4 (4-day diet recall)
+df_NDNS_seafood_aggregate_person_Yr1_11$gDay  <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ 4
 
-```
-
-
-```{r Sum seafood consumption per species per year}
-# Sum seafood consumption per person per species
-df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(gDay ~ Species + SurveyYear, data =
-                                                df_NDNS_seafood_aggregate_person_Yr1_11, mean)
+# Calculate annual seafood intake by multiplying daily consumption by 365
+df_NDNS_seafood_aggregate_person_Yr1_11$gYear <- df_NDNS_seafood_aggregate_person_Yr1_11$gDay * 365
 
 ```
 
 
 ```{r Scale up NDNS consumption data with UK population data}
 # Create data frame with NDNS survey year respondents 
-respondersPerYear <- df_NDNS_seafood_consumption_Yr1_11 %>%
+respondersPerYear <- df_NDNS_seafood_aggregate_person_Yr1_11 %>%
     group_by(SurveyYear) %>%
     summarise(Count = n())   
 
 # Merge NDNS responses with consumption data 
-df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_Yr1_11, respondersPerYear, by = "SurveyYear")
+df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_person_Yr1_11, respondersPerYear, by = "SurveyYear")
 
 # Divide seafood consumption by NDNS respondents 
-df_NDNS_seafoodReported_Yr1_11$avgEaten <- df_NDNS_seafoodReported_Yr1_11$gDay / df_NDNS_seafoodReported_Yr1_11$Count
-
-
-
+df_NDNS_seafoodReported_Yr1_11$avgIntakeNDNS <- df_NDNS_seafood_aggregate_person_Yr1_11$gYear / df_NDNS_seafoodReported_Yr1_11$Count
 
 ```
 
 
-
-```{r Aggregate seafood species per year}
-# Aggregate grams by species and year 
-df_NDNS_seafood_aggregate_Yr1_11 <- aggregate(Value ~ Species + SurveyYear, data =
-                                                df_NDNS_seafood_consumption_Yr1_11, sum)
-
-```
-
-
-All cleaned data sets should be in the same units. Convert grams/capita/week to grams/UK/year
-
-
-```{r Convert grams/capita/week to grams/UK/year}
-df_NDNS_seafood_aggregate_Yr1_11$Value
-```
-
-
+Before merging with population data need to change survey values. 
 
 ```{r Allocate numerical values to survey years}
 # Create new data frame with survey years and corresponding numerical values
-SurveyYear <- unique(df_NDNS_seafood_consumption_Yr1_11$SurveyYear)
-Year <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
+SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7",
+                "NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
+NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
 
 # Create new data frame
-df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
+df_NDNSYearData <- as.data.frame(cbind(SurveyYear, NDNSYear))
+df_NDNSYearData$NDNSYear <- as.numeric(as.character(df_NDNSYearData$NDNSYear))
 
 # Create new data frame allocate numerical values by merging data frames
-df_NDNS_seafood_consumption_Yr1_11_num <- merge(df_NDNS_seafood_consumption_Yr1_11, df_NDNSYearData, by = "SurveyYear")
+df_NDNS_seafood_consumption_20081919 <- merge(df_NDNS_seafoodReported_Yr1_11, df_NDNSYearData, by = "SurveyYear")
+
+```
+
+
+```{r Calcaulte seafood intake for whole of UK}
+# Join seafood df_NDNS_seafood_consumption_20081919 with population data by year
+df_NDNS_seafoodReported_Yr1_11 <- df_NDNS_seafood_consumption_20081919 %>% inner_join(., df_UK_MidYearpopulation, by = c('NDNSYear' = 'MidYear'))
+
+colnames(df_NDNS_seafoodReported_Yr1_11)
+
+# Multiply by the number of people in the country
+df_NDNS_seafoodReported_Yr1_11$Value <- df_NDNS_seafoodReported_Yr1_11$avgIntakeNDNS * df_NDNS_seafoodReported_Yr1_11$Estimates
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_NDNS_seafood_consumption_Yr1_11_num$DataSupplier <- "NDNS"
-df_NDNS_seafood_consumption_Yr1_11_num$DataSet <- "FoodDiaries"
-df_NDNS_seafood_consumption_Yr1_11_num$Commodity <- "Consumption"
-df_NDNS_seafood_consumption_Yr1_11_num$Flag <- "ConV2"
-df_NDNS_seafood_consumption_Yr1_11_num$TemporalResolution <- "FinancialYear"
-df_NDNS_seafood_consumption_Yr1_11_num$Units <- "Grams/Capita/Week"
-df_NDNS_seafood_consumption_Yr1_11_num$FlagDescription <- "Units changed to g/country/year"
+df_NDNS_seafoodReported_Yr1_11$DataSupplier <- "NDNS"
+df_NDNS_seafoodReported_Yr1_11$DataSet <- "FoodDiaries"
+df_NDNS_seafoodReported_Yr1_11$Commodity <- "Consumption"
+df_NDNS_seafoodReported_Yr1_11$Flag <- "ConV2"
+df_NDNS_seafoodReported_Yr1_11$TemporalResolution <- "FinancialYear"
+df_NDNS_seafoodReported_Yr1_11$Units <- "Grams/Country/Year"
+df_NDNS_seafoodReported_Yr1_11$FlagDescription <- "Units changed to Grams/Country/Year"
 
 ```
 
 
 ```{r Select desired variables for the data set}
 # Identify columns in data frame
-colnames(df_NDNS_seafood_consumption_Yr1_11_num)
+colnames(df_NDNS_seafoodReported_Yr1_11)
 
 # Select desired columns for cleaned data set
-df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafood_consumption_Yr1_11_num[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_NDNS_seafood_consumption_Yr1_11_cleaned <- df_NDNS_seafoodReported_Yr1_11[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
 
 ```
 
@@ -650,7 +648,7 @@ Load household purchases between 2009 and 2015. Note that the structures are dif
 
 ```{r Load data (household 2009 to 2015)}
 # read DEFRA household data set (.csv)
-df_DEFRA_household_200915_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200915-edit.csv", sep="/"))
+df_DEFRA_household_200915_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200915.csv", sep="/"))
 
 # Select only years 2009 to 2015
 df_DEFRA_household_200915 <- subset(df_DEFRA_household_200915_data, 
@@ -700,17 +698,26 @@ df_DEFRA_household_200918$SpeciesNEW <- df_DEFRA_household_200918$FoodProduct
 df_DEFRA_household_200918 <- df_DEFRA_household_200918 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
+colnames(df_DEFRA_household_200918)
+
+
 ```
 
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_household_200918_agg <- aggregate(Value ~ Species + Year, data =
+df_DEFRA_household_200918_agg <- aggregate(Value ~ Species + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_household_200918, sum)
 
+#unique(df_DEFRA_household_200918_agg$Species)
+
+
+#df_DEFRA_household_200918_agg <- aggregate(Value ~ Species + Year, data =
+ #                                               df_DEFRA_household_200918, sum)
+
 # Merge with translation document again to obtain species type 
-df_DEFRA_household_200918_agg$SpeciesNEW <- df_DEFRA_household_200918_agg$Species 
-df_DEFRA_household_200918_agg <- df_DEFRA_household_200918_agg %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+#df_DEFRA_household_200918_agg$SpeciesNEW <- df_DEFRA_household_200918_agg$Species 
+#df_DEFRA_household_200918_agg <- df_DEFRA_household_200918_agg %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 
 ```
 
@@ -748,7 +755,7 @@ df_DEFRA_household_200918_aggYear$totUK
 colnames(df_DEFRA_household_200918_aggYear)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 ```
 
