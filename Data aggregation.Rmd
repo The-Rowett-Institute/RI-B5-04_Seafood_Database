@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '14/02/2023'
+date: '16/02/2023'
 output: html_document
 ---
 
@@ -46,7 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations-edit.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -62,7 +62,7 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 ```{r Load UK population data (2009 to 2018)}
 # UK population data 2009 to 2018
 # Read in .csv file
-df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned-edited.csv", sep="/"), na = c(".."))
+df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned-edit.csv", sep="/"), na = c(".."))
 
 
 # UK population data. Mid year estimates 2001910 to 201819
@@ -163,10 +163,10 @@ We need to ensure species are spelled the same across all data sets, otherwise d
 ```{r Join data frame with translation document}
 # Join data frame with translation document- ensures consistent spelling across data sets
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_UK_AllUKLandings_200918$SpeciesNEW <- df_UK_AllUKLandings_200918$Species
+df_UK_AllUKLandings_200918$SpeciesRevised <- df_UK_AllUKLandings_200918$Species
 
 # Join data frame with MCS data frame by species name
-df_UK_AllUKLandings_200918 <- df_UK_AllUKLandings_200918 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_UK_AllUKLandings_200918 <- df_UK_AllUKLandings_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
@@ -211,10 +211,14 @@ df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the 
 colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
+
+# Rename "SeafoodSpecies" column 
+df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, Species = SeafoodSpecies)
+
 
 ```
 
@@ -224,7 +228,7 @@ colnames(df_UK_AllUKLandings_200918_clean)
 filepath <- paste(data_dir,"ProcessedData", sep = "")
 
 # Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
-write.csv(df_UK_AllUKLandings_200918_clean, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -258,10 +262,10 @@ df_UKFarmed_200918 <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (duplicated column entries to be duplicated)
-df_UKFarmed_200918$SpeciesNEW <- df_UKFarmed_200918$Species
+df_UKFarmed_200918$SpeciesRevised <- df_UKFarmed_200918$Species
 
 # Merge data frame with MCS data frame by species name
-df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 
 ```
 
@@ -300,7 +304,13 @@ df_UKFarmed_200918$FlagDescription <- "CF applied to all or part of the data"
 colnames(df_UKFarmed_200918)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Check column names
+colnames(df_UK_aquaculture_200918)
+
+# Rename "SeafoodSpecies" column to "Species"
+df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, Species = SeafoodSpecies)
 
 ```
 
@@ -308,7 +318,7 @@ df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Com
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_aquaculture_200918, file = 
+write.csv(df_UK_aquaculture_200918_cleaned, file = 
             paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
@@ -331,10 +341,10 @@ str(df_trade_HMRC_data)
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (duplicated column entries to be duplicated)
-df_trade_HMRC_data$SpeciesNEW <- df_trade_HMRC_data$Species
+df_trade_HMRC_data$SpeciesRevised <- df_trade_HMRC_data$Species
 
 # Merge data frame with MCS data frame by species name
-df_trade_HMRC_data <- df_trade_HMRC_data %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_trade_HMRC_data <- df_trade_HMRC_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 
 ```
 
@@ -349,7 +359,10 @@ df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
 df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename "SeafoodSpecies" column to "Species"
+df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
 
 ```
 
@@ -357,7 +370,7 @@ df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier", "DataSet", "Co
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_cleaned_UK_HMRC_200919, file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = ""), row.names = FALSE)
+write.csv(df_cleaned_UK_HMRC_200919_cleaned, file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -459,10 +472,10 @@ df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_NDNS_seafood_consumption_Yr1_11$SpeciesNEW <- df_NDNS_seafood_consumption_Yr1_11$FoodName
+df_NDNS_seafood_consumption_Yr1_11$SpeciesRevised <- df_NDNS_seafood_consumption_Yr1_11$FoodName
 
 # Join data frame with MCS data frame by species name
-df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 ```
 
@@ -606,10 +619,10 @@ Need to join seafood purchasing data with the seafood translation document befor
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_DEFRA_purchase_201618_data$SpeciesNEW <- df_DEFRA_purchase_201618_data$codeDESCRIPTION
+df_DEFRA_purchase_201618_data$SpeciesRevised <- df_DEFRA_purchase_201618_data$codeDESCRIPTION
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_purchase_201618_data <- df_DEFRA_purchase_201618_data %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_purchase_201618_data <- df_DEFRA_purchase_201618_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
@@ -692,32 +705,22 @@ df_DEFRA_household_200918 <- rbind(df_DEFRA_household_201915_to_join, df_DEFRA_h
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_DEFRA_household_200918$SpeciesNEW <- df_DEFRA_household_200918$FoodProduct
+df_DEFRA_household_200918$SpeciesRevised <- df_DEFRA_household_200918$FoodProduct
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_household_200918 <- df_DEFRA_household_200918 %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_household_200918 <- df_DEFRA_household_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
+# Cehck column names
 colnames(df_DEFRA_household_200918)
-
 
 ```
 
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_household_200918_agg <- aggregate(Value ~ Species + Year + SpeciesType + SACN, data =
+df_DEFRA_household_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_household_200918, sum)
-
-#unique(df_DEFRA_household_200918_agg$Species)
-
-
-#df_DEFRA_household_200918_agg <- aggregate(Value ~ Species + Year, data =
- #                                               df_DEFRA_household_200918, sum)
-
-# Merge with translation document again to obtain species type 
-#df_DEFRA_household_200918_agg$SpeciesNEW <- df_DEFRA_household_200918_agg$Species 
-#df_DEFRA_household_200918_agg <- df_DEFRA_household_200918_agg %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
 
 ```
 
@@ -730,14 +733,16 @@ df_DEFRA_household_200918_aggYear <- merge(df_DEFRA_household_200918_agg, df_UK_
 df_DEFRA_household_200918_aggYear$PerYear <- df_DEFRA_household_200918_aggYear$Value * 52
 
 # Create new column multiplying by population size
-df_DEFRA_household_200918_aggYear$totUK <- df_DEFRA_household_200918_aggYear$PerYear * df_DEFRA_household_200918_aggYear$PopSize
+df_DEFRA_household_200918_aggYear$totUK <- df_DEFRA_household_200918_aggYear$PerYear * df_DEFRA_household_200918_aggYear$UKPOP
+
+str(df_DEFRA_household_200918_aggYear)
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Add additional variables
-#df_DEFRA_household_200918_aggYear$DataSupplier <- "DEFRA"
+df_DEFRA_household_200918_aggYear$DataSupplier <- "DEFRA"
 df_DEFRA_household_200918_aggYear$DataSet <- "FamilyFoods_household"
 df_DEFRA_household_200918_aggYear$Commodity <- "Purchases"
 df_DEFRA_household_200918_aggYear$Flag <- "ConV2"
@@ -745,8 +750,7 @@ df_DEFRA_household_200918_aggYear$TemporalResolution <- "CalendarYear"
 df_DEFRA_household_200918_aggYear$Units <- "Grams/Country/Year"
 df_DEFRA_household_200918_aggYear$FlagDescription <- "Unit converted to Grams/Country/Year"
 
-# Rename value column- totUK will be the new "Value" column 
-df_DEFRA_household_200918_aggYear$totUK
+
 ```
 
 
@@ -755,7 +759,11 @@ df_DEFRA_household_200918_aggYear$totUK
 colnames(df_DEFRA_household_200918_aggYear)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSupplier", "DataSet", "Commodity", "Species.x", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename some variables
+df_DEFRA_household_200918_aggYear_cleaned <- rename(df_DEFRA_household_200918_cleaned, 
+                                                    Species = SeafoodSpecies, Value = totUK)
 
 ```
 
@@ -763,47 +771,25 @@ df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSu
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(df_DEFRA_household_200918_cleaned, file =
+write.csv(df_DEFRA_household_200918_aggYear_cleaned, file =
             paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
 
 
 
+### iii) Eating out (2016 to 2018)
 
 
+```{r Transform data (household 2016 to 2018)}
+# Select only years 2016 to 2018
+df_DEFRA_eatenOut_201618_short <- subset(df_DEFRA_eatenOut_201618, 
+                           select = c("Year", "codeDESCRIPTION", "estimate"))
 
-### ii) Eating out (2016 to 2018)
-
-```{r Add additional variables to data set}
-# Rename estimate column to "Value"
-names(df_DEFRA_eatenOut_201618)[names(df_DEFRA_eatenOut_201618)=="estimate"] <- "Value"
-
-# Create "cleaned" data frame, defining units and data source 
-df_DEFRA_eatenOut_201618$DataSupplier <- "DEFRA"
-df_DEFRA_eatenOut_201618$DataSet <- "FamilyFoods_eatenOut"
-df_DEFRA_eatenOut_201618$Commodity <- "Purchases"
-df_DEFRA_eatenOut_201618$Flag <- "ConV4, ConV5"
-df_DEFRA_eatenOut_201618$TemporalResolution <- "CalendarYear"
-df_DEFRA_eatenOut_201618$Units <- "Grams/Capita/Week"
-df_DEFRA_eatenOut_201618$FlagDescription <- "Units changed to g/country/year"
+# Allocate units
+df_DEFRA_eatenOut_201618_short$Units <- "Grams/Capita/Week"
 
 ```
-
-
-```{r Select desired variables for the data set}
-# Identify columns in data frame
-colnames(df_DEFRA_eatenOut_201618)
-
-# Select desired columns for cleaned data set
-df_DEFRA_eatenOut_201618_cleaned <- df_DEFRA_eatenOut_201618[c("DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
-
-```
-
-
-
-
-
 
 
 ### iv) Eating out (2009 to 2015)
@@ -817,7 +803,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load data (2009 to 2015)}
 # read DEFRA eaten out data set
-df_DEFRA_eatenOut_200915_data <- vroom(file=paste(filepath,"DEFRA_UK_eatenOut-200915.csv", sep="/"))
+df_DEFRA_eatenOut_200915_data <- vroom(file = paste(filepath,"DEFRA_UK_eatenOut-200915.csv", sep="/"))
 
 # Check for missing values
 md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
@@ -825,7 +811,7 @@ md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
 
 # Select only years 2009 to 2015
 df_DEFRA_eatenOut_200915 <- subset(df_DEFRA_eatenOut_200915_data, 
-                           select = c("EO Minor code", "Units", "2009", "2010", "2011",
+                           select = c("EO_MinorCode", "Units", "2009", "2010", "2011",
                                       "2012", "2013","2014", "2015"))
 
 ```
@@ -833,24 +819,125 @@ df_DEFRA_eatenOut_200915 <- subset(df_DEFRA_eatenOut_200915_data,
 
 ```{r Transform data set (2009 to 2015)}
 # Change structure of the data set 
-df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("EO Minor code", "Units"), variable.name = "Year", value.name = "Value")
+df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("EO_MinorCode", "Units"), variable.name = "Year", value.name = "Value")
+
+```
+
+
+
+```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2018}
+# Check data frame structure  
+colnames(df_DEFRA_eatenOut_200915_long)
+colnames(df_DEFRA_eatenOut_201618_short)
+
+# Rename variables to allow data frames to merge
+# Rename codeDescription and estimate column
+df_DEFRA_eatenOut_201618_to_join <- rename(df_DEFRA_household_201618_short, 
+                                            FoodProduct = codeDESCRIPTION, Value = estimate)
+
+# Rename minor food code column
+df_DEFRA_eatenOut_201915_to_join <- rename(df_DEFRA_eatenOut_200915_long, FoodProduct = EO_MinorCode)
+
+# Ensure "Year" column is a numerical value. Convert to character first, then numeric
+df_DEFRA_eatenOut_201915_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201915_to_join$Year))
+df_DEFRA_eatenOut_201618_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201618_to_join$Year))
+
+# Combine data frames
+df_DEFRA_eatenOut_200918 <- rbind(df_DEFRA_eatenOut_201915_to_join, df_DEFRA_eatenOut_201618_to_join)
 ```
 
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_DEFRA_eatenOut_200915_long$SpeciesNEW <- df_DEFRA_eatenOut_200915_long$`EO Minor code`
-
-colnames(df_DEFRA_eatenOut_200915_long)
+df_DEFRA_eatenOut_200915_long$SpeciesRevised <- df_DEFRA_eatenOut_200915_long$EO_MinorCode
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_eatenOut_200915_long <- df_DEFRA_eatenOut_200915_long %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_eatenOut_200915_long <- df_DEFRA_eatenOut_200915_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
 colnames(df_DEFRA_eatenOut_200915_long)
 
 ```
+
+###
+
+
+Now combine the data sets. 
+`
+
+
+```{r Join data frame with translation document}
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_DEFRA_household_200918$SpeciesRevised <- df_DEFRA_household_200918$FoodProduct
+
+# Join data frame with MCS data frame by species name
+df_DEFRA_household_200918 <- df_DEFRA_household_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+# Cehck column names
+colnames(df_DEFRA_household_200918)
+
+```
+
+
+```{r Seafood consumption (g/capita/week), by species}
+# Sum seafood consumption per person per species
+df_DEFRA_household_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
+                                                df_DEFRA_household_200918, sum)
+
+```
+
+
+```{r Convert g/capita/week to g/country/year}
+# Merge household purchasing data with population data 
+df_DEFRA_household_200918_aggYear <- merge(df_DEFRA_household_200918_agg, df_UK_population_200918, "Year")
+
+# Multiply value data by 52 (convert grams from week to year)
+df_DEFRA_household_200918_aggYear$PerYear <- df_DEFRA_household_200918_aggYear$Value * 52
+
+# Create new column multiplying by population size
+df_DEFRA_household_200918_aggYear$totUK <- df_DEFRA_household_200918_aggYear$PerYear * df_DEFRA_household_200918_aggYear$UKPOP
+
+str(df_DEFRA_household_200918_aggYear)
+
+```
+
+
+```{r Add additional variables to data set}
+# Add additional variables
+df_DEFRA_household_200918_aggYear$DataSupplier <- "DEFRA"
+df_DEFRA_household_200918_aggYear$DataSet <- "FamilyFoods_household"
+df_DEFRA_household_200918_aggYear$Commodity <- "Purchases"
+df_DEFRA_household_200918_aggYear$Flag <- "ConV2"
+df_DEFRA_household_200918_aggYear$TemporalResolution <- "CalendarYear"
+df_DEFRA_household_200918_aggYear$Units <- "Grams/Country/Year"
+df_DEFRA_household_200918_aggYear$FlagDescription <- "Unit converted to Grams/Country/Year"
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ```{r Add additional variables to data set}
@@ -929,10 +1016,10 @@ colnames(df_PHE_composition_data)
 ```{r Join data frame with translation document}
 # Cleaned data set does not consider the status of the sample e.g. raw/ cooked. So new column created with such information.
 # Duplicate species name column (duplicated column entries to be duplicated)
-df_PHE_composition_data$SpeciesNEW <- df_PHE_composition_data$SampleDescription
+df_PHE_composition_data$SpeciesRevised <- df_PHE_composition_data$SampleDescription
 
 # Merge data frame with MCS data frame by species name
-df_PHE_composition_data <- df_PHE_composition_data %>% inner_join(., MCS_translations, by = c('SpeciesNEW' = 'MCS (DO NOT TOUCH)'))
+df_PHE_composition_data <- df_PHE_composition_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 
 # Check the structure
 str(df_PHE_composition_data)
