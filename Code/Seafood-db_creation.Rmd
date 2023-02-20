@@ -58,11 +58,22 @@ rm(i)
 ```{r Creating the Seafood database}
 
 
-df_Seafood_DB <- rbind(df_Trade_, df_AllLan) # Note df_Trade_ is the edited one
+df_Seafood_DB <- rbind(df_TradeD, df_AllLan) # Note df_Trade_ is the edited one
 df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 
-df_Seafood_CoPu_DB <- rbind(df_Consum,df_EatenO)
-df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
+
+```
+
+```{r writing the  Seafood database}
+
+source("Data_filepath.R")
+
+filepath <- paste(data_dir,"Outputs", sep="")
+
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_prelimary.csv",sep="/"), row.names = FALSE)
 
 ```
 

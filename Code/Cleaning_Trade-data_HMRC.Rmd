@@ -192,7 +192,7 @@ df_HMRC_4DB$`Net Mass (g)` <- ifelse(df_HMRC_4DB$CF==1,df_HMRC_4DB$`Net Mass (g)
 
 # We will now need to aggregated the weight values for some species again. As we have aggregate some some of the species and species type e.g. atlantic & pacific salmon as just salmon
 
-df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = RevisedMCS, SpeciesType = EUMOFA_ST, Year, Commodity) %>% summarise(`Net Mass (g)`= sum(`Net Mass (kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
+df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = SeafoodSpecies, SpeciesType, Year, Commodity, SACN) %>% summarise(`Net Mass (g)`= sum(`Net Mass (kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
 
 df_HMRC_4DB <- df_HRMC.sum
 
@@ -207,15 +207,15 @@ df_HMRC_4DB$DataSet <- "HMRC Overseas Trade data table - UK Trade Info"
 df_HMRC_4DB <- rename(df_HMRC_4DB, Value =`Net Mass (g)`)
 df_HMRC_4DB$Units <- "Grams"
 df_HMRC_4DB$TemporalResolution <- "Annual"
-df_HMRC_4DB$Flag <- "EXAMPLES: UC, SSTAlig"
-df_HMRC_4DB$FlagDescription <- "EXAMPLES:Units changed, Species & Species Type aligned"
+df_HMRC_4DB$Flag <- "ConV1"
+df_HMRC_4DB$FlagDescription <- "ConV1: Conversion factors were applied to all or part of the data (i.e., whole fish to edible portion)"
 
 ```
 
 
 ```{r Selecting Columns, removing non-food uses and Saving to .csv}
 # Selecting Columns
-df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Species, SpeciesType, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
+df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Species, SpeciesType, SACN, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
 
 # Removing Non-food uses im- & exports
 df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!Species %in% "Other non-food use")
