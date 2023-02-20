@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '17/02/2023'
+date: '20/02/2023'
 output: html_document
 ---
 
@@ -46,7 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations-edit.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -566,6 +566,10 @@ colnames(df_NDNS_seafoodintakeUK_200918)
 # Select desired columns for cleaned data set
 df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
+# Rename "SeafoodSpecies" column 
+df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cleaned, Species = SeafoodSpecies)
+
+
 
 ```
 
@@ -573,7 +577,7 @@ df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("Data
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_NDNS_seafoodintakeUK_200918_cleaned, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_NDNS_seafoodintakeUK_200918_clean, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
