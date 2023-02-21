@@ -25,6 +25,7 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(plyr) # joins multiple data frames together
+library(ggplot2)
 ```
 
 ```{r Load file path, echo=TRUE}
@@ -33,56 +34,87 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep="") 
+filepath <- paste(data_dir,"Outputs", sep="") 
 # note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load the database}
+# Load database 
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c(".."))
+
+# Check the structure 
+str(df_UK_seafoodDB)
+
+# Set value to numerical 
+df_UK_seafoodDB$Value <- as.numeric(df_UK_seafoodDB$Value)
+```
+
+```{r Final clean}
+# Remove products for non-human consumption 
+
+# Remove entries not included in dietary recs e.g. aglae, fishmeal 
 
 ```
 
 
 
-## Inital plots
+## Exploratory plots
 
-### Figure 1. Annual UK seafood supply (g/capita/week) between 2009 and 2018
+```{r}
+# Separate out other "species"
+df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
 
-```{r Calculate annual UK seafood supply (g/capita/week) between 2009 and 2018}
-# Sum amount of fish available g/capita/week per year for each commodity. 
-
-# Name columns in aggregate function
-captProd <- aggregate(list(CaptureProd = df_captureProd_NS_clean_data$Value), 
-                      list(Year = df_captureProd_NS_clean_data$Year), sum)
-captProd <- subset(captProd, Year < 2019 & Year > 2008) # up to 2018
-
-aquaProd <- aggregate(list(AquaProd = df_aquaProd_Eurostat_clean_data$Value), 
-                      list(Year = df_aquaProd_Eurostat_clean_data$Year), sum)
-aquaProd <- subset(aquaProd, Year < 2019)# up to 2018
-
-householdPurch <- aggregate(list(HPurch = df_housePurch_DEFRA_data$ValueGramsCapitaWeek), 
-                      list(Year = df_housePurch_DEFRA_data$Year), sum)
-householdPurch <- subset(householdPurch, Year < 2019) # up to 2018
-
-eatenOutPurch <- aggregate(list(EOPurch = df_eatenOutPurch_DEFRA_data$ValueGramsCapitaWeek), 
-                      list(Year = df_eatenOutPurch_DEFRA_data$Year), sum)
-eatenOutPurch<- subset(eatenOutPurch, Year < 2019) # up to 2018
+df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
+```
 
 
-# Separate imports and export data
-seafoodImports <- subset(df_trade_HMRC_clean_data, Commodity == "Imports")
-seafoodExports <- subset(df_trade_HMRC_clean_data, Commodity == "Exports")
+```{r Exploratory plots}
+# Create stacked bar plot displaying  value for each species, stacked by commodity. 
+ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = Species)) + 
+  geom_bar(position='stack', stat='identity')
 
-imports <- aggregate(list(Imports = seafoodImports$Value), 
-                      list(Year = seafoodImports$Year), sum)
-imports <- subset(imports, Year < 2019) # up to 2018
+# Plot bars side by side
+ggplot(df_UK_seafoodDB, aes(x = Species, y = Value, fill = Commodity)) +
+  geom_col(position = "dodge")
+```
 
-exports <- aggregate(list(Exports = seafoodExports$Value), 
-                      list(Year = seafoodExports$Year), sum)
-exports <- subset(exports, Year < 2019) # up to 2018
+
+```{r Subset data by commodity}
+# Subset production data
+df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+
+# Box plot of UK seafood production, by species 
+boxplot(Value ~ Species, data = df_UK_seafood_prod, ylab= "Production (g)", xlab = "", las = 3)
+
+# Box plot of UK seafood production, by SACN 
+boxplot(Value ~ SACN, data = df_UK_seafood_prod, ylab= "Production (g)", xlab = "", las = 3)
+
+# Group production values by SACN values
+bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las =3)
 
 ```
+
+
+
+
+#####
+
+
+```{r}
+seafoodCommodity <- as.data.frame(unstack(df_UK_seafoodDB, Commodity ~ Year))
+
+str()
+```
+
 
 
 ```{r Merge summed commodities bweteen 2009 and 2018 }
 # Merge aggregated data
-df_annualSeafood <- cbind(captProd, aquaProd[,2], imports[,2], exports[,2] )
+df_annualSeafood <- merge(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, by = Species, Year)
+
+
+df_annualSeafood <- cbind(df_allLandingsintoUK_NS_clean_data, aquaProd[,2], imports[,2], exports[,2] )
 
 # Rename column in the data frame
 names(df_annualSeafood) <- c("Year", "CaptureProd", "Aquaprod", "Imports", "Exports")

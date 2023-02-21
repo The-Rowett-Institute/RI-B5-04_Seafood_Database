@@ -216,6 +216,8 @@ df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier",
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
 
+str(df_UK_AllUKLandings_200918_clean)
+
 # Rename "SeafoodSpecies" column 
 df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, Species = SeafoodSpecies)
 
