@@ -46,7 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations-edit.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -333,7 +333,7 @@ Trade data was sourced from the HMRC and includes both imports and exports. An u
 # Some edits are needed to ensure consistency with processed data sets
 
 # Read in UK trade data 
-df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep = "/"))
+df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = "/"))
 str(df_trade_HMRC_data)
 
 ```
@@ -541,7 +541,7 @@ df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818,
 df_NDNS_seafoodintakeUK_200918 <- merge(df_NDNS_seafood_consumption_200918, df_UK_population_200918, by = "Year")
 
 # Multiply by the number of people in the country
-df_NDNS_seafoodintakeUK_200918$Value <- df_NDNS_seafoodintakeUK_200918$avgIntakeNDNS * df_NDNS_seafoodReported_200918$UKPOP
+df_NDNS_seafoodintakeUK_200918$Value <- df_NDNS_seafoodintakeUK_200918$avgIntakeNDNS * df_NDNS_seafoodintakeUK_200918$UKPOP
 
 ```
 
@@ -929,6 +929,65 @@ write.csv(df_DEFRA_eatenOut_200918_cleaned, file =
             paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
+
+
+
+## UK population data (ONS) 
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (1971 to 2020)}
+# Load data (1971 to 2020)
+df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
+
+str(df_UK_ONS_population_data)
+
+```
+
+
+```{r Subset data for desired years}
+# Subset UK population data between 2009 and 2018
+df_UK_pop_200918 <- subset(df_UK_ONS_population_data, 
+                      CDID > 2008 & CDID < 2019 , select= c(CDID, UKPOP))
+
+# Check years
+unique(df_UK_pop_200918$CDID)
+
+```
+
+
+
+```{r Add additional variables to data set}
+# Rename the "CDID" column to "Year"
+names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Year"
+#names(df_UK_pop_200918)[names(df_UK_pop_200918)=="UKPOP"] <- "Year"
+
+# Create "cleaned" data frame, defining units and data source 
+df_UK_pop_200918$DataSupplier <- "ONS"
+df_UK_pop_200918$DataSet <- "TotalUKPopulation"
+df_UK_pop_200918$Commodity <- "Population"
+df_UK_pop_200918$Flag <- "NA"
+df_UK_pop_200918$FlagDescription <- "NA"
+df_UK_pop_200918$Units <- "Capita"
+df_UK_pop_200918$TemporalResolution <- "CalendarYear"
+
+# Identify column names
+colnames(df_UK_pop_200918)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
+```
+
 
 
 

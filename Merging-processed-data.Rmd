@@ -1,23 +1,29 @@
 ---
-title: "RI-B5-04: UK seafood supply chains. Part 2. Merging cleaned data. "
-author: "A.Lofstedt"
-date: "25/01/2023"
+title: "RI-B5-04: UK seafood supply chains. Creation of a UK Seafood supply chain database"
+author: "B. Scheliga and A.Lofstedt"
+date: "`r Sys.Date()`"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
-# sets options for entire document in the first chunk
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Part 2: Merging processed data to map UK seafood supply chains
+## Introduction
 
-This R markdown document outlines how the cleaned data quantifying seafood production (both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2018 was merged for analysis. Two data frames are created- one with seafood supplies expressed in grams and another expressed in g/ capita/ week 
+This is a document describes the methods and data used to create the UK Seafood supply chain database, linking  
+both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2018.
 
-## Preparation
+This project was part of the RESAS - Project from the Rowett Insitute at the University of Aberdeen.
 
-```{r Load libraries, include=FALSE}
-# Load packages
+Two data frames are created- one with seafood supplies expressed in grams and another expressed in g/ capita/ week 
+
+
+## Method
+
+### Libraries
+
+```{r Libraries}
 library(tidyr) # for tidying data
 library(dplyr) # base R alternative but neater
 library(vroom) # for loading and transforming data
@@ -26,80 +32,70 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(stringr) # used to replace matched patterns in a string
+#library(here)
 ```
 
 
-```{r Load file path, echo=TRUE}
-# Loading file path to the data into a value 
-source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
-```
+### Datasets
+
+```{r Loading data}
+# loading filepath to the project folder on the University storage
+source("Data_filepath.R")
+
+# Only selecting the cleaned dataset, which are annotate with the "_cleaned_sfdb". There might be other processed files in the folder, which we don't want
+filepath <- paste(data_dir,"ProcessedData/", sep="")# we are storing the file path here, because we'll need it later
+vec_filenames_sfdb <- list.files(filepath, pattern = "Cleaned.csv", full.names = TRUE)
 
 
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-
-## UK population data (ONS) 
-
-```{r Specify the desired file path}
-# Select file path with raw data
-filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
-```
-
-
-```{r Load data (1971 to 2020)}
-# Load data (1971 to 2020)
-df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
-
-str(df_UK_ONS_population_data)
-
-```
-
-
-```{r Subset data for desired years}
-# Subset UK population data between 2009 and 2018
-df_UK_pop_200918 <- subset(df_UK_ONS_population_data, 
-                      CDID > 2008 & CDID < 2019 , select= c(CDID, UKPOP))
-
-# Check years
-unique(df_UK_pop_200918$CDID)
-
-```
-
-
-```{r Add additional variables to data set}
-# Rename the "CDID" column to "Year"
-names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Year"
-#names(df_UK_pop_200918)[names(df_UK_pop_200918)=="UKPOP"] <- "Year"
-
-# Create "cleaned" data frame, defining units and data source 
-df_UK_pop_200918$DataSupplier <- "ONS"
-df_UK_pop_200918$DataSet <- "TotalUKPopulation"
-df_UK_pop_200918$Commodity <- "Population"
-df_UK_pop_200918$Flag <- "NA"
-df_UK_pop_200918$FlagDescription <- "NA"
-df_UK_pop_200918$Units <- "Capita"
-df_UK_pop_200918$TemporalResolution <- "CalendarYear"
-
-# Identify column names
-colnames(df_UK_pop_200918)
-
-```
-
-
-```{r Save cleaned data}
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+print("The following files were loaded:")
+i = 1
+# Loading the cleaned dataset
+for(f in vec_filenames_sfdb){
+    temp <- fread(f) # storing the data in a temporary 
+    assign(paste("df_",substr(sub(paste(".*",filepath,sep=""),"",f),1,6),sep=""),temp) # assigning the df a name based on input dataset
+    print(paste(i,". ",sub(paste(".*",filepath,sep=""),"",f),sep="")) # print out which dataset files had been used
+    i = i+1
+    rm(temp)# removing temp object
+}
+rm(i)
 
 ```
 
 
 
+### Creating the Seafood database
+
+
+```{r Creating the Seafood database}
+df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
+df_Seafood_DB <- rbind(df_TradeD, df_AllLan) # Note df_Trade_ is the edited one
+df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
+df_Seafood_CoPu_DB <- rbind(df_Consum,df_EatenO)
+df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
+```
+
+
+```{r writing the seafood database}
+source("Data_filepath.R")
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_prelimary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+
+##### Not needed
 
 ## Aggregating the cleaned data sets 
+
+```{r Load data from processed data file}
+# State file path 
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+```
+
 
 ```{r Load cleaned data}
 # Load UK capture production data (UK and foreign vessels landings into the UK)
@@ -109,7 +105,7 @@ df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsin
 df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK trade data (further processed)
-df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_clean.csv", sep = "/"))
+df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK household purchasing data 
 df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
@@ -119,36 +115,49 @@ df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurcha
 
 # Load UK consumption data 
 df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK population data 
-df_popSize_NS_clean_data <- vroom(file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = "/"))
-
 ```
 
 
 
-## UK seafood supplies (grams)
-
-Create a data frame calculating UK seafood supplies per year. Units are displayed as grams.
-
-```{r Combine all data frames}
-# Check strucure of all dataframs prior to combining
+```{r Check strucure of all data frames}
+# Check structure of all data frames prior to combining
 colnames(df_allLandingsintoUK_NS_clean_data)
 colnames(df_aquaProd_Eurostat_clean_data)
 colnames(df_trade_HMRC_clean_data)
 colnames(df_eatenOutPurch_DEFRA_clean_data)
 colnames(df_housePurch_DEFRA_clean_data)
 colnames(df_consumption_NDNS_clean_data)
-colnames(df_consumption_NDNS_clean_data)
-colnames(df_popSize_NS_clean_data)
-
-
-# combine cleaned data sets 
-df_UKSeafoodSuppliesDatabase <- rbind(df_captureProd_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_trade_HMRC_clean_data, df_housePurch_DEFRA_clean_data, df_eatenOutPurch_DEFRA_clean_data, df_consumption_NDNS_clean_data)
-
-df_UKSeafoodSupplies <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, df_consumption_NDNS_clean_data)
 
 ```
+
+
+### Creating the Seafood database
+
+
+```{r Creating the Seafood database}
+df_Seafood_DB <- rbind(df_trade_HMRC_clean_data, df_allLandingsintoUK_NS_clean_data) 
+df_Seafood_DB <- rbind(df_Seafood_DB, df_aquaProd_Eurostat_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_consumption_NDNS_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_eatenOutPurch_DEFRA_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_housePurch_DEFRA_clean_data)
+
+
+df_Seafood_CoPu_DB <- rbind(df_consumption_NDNS_clean_data,df_eatenOutPurch_DEFRA_clean_data)
+df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
+```
+
+
+```{r writing the seafood database}
+source("Data_filepath.R")
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_prelimary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+
+
+
 
 
 ```{r Save cleaned data}
@@ -157,29 +166,3 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 write.csv(df_UKSeafoodSuppliesDatabase, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
 
 ```
-
-
-
-
-## UK Seafood supplies per capita (g/capita/ week)
-
-Create a new data frame calculating UK seafood supplies per capita per week. Units are displayed as grams per capita per week.
-
-
-```{r Calculate grams available per capita}
-# Add in annual UK population data to the data frame as a new column. Duplicate population data for each year. 
-
-# Match population size per year to each year in the merged seafood data frame
-df_UKSeafoodPerCapita <- merge(df_UKSeafoodSupplies, df_NS_UK_pop, by = "Year")
-
-# Convert grams/year to g/capita/year
-df_UKSeafoodPerCapita$ValueGramsCapitaYear <- df_UKSeafoodPerCapita$ValueGrams / df_UKSeafoodPerCapita$UKPop
-
-# Convert grams/year to g/capita/week
-df_UKSeafoodPerCapita$Value <- df_UKSeafoodPerCapita$ValueGramsCapitaYear / 52
-
-# Add additional column stating the units
-df_UKSeafoodPerCapita$Units <- "GramsCapitaWeek"
-
-```
-
