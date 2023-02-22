@@ -41,33 +41,26 @@ filepath <- paste(data_dir,"Outputs", sep="")
 
 ```{r Load the database}
 # Load database 
-df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c(".."))
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 
 # Check the structure 
 str(df_UK_seafoodDB)
 
-# Set value to numerical 
-df_UK_seafoodDB$Value <- as.numeric(df_UK_seafoodDB$Value)
 ```
+
+
+Remove products for non-human consumption nor are included in the dietary recommendations 
 
 ```{r Final clean}
 # Remove products for non-human consumption 
 
-# Remove entries not included in dietary recs e.g. aglae, fishmeal 
+# Remove products not included in dietary recommendations  e.g. algae, fish meal, fish oil
 
 ```
 
 
 
 ## Exploratory plots
-
-```{r}
-# Separate out other "species"
-df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
-
-df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
-```
-
 
 ```{r Exploratory plots}
 # Create stacked bar plot displaying  value for each species, stacked by commodity. 
@@ -78,6 +71,15 @@ ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = Species)) +
 ggplot(df_UK_seafoodDB, aes(x = Species, y = Value, fill = Commodity)) +
   geom_col(position = "dodge")
 ```
+
+
+```{r}
+# Separate out other "species"
+df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+
+df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
+```
+
 
 
 ```{r Subset data by commodity}
@@ -96,23 +98,67 @@ bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las =3)
 ```
 
 
+Unstack the data frame to create a new column calculating seafood availability per species 
 
 
-#####
+```{r Unstack the data frame}
+str(df_UK_seafoodDB)
 
+library(reshape2)
+library(reshape)
 
-```{r}
-seafoodCommodity <- as.data.frame(unstack(df_UK_seafoodDB, Commodity ~ Year))
-
-str()
+df_UK_seafoodDB_short <- cast(df_UK_seafoodDB, Species  ~ Commodity)
+ 
+unique(df_UK_seafoodDB$Commodity)
 ```
+
+
+
+```{r Unstack the data frame}
+# Subset commodities and create new dataset
+df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+df_UK_seafood_imp <- subset(df_UK_seafoodDB, Commodity == "Imports")
+df_UK_seafood_exp <- subset(df_UK_seafoodDB, Commodity == "Exports")
+
+# Merge data sets by species and year 
+df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = c("Species", "Year")), all= TRUE)
+
+inner.joi
+
+str(df_UK_seafood_prod)
+str(df_UK_seafood_imp)
+df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = "Species", all= TRUE)
+
+df_UK_seafood_prod <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_imp, by = c('Species' = 'Species', "Year"= "Year"))
+df_UK_seafoodDB_short <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_exp, by = c('Species' = 'Species', "Year"= "Year"))
+
+
+# Create new data frame with desired variables 
+colnames(df_UK_seafoodDB_short)
+
+# Select desired variables 
+df_UK_seafoodDB_short_clean <- df_UK_seafoodDB_short[c("Species", "SpeciesType", "SACN.x", "Value.x", "Value.y", "Value", "Year")]
+
+# Rename variables
+names(df_UK_seafoodDB_short_clean) <- c("Species", "SpeciesType", "SACN", "Prod", "Imp", "Exports", "Year")
+
+# Calculate seafood supplies
+df_UK_seafoodDB_short_clean$supplies <- (df_UK_seafoodDB_short_clean$Prod + df_UK_seafoodDB_short_clean$Imp) - df_UK_seafoodDB_short_clean$Exports
+
+# Create box plot of supplies
+boxplot(supplies ~ Species, data = df_UK_seafoodDB_short_clean, col = "lightgray", 
+        ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
+
+```
+
+
+
 
 
 
 ```{r Merge summed commodities bweteen 2009 and 2018 }
 # Merge aggregated data
 df_annualSeafood <- merge(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, by = Species, Year)
-
 
 df_annualSeafood <- cbind(df_allLandingsintoUK_NS_clean_data, aquaProd[,2], imports[,2], exports[,2] )
 
