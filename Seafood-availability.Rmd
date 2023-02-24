@@ -112,6 +112,19 @@ df_UK_seafoodDB_short <- cast(df_UK_seafoodDB, Species  ~ Commodity)
 unique(df_UK_seafoodDB$Commodity)
 ```
 
+```{r}
+# Load UK capture production data (UK and foreign vessels landings into the UK)
+df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK aquaculture production data 
+df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
+
+
+df_UK_seafood_prod <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data)
+
+```
+
+
 
 
 ```{r Unstack the data frame}
@@ -120,6 +133,9 @@ df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
 df_UK_seafood_imp <- subset(df_UK_seafoodDB, Commodity == "Imports")
 df_UK_seafood_exp <- subset(df_UK_seafoodDB, Commodity == "Exports")
 
+
+
+
 # Merge data sets by species and year 
 df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = c("Species", "Year")), all= TRUE)
 
@@ -127,6 +143,8 @@ inner.joi
 
 str(df_UK_seafood_prod)
 str(df_UK_seafood_imp)
+
+
 df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = "Species", all= TRUE)
 
 df_UK_seafood_prod <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_imp, by = c('Species' = 'Species', "Year"= "Year"))
