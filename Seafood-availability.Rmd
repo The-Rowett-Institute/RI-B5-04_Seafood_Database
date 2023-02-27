@@ -26,6 +26,7 @@ library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(plyr) # joins multiple data frames together
 library(ggplot2)
+
 ```
 
 ```{r Load file path, echo=TRUE}
@@ -93,7 +94,7 @@ boxplot(Value ~ Species, data = df_UK_seafood_prod, ylab= "Production (g)", xlab
 boxplot(Value ~ SACN, data = df_UK_seafood_prod, ylab= "Production (g)", xlab = "", las = 3)
 
 # Group production values by SACN values
-bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las =3)
+bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las = 3)
 
 ```
 
@@ -101,25 +102,15 @@ bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las =3)
 Unstack the data frame to create a new column calculating seafood availability per species 
 
 
-```{r Unstack the data frame}
-str(df_UK_seafoodDB)
 
-library(reshape2)
-library(reshape)
-
-df_UK_seafoodDB_short <- cast(df_UK_seafoodDB, Species  ~ Commodity)
- 
-unique(df_UK_seafoodDB$Commodity)
-```
-
-```{r}
+```{r For AL when changing the data}
 # Load UK capture production data (UK and foreign vessels landings into the UK)
 df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = "/"))
 
 # Load UK aquaculture production data 
 df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
 
-
+# Merge data frames
 df_UK_seafood_prod <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data)
 
 ```
@@ -133,23 +124,10 @@ df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
 df_UK_seafood_imp <- subset(df_UK_seafoodDB, Commodity == "Imports")
 df_UK_seafood_exp <- subset(df_UK_seafoodDB, Commodity == "Exports")
 
-
-
-
-# Merge data sets by species and year 
-df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = c("Species", "Year")), all= TRUE)
-
-inner.joi
-
-str(df_UK_seafood_prod)
-str(df_UK_seafood_imp)
-
-
+# Merge data sets by species 
 df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = "Species", all= TRUE)
-
 df_UK_seafood_prod <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_imp, by = c('Species' = 'Species', "Year"= "Year"))
 df_UK_seafoodDB_short <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_exp, by = c('Species' = 'Species', "Year"= "Year"))
-
 
 # Create new data frame with desired variables 
 colnames(df_UK_seafoodDB_short)
@@ -162,45 +140,31 @@ names(df_UK_seafoodDB_short_clean) <- c("Species", "SpeciesType", "SACN", "Prod"
 
 # Calculate seafood supplies
 df_UK_seafoodDB_short_clean$supplies <- (df_UK_seafoodDB_short_clean$Prod + df_UK_seafoodDB_short_clean$Imp) - df_UK_seafoodDB_short_clean$Exports
+```
 
+
+```{r Boxplot of seafood supplies}
 # Create box plot of supplies
 boxplot(supplies ~ Species, data = df_UK_seafoodDB_short_clean, col = "lightgray", 
         ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
 
-```
-
-
-
-
-
-
-```{r Merge summed commodities bweteen 2009 and 2018 }
-# Merge aggregated data
-df_annualSeafood <- merge(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, by = Species, Year)
-
-df_annualSeafood <- cbind(df_allLandingsintoUK_NS_clean_data, aquaProd[,2], imports[,2], exports[,2] )
-
-# Rename column in the data frame
-names(df_annualSeafood) <- c("Year", "CaptureProd", "Aquaprod", "Imports", "Exports")
+# add in horizontal line marking dietary recommendation
+#abline(h = 0, col = "darkred")
 
 ```
-
-
-```{r Calculate annual net seafood availabilty (grams/capita/week)}
-# Calculate total seafood production
-df_annualSeafood$totProd <- (df_annualSeafood$CaptureProd + df_annualSeafood$Aquaprod)
-
-# Calculate average net seafood availability = (production + imports) - exports
-df_annualSeafood$available <- (df_annualSeafood$totProd + 
-                              df_annualSeafood$Imports) - df_annualSeafood$Exports 
-
-```
-
 
 
 ```{r Plot annual UK seafood supply (g/capita/week) between 2009 and 2018}
+
+# Aggregate species data
+annual_seafood <- aggregate(supplies ~ Year, data = df_UK_seafoodDB_short_clean, sum)
+
+annual_seafoods <- plot(supplies ~ Year, data = annual_seafood, pch= 20, type = "l", cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood available", xlab = "Year")
+
+# Calculate seafood supplies per person per week
+
 # Plot annual seafood availability between 2009 and 2018
-annual_seafood <- plot(available ~ Year, data = df_annualSeafood, pch= 20, type = "l", cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood available", xlab = "Year", ylim = c(0, 300))
+annual_seafoods <- plot(supplies ~ Year, data = annual_seafood, pch= 20, type = "l", cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood available", xlab = "Year", ylim = c(0, 300))
 
 # add in horizontal line marking dietary recommendation
 abline(h = 280, col = "darkgreen")
@@ -715,5 +679,16 @@ df_clean_UK_pop$Units <- "UK-total-pop"
 df_clean_UK_pop$Data_source <- "National-statistics"
 ```
 
+
+```{r Merge summed commodities bweteen 2009 and 2018 }
+# Merge aggregated data
+df_annualSeafood <- merge(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Eurostat_clean_data, by = Species, Year)
+
+df_annualSeafood <- cbind(df_allLandingsintoUK_NS_clean_data, aquaProd[,2], imports[,2], exports[,2] )
+
+# Rename column in the data frame
+names(df_annualSeafood) <- c("Year", "CaptureProd", "Aquaprod", "Imports", "Exports")
+
+```
 
 

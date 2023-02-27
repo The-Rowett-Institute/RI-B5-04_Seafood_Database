@@ -64,11 +64,6 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 # Read in .csv file
 df_UK_population_200918 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c(".."))
 
-
-# UK population data. Mid year estimates 2001910 to 201819
-# Read in .csv file
-#df_UK_MidYearpopulation <- vroom(file=paste(filepath,"ONS_UK_MidYearPopulation-20091018.csv", sep="/"), na = c(".."))
-
 ```
 
 
@@ -95,9 +90,6 @@ Here we load landings data on landings into the UK by UK and foreign vessels. Mu
 # Read in .csv file
 df_UK_AllUKLandings_201721_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-201721.csv", sep="/"), na = c(".."))
 
-
-df_UK_AllUKLandings_201721_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201721.csv", sep="/"), na = c(".."))
- 
 # Check for missing values. Right column summed to be total number of rows in the data set
 md.pattern(df_UK_AllUKLandings_201721_data, rotate.names = TRUE)
 
@@ -115,7 +107,7 @@ df_UK_AllUKLandings_201718_long <- melt(df_UK_AllUKLandings_201718_data, id.vars
 ```{r Load data (2012 to 2016)}
 # ii) Landings into the UK by UK and foreign vessels: 2012 to 2016 
 # Read in .csv file
-df_UK_AllUKLandings_201216_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201216.csv", sep="/"), na = c(".."))
+df_UK_AllUKLandings_201216_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-201216.csv", sep="/"), na = c(".."))
 
 # Check for missing values
 md.pattern(df_UK_AllUKLandings_201216_data, rotate.names = TRUE)
@@ -132,7 +124,7 @@ df_UK_AllUKLandings_201216_long <- melt(df_UK_AllUKLandings_201216_data, id.vars
 ```{r Load data (2008 to 2011)}
 # iii) Landings into the UK by UK and foreign vessels: 2008 to 2012 but select years 2009 to 2011. Always best to use the most recent data set.
 # Read in .csv file
-df_UK_AllUKLandings_200811_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-200913.csv", sep="/"), na = c(".."))
+df_UK_AllUKLandings_200811_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-200811.csv", sep="/"), na = c(".."))
 
 # Check for missing values
 md.pattern(df_UK_AllUKLandings_200811_data, rotate.names = TRUE)
@@ -235,8 +227,6 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 # Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
 write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
-write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
-
 ```
 
 
@@ -245,6 +235,14 @@ write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"UKVesslesLa
 ### A) Capture fisheries (MMO) UK vessels landing in to the UK and abroad
 
 Here we load landings data on landings into the UK by UK and foreign vessels. Multiple data sets are loaded to accommodate for the time period.
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
 
 ```{r Load data (2017 to 2019)}
 # i) Landings into the UK by UK and foreign vessels: 2017 to 2021
@@ -316,19 +314,17 @@ Capture fisheries data are now all in one data frame. Data frame is composed of 
 We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
 
 
-## up to here
-
 ```{r Join data frame with translation document}
 # Join data frame with translation document- ensures consistent spelling across data sets
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_UKV_LandingUKAbroad_200918_long$SpeciesRevised <- df_UK_AllUKLandings_200918$Species
+df_UKV_LandingUKAbroad_200918_long$SpeciesRevised <- df_UKV_LandingUKAbroad_200918_long$Species
 
 # Join data frame with MCS data frame by species name
-df_UK_AllUKLandings_200918 <- df_UK_AllUKLandings_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_UKV_LandingUKAbroad_200918_long <- df_UKV_LandingUKAbroad_200918_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
-colnames(df_UK_AllUKLandings_200918)
+colnames(df_UKV_LandingUKAbroad_200918_long)
 
 ```
 
@@ -337,47 +333,47 @@ Landings provided as whole weight. Need to apply conversion factors estimate edi
 
 ```{r Apply conversion factors to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UK_AllUKLandings_200918$CF_value) # no processed data here so no 1 values
+unique(df_UKV_LandingUKAbroad_200918_long$CF_value) # no processed data here so no 1 values
 
 # Create new column and apply conversion factors values
-df_UK_AllUKLandings_200918$apply_CF <- df_UK_AllUKLandings_200918$Value * df_UK_AllUKLandings_200918$CF_value
+df_UKV_LandingUKAbroad_200918_long$apply_CF <- df_UKV_LandingUKAbroad_200918_long$Value * df_UKV_LandingUKAbroad_200918_long$CF_value
 
 ```
 
 
 ```{r Convert from 1000 tonnes to grams}
 # Convert raw value from 000's tonnes to grams 
-df_UK_AllUKLandings_200918$Value <- (df_UK_AllUKLandings_200918$apply_CF * 1000) * 1000000
+df_UKV_LandingUKAbroad_200918_long$Value <- (df_UKV_LandingUKAbroad_200918_long$apply_CF * 1000) * 1000000
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UK_AllUKLandings_200918$Units <- "Grams"
-df_UK_AllUKLandings_200918$DataSupplier <- "MMO"
-df_UK_AllUKLandings_200918$DataSet <- "Capture_SeaFisheriesStatistics"
-df_UK_AllUKLandings_200918$Commodity <- "Production"
-df_UK_AllUKLandings_200918$Flag <- "ConV1"
-df_UK_AllUKLandings_200918$TemporalResolution <- "CalendarYear"
-df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the data"
+df_UKV_LandingUKAbroad_200918_long$Units <- "Grams"
+df_UKV_LandingUKAbroad_200918_long$DataSupplier <- "MMO"
+df_UKV_LandingUKAbroad_200918_long$DataSet <- "Capture_SeaFisheriesStatistics"
+df_UKV_LandingUKAbroad_200918_long$Commodity <- "Production"
+df_UKV_LandingUKAbroad_200918_long$Flag <- "ConV1"
+df_UKV_LandingUKAbroad_200918_long$TemporalResolution <- "CalendarYear"
+df_UKV_LandingUKAbroad_200918_long$FlagDescription <- "CF applied to all or part of the data"
 
 ```
 
 
 ```{r Select desired variables for the cleaned data set}
 # Identify column names
-colnames(df_UK_AllUKLandings_200918)
+colnames(df_UKV_LandingUKAbroad_200918_long)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UKV_LandingUKAbroad_200918_clean <- df_UKV_LandingUKAbroad_200918_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
-colnames(df_UK_AllUKLandings_200918_clean)
+colnames(df_UKV_LandingUKAbroad_200918_clean)
 
-str(df_UK_AllUKLandings_200918_clean)
+str(df_UKV_LandingUKAbroad_200918_clean)
 
 # Rename "SeafoodSpecies" column 
-df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, Species = SeafoodSpecies)
+df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, Species = SeafoodSpecies)
 
 
 ```
@@ -388,9 +384,7 @@ df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, S
 filepath <- paste(data_dir,"ProcessedData", sep = "")
 
 # Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
-write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
-
-write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_UKV_LandingUKAbroad_200918_cleaned, file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -536,7 +530,7 @@ colnames(df_cleaned_UK_HMRC_200919_cleaned)
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_cleaned_UK_HMRC_200919_cleaned, file = paste(filepath,"Trade_HMRC_clean-edit.csv", sep = ""), row.names = FALSE)
+write.csv(df_cleaned_UK_HMRC_200919_cleaned, file = paste(filepath,"TradeData_HMRC_PreliminaryAgainCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
