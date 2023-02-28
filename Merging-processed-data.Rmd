@@ -67,7 +67,8 @@ rm(i)
 
 ```{r Creating the Seafood database}
 df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
-df_Seafood_DB <- rbind(df_TradeD, df_AllLan) # Note df_Trade_ is the edited one
+
+df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # Note df_Trade_ is the edited one
 df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)

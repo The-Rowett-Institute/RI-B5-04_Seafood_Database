@@ -588,10 +588,6 @@ colnames(df_NDNS_foodlevel_yr11_data)
 # Check if columns match up
 all_equal(df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr9data)
 
-
-# Rename "AgeR"
-#colnames(df_NDNS_foodlevel_yr9_11_data)[colnames(df_NDNS_foodlevel_yr9_11_data) == 'AgeR'] <- 'Age'
-
 # Join data frames
 NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
                              df_NDNS_foodlevel_yr5_6_data,
@@ -641,8 +637,7 @@ Now all species are in a separate column. Some species are duplicated per year i
 
 ```{r Sum seafood consumption over 4-day diet recall, by species, by year}
 # Sum seafood consumption per species per year
-df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ SeafoodSpecies + SurveyYear + SpeciesType + 
-                                                       SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
+df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ SeafoodSpecies + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
 
 ```
 
@@ -659,15 +654,23 @@ df_NDNS_seafood_aggregate_person_Yr1_11$gYear <- df_NDNS_seafood_aggregate_perso
 
 ```{r Scale up NDNS consumption data with UK population data}
 # Create data frame with NDNS survey year respondents 
-respondersPerYear <- df_NDNS_seafood_aggregate_person_Yr1_11 %>%
+
+unique(NDNS_UK_Yr1_11_data$SurveyYear) # NA, 37 and 54 entries explored- no serial number so removed from data set
+
+#respondersPerYear <- NDNS_UK_Yr1_11_data %>%
+#    group_by(SurveyYear) %>%
+#    summarise(Count = n())  
+
+
+respondersPerYear <- NDNS_UK_Yr1_11_data %>%
     group_by(SurveyYear) %>%
-    summarise(Count = n())   
+    summarise(count = n_distinct(seriali)) 
 
 # Merge NDNS responses with consumption data 
 df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_person_Yr1_11, respondersPerYear, by = "SurveyYear")
 
 # Divide seafood consumption by NDNS respondents 
-df_NDNS_seafoodReported_Yr1_11$avgIntakeNDNS <- df_NDNS_seafood_aggregate_person_Yr1_11$gYear / df_NDNS_seafoodReported_Yr1_11$Count
+df_NDNS_seafoodReported_Yr1_11$avgIntakeNDNS <- df_NDNS_seafood_aggregate_person_Yr1_11$gYear / df_NDNS_seafoodReported_Yr1_11$count
 
 ```
 
@@ -676,8 +679,7 @@ Before merging with population data need to change survey values.
 
 ```{r Allocate numerical values to survey years}
 # Create new data frame with survey years and corresponding numerical values
-SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7",
-                "NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
+SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7","NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
 #NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
 Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018) 
 
@@ -726,8 +728,6 @@ df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("Data
 
 # Rename "SeafoodSpecies" column 
 df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cleaned, Species = SeafoodSpecies)
-
-
 
 ```
 

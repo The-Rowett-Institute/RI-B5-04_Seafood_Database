@@ -55,7 +55,12 @@ Remove products for non-human consumption nor are included in the dietary recomm
 ```{r Final clean}
 # Remove products for non-human consumption 
 
-# Remove products not included in dietary recommendations  e.g. algae, fish meal, fish oil
+# Remove products not included in dietary recommendations  e.g. algae, fish meal, "fish oil", "Seaweed and other algae",
+
+# Separate out other "species"
+df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+
+df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
 
 ```
 
@@ -63,27 +68,36 @@ Remove products for non-human consumption nor are included in the dietary recomm
 
 ## Exploratory plots
 
-```{r Exploratory plots}
-# Create stacked bar plot displaying  value for each species, stacked by commodity. 
+```{r Bar plot displaying weight for each species/type by commodity}
+# Create stacked bar plot displaying weight for each species, by commodity. 
 ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = Species)) + 
-  geom_bar(position='stack', stat='identity')
+  geom_bar(position='stack', stat='identity') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # Plot bars side by side
 ggplot(df_UK_seafoodDB, aes(x = Species, y = Value, fill = Commodity)) +
   geom_col(position = "dodge")
+
+# Create stacked bar plot displaying weight for each species type, by commodity. 
+ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = SpeciesType)) + 
+  geom_bar(position='stack', stat='identity') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+ggplot(df_UK_seafoodDB, aes(x = SpeciesType, y = Value, fill = Commodity)) +
+  geom_col(position = "dodge") + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Create stacked bar plot displaying weight for each SACN, by commodity. 
+ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = SACN)) + 
+  geom_bar(position='stack', stat='identity') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+
 ```
 
 
-```{r}
-# Separate out other "species"
-df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
 
-df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
-```
-
-
-
-```{r Subset data by commodity}
+```{r Explore data by commodity}
 # Subset production data
 df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
 
@@ -93,13 +107,22 @@ boxplot(Value ~ Species, data = df_UK_seafood_prod, ylab= "Production (g)", xlab
 # Box plot of UK seafood production, by SACN 
 boxplot(Value ~ SACN, data = df_UK_seafood_prod, ylab= "Production (g)", xlab = "", las = 3)
 
+ggplot(df_UK_seafood_prod, aes(SACN, Value)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) 
+
 # Group production values by SACN values
 bwplot(Value ~ Species | SACN, data = df_UK_seafood_prod, las = 3)
+
+ggplot(df_UK_seafood_prod, aes(Species, Value)) +
+    geom_point() +
+    facet_wrap(~ SACN) + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
 
 ```
 
 
-Unstack the data frame to create a new column calculating seafood availability per species 
 
 
 
