@@ -26,6 +26,7 @@ library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(plyr) # joins multiple data frames together
 library(ggplot2)
+library(scales) # displays integers on the axis
 
 ```
 
@@ -55,12 +56,20 @@ Remove products for non-human consumption nor are included in the dietary recomm
 ```{r Final clean}
 # Remove products for non-human consumption 
 
-# Remove products not included in dietary recommendations  e.g. algae, fish meal, "fish oil", "Seaweed and other algae",
+# Check the unique species types
+unique(df_UK_seafoodDB$SpeciesType)
 
-# Separate out other "species"
-df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+# Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove 2019 data
+df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Year !=2019)
 
-df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
+# Check their removal
+unique(df_UK_seafoodDB_food$SpeciesType)
+unique(df_UK_seafoodDB_food$Species)
+unique(df_UK_seafoodDB_food$Year)
+
+
+
+#df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
 
 ```
 
@@ -70,27 +79,37 @@ df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
 
 ```{r Bar plot displaying weight for each species/type by commodity}
 # Create stacked bar plot displaying weight for each species, by commodity. 
-ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = Species)) + 
+ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = Species)) + 
   geom_bar(position='stack', stat='identity') + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # Plot bars side by side
-ggplot(df_UK_seafoodDB, aes(x = Species, y = Value, fill = Commodity)) +
+ggplot(df_UK_seafoodDB_food, aes(x = Species, y = Value, fill = Commodity)) +
   geom_col(position = "dodge")
 
 # Create stacked bar plot displaying weight for each species type, by commodity. 
-ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = SpeciesType)) + 
+ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = SpeciesType)) + 
   geom_bar(position='stack', stat='identity') + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-ggplot(df_UK_seafoodDB, aes(x = SpeciesType, y = Value, fill = Commodity)) +
+ggplot(df_UK_seafoodDB_food, aes(x = SpeciesType, y = Value, fill = Commodity)) +
   geom_col(position = "dodge") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # Create stacked bar plot displaying weight for each SACN, by commodity. 
-ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = SACN)) + 
+ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = SACN)) + 
   geom_bar(position='stack', stat='identity') + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Aggregate seafood value per year per commodity
+df_UK_seafood_sum <- aggregate(Value ~ Year + Commodity, data = df_UK_seafoodDB_food, sum)
+
+# Plot commodity values per year 
+ggplot(df_UK_seafood_sum, aes(x = Year, y = Value)) + 
+  geom_line(aes(color = Commodity)) + 
+  scale_color_manual(name='Commodity', labels=c('production', 'imports', 'exports', 'purchases', 'consumption'),
+                     values=c('red', 'purple', 'steelblue', 'orange', 'green')) + 
+  scale_x_continuous(breaks= pretty_breaks())
 
 
 ```
@@ -99,7 +118,7 @@ ggplot(df_UK_seafoodDB, aes(fill = Commodity, y = Value, x = SACN)) +
 
 ```{r Explore data by commodity}
 # Subset production data
-df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
+df_UK_seafood_prod <- subset(df_UK_seafoodDB_food, Commodity == "Production")
 
 # Box plot of UK seafood production, by species 
 boxplot(Value ~ Species, data = df_UK_seafood_prod, ylab= "Production (g)", xlab = "", las = 3)
@@ -119,11 +138,7 @@ ggplot(df_UK_seafood_prod, aes(Species, Value)) +
     facet_wrap(~ SACN) + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
-
 ```
-
-
-
 
 
 ```{r For AL when changing the data}
@@ -141,49 +156,109 @@ df_UK_seafood_prod <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Euro
 
 
 
-```{r Unstack the data frame}
-# Subset commodities and create new dataset
-df_UK_seafood_prod <- subset(df_UK_seafoodDB, Commodity == "Production")
-df_UK_seafood_imp <- subset(df_UK_seafoodDB, Commodity == "Imports")
-df_UK_seafood_exp <- subset(df_UK_seafoodDB, Commodity == "Exports")
+```{r Subeset database commodities}
+# Subset commodities 
+df_UK_seafood_prod <- subset(df_UK_seafoodDB_food, Commodity == "Production")
+df_UK_seafood_imp <- subset(df_UK_seafoodDB_food, Commodity == "Imports")
+df_UK_seafood_exp <- subset(df_UK_seafoodDB_food, Commodity == "Exports")
+df_UK_seafood_purch <- subset(df_UK_seafoodDB_food, Commodity == "Purchase")
+df_UK_seafood_consump <- subset(df_UK_seafoodDB_food, Commodity == "Consumption")
 
-# Merge data sets by species 
-df_UK_seafoodDB_short <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = "Species", all= TRUE)
-df_UK_seafood_prod <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_imp, by = c('Species' = 'Species', "Year"= "Year"))
-df_UK_seafoodDB_short <- df_UK_seafood_prod %>% full_join(., df_UK_seafood_exp, by = c('Species' = 'Species', "Year"= "Year"))
+# Merge data sets (sideways i.e. by column) by species name and year 
+
+df_UK_seafoodPos <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = c("Species", "Year"), all= TRUE)
+df_UK_supplies <- merge(df_UK_seafoodPos, df_UK_seafood_exp, by = c("Species", "Year"), all= TRUE)
+df_UK_sup_purch <- merge(df_UK_supplies, df_UK_seafood_purch, by = c("Species", "Year"), all= TRUE)
+df_UK_sup_purch_cons <- merge(df_UK_sup_purch, df_UK_seafood_consump, by = c("Species", "Year"), all= TRUE)
+
 
 # Create new data frame with desired variables 
-colnames(df_UK_seafoodDB_short)
+colnames(df_UK_supplies)
 
 # Select desired variables 
-df_UK_seafoodDB_short_clean <- df_UK_seafoodDB_short[c("Species", "SpeciesType", "SACN.x", "Value.x", "Value.y", "Value", "Year")]
+df_UK_supplies_short<- df_UK_supplies[c("Species", "SpeciesType.x", "SACN.x", "Value.x", "Value.y", "Value", "Year")]
 
 # Rename variables
-names(df_UK_seafoodDB_short_clean) <- c("Species", "SpeciesType", "SACN", "Prod", "Imp", "Exports", "Year")
+names(df_UK_supplies_short) <- c("Species", "SpeciesType", "SACN", "Prod", "Imp", "Exports", "Year")
+
+# Convert NA to zeros (otherwise availability cannot be calculated)
+df_UK_supplies_short[is.na(df_UK_supplies_short)] <- 0
 
 # Calculate seafood supplies
-df_UK_seafoodDB_short_clean$supplies <- (df_UK_seafoodDB_short_clean$Prod + df_UK_seafoodDB_short_clean$Imp) - df_UK_seafoodDB_short_clean$Exports
+df_UK_supplies_short$supplies <- (df_UK_supplies_short$Prod + df_UK_supplies_short$Imp) - df_UK_supplies_short$Exports
+
 ```
 
 
 ```{r Boxplot of seafood supplies}
-# Create box plot of supplies
-boxplot(supplies ~ Species, data = df_UK_seafoodDB_short_clean, col = "lightgray", 
+# Box plot of UK seafood supplies
+boxplot(supplies ~ Species, data = df_UK_supplies_short, col = "lightgray", 
         ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
+
+ggplot(df_UK_supplies_short, aes(Species, supplies)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) + 
+  geom_hline(yintercept = 0, linetype="dashed", color = "red", size = 1.0)
+
+ggplot(df_UK_supplies_short, aes(SpeciesType, supplies)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) 
+
+#ggplot(df_UK_supplies_short, aes(Species, supplies)) +
+#    geom_point() +
+#    facet_wrap(~ SACN) + 
+#  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
 # add in horizontal line marking dietary recommendation
 #abline(h = 0, col = "darkred")
+```
+
+
+```{r Boxplot of seafood supplies by}
+# Subset data frame according to SACN classification
+df_UK_supplies_oily <- subset(df_UK_supplies_short, SACN == "Oily")
+df_UK_supplies_lean <- subset(df_UK_supplies_short, SACN == "Lean")
+df_UK_supplies_shellfish <- subset(df_UK_supplies_short, SACN == "Shellfish")
+
+# Plot oily fish only 
+ggplot(df_UK_supplies_oily, aes(Species, supplies)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) + 
+  geom_hline(yintercept = 0, linetype="dashed", color = "red", size = 1.0)
+
+# Plot lean fish only 
+ggplot(df_UK_supplies_lean, aes(Species, supplies)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) + 
+  geom_hline(yintercept = 0, linetype="dashed", color = "red", size = 1.0)
+
+# Plot shellfish fish only 
+ggplot(df_UK_supplies_shellfish, aes(Species, supplies)) +
+  geom_boxplot() +
+  scale_x_discrete(guide = guide_axis(angle = 90)) + 
+  geom_hline(yintercept = 0, linetype="dashed", color = "red", size = 1.0) # Change line type and color
 
 ```
 
 
+```{r Plot UK seafood supply (g) between 2009 and 2018}
+# Aggregate seafood supplies per year
+annual_seafood <- aggregate(supplies ~ Year, data = df_UK_supplies_short, sum)
+
+# Plot seafood supplies per year (between 2009 and 2018)
+annual_seafoods <- plot(supplies ~ Year, data = annual_seafood, pch= 20, type = "l", cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood supplies (g)", xlab = "Year")
+
+# Create stacked bar plot displaying weight for each SACN, by commodity. 
+ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = SACN)) + 
+  geom_bar(position='stack', stat='identity') + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+```
+
+
+
+
 ```{r Plot annual UK seafood supply (g/capita/week) between 2009 and 2018}
-
-# Aggregate species data
-annual_seafood <- aggregate(supplies ~ Year, data = df_UK_seafoodDB_short_clean, sum)
-
-annual_seafoods <- plot(supplies ~ Year, data = annual_seafood, pch= 20, type = "l", cex.axis = 1.0, cex.lab = 1.5, ylab = "Seafood available", xlab = "Year")
-
 # Calculate seafood supplies per person per week
 
 # Plot annual seafood availability between 2009 and 2018
@@ -191,8 +266,9 @@ annual_seafoods <- plot(supplies ~ Year, data = annual_seafood, pch= 20, type = 
 
 # add in horizontal line marking dietary recommendation
 abline(h = 280, col = "darkgreen")
-```
 
+
+```
 
 
 
