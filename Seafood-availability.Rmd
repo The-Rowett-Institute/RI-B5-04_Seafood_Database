@@ -54,19 +54,16 @@ str(df_UK_seafoodDB)
 Remove products for non-human consumption nor are included in the dietary recommendations 
 
 ```{r Final clean}
-# Remove products for non-human consumption 
-
 # Check the unique species types
 unique(df_UK_seafoodDB$SpeciesType)
 
-# Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove 2019 data
-df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Year !=2019)
+# Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove products for non-human consumption. Remove 2019 data
+df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Species != "Surimi" & Year !=2019)
 
 # Check their removal
 unique(df_UK_seafoodDB_food$SpeciesType)
 unique(df_UK_seafoodDB_food$Species)
 unique(df_UK_seafoodDB_food$Year)
-
 
 
 #df_UK_seafoodSpecies <-df_UK_seafoodDB[grep("Other", df_UK_seafoodDB$Species), ]
@@ -157,15 +154,14 @@ df_UK_seafood_prod <- rbind(df_allLandingsintoUK_NS_clean_data, df_aquaProd_Euro
 
 
 ```{r Subeset database commodities}
-# Subset commodities 
+# Subset commodities (long and thin)
 df_UK_seafood_prod <- subset(df_UK_seafoodDB_food, Commodity == "Production")
 df_UK_seafood_imp <- subset(df_UK_seafoodDB_food, Commodity == "Imports")
 df_UK_seafood_exp <- subset(df_UK_seafoodDB_food, Commodity == "Exports")
 df_UK_seafood_purch <- subset(df_UK_seafoodDB_food, Commodity == "Purchase")
 df_UK_seafood_consump <- subset(df_UK_seafoodDB_food, Commodity == "Consumption")
 
-# Merge data sets (sideways i.e. by column) by species name and year 
-
+# Join commodities (short and wide) by species and year 
 df_UK_seafoodPos <- merge(df_UK_seafood_prod, df_UK_seafood_imp, by = c("Species", "Year"), all= TRUE)
 df_UK_supplies <- merge(df_UK_seafoodPos, df_UK_seafood_exp, by = c("Species", "Year"), all= TRUE)
 df_UK_sup_purch <- merge(df_UK_supplies, df_UK_seafood_purch, by = c("Species", "Year"), all= TRUE)
