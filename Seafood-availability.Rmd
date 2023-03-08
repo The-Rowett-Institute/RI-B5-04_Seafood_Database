@@ -84,6 +84,8 @@ ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = Species)) +
 ggplot(df_UK_seafoodDB_food, aes(x = Species, y = Value, fill = Commodity)) +
   geom_col(position = "dodge")
 
+
+
 # Create stacked bar plot displaying weight for each species type, by commodity. 
 ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = SpeciesType)) + 
   geom_bar(position='stack', stat='identity') + 
@@ -93,10 +95,23 @@ ggplot(df_UK_seafoodDB_food, aes(x = SpeciesType, y = Value, fill = Commodity)) 
   geom_col(position = "dodge") + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
 
+
+
 # Create stacked bar plot displaying weight for each SACN, by commodity. 
 ggplot(df_UK_seafoodDB_food, aes(fill = Commodity, y = Value, x = SACN)) + 
   geom_bar(position='stack', stat='identity') + 
   theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust = 1))
+
+# Plot bars side by side
+ggplot(df_UK_seafoodDB_food, aes(x = SACN, y = Value, fill = Commodity)) +
+  geom_col(position = "dodge")
+
+# Remove "No data" from category 
+df_UK_seafoodDB_SACN<- subset(df_UK_seafoodDB_food, SACN != "NoData")
+
+ggplot(df_UK_seafoodDB_SACN, aes(x = SACN, y = Value, fill = Commodity)) +
+  geom_col(position = "dodge")
+
 
 # Aggregate seafood value per year per commodity
 df_UK_seafood_sum <- aggregate(Value ~ Year + Commodity, data = df_UK_seafoodDB_food, sum)
@@ -167,6 +182,12 @@ df_UK_supplies <- merge(df_UK_seafoodPos, df_UK_seafood_exp, by = c("Species", "
 df_UK_sup_purch <- merge(df_UK_supplies, df_UK_seafood_purch, by = c("Species", "Year"), all= TRUE)
 df_UK_sup_purch_cons <- merge(df_UK_sup_purch, df_UK_seafood_consump, by = c("Species", "Year"), all= TRUE)
 
+# Create a list
+list_seafood_df <- list(df_UK_seafood_prod, df_UK_seafood_imp, df_UK_seafood_exp, df_UK_seafood_purch, df_UK_seafood_consump)
+
+g <- Reduce(function(x, y) merge(x, y, all=TRUE), list_seafood_df)
+
+
 
 # Create new data frame with desired variables 
 colnames(df_UK_supplies)
@@ -191,6 +212,7 @@ df_UK_supplies_short$supplies <- (df_UK_supplies_short$Prod + df_UK_supplies_sho
 boxplot(supplies ~ Species, data = df_UK_supplies_short, col = "lightgray", 
         ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
 
+
 # Plot using ggplot
 ggplot(df_UK_supplies_short, aes(Species, supplies)) +
   geom_boxplot() +
@@ -198,7 +220,7 @@ ggplot(df_UK_supplies_short, aes(Species, supplies)) +
   scale_y_continuous(name = "Seafood supplies (g)") +
   geom_hline(yintercept = 0, linetype="dashed", color = "red", size = 1.0)
 
-#Plot by species type
+# Plot by species type
 ggplot(df_UK_supplies_short, aes(SpeciesType, supplies)) +
   geom_boxplot() +
   scale_x_discrete(guide = guide_axis(angle = 90)) 
@@ -211,6 +233,58 @@ ggplot(df_UK_supplies_short, aes(SpeciesType, supplies)) +
 
 ```
 
+```{r Barplot of UK seafood supplies in 2018}
+# Subset for most recent year (2018)
+df_UK_supplies_2018_all <- subset(df_UK_supplies_short, Year == 2018)
+unique(df_UK_supplies_2018$Year)
+
+# Aggregate supplies by species
+df_UK_supplies_2018 <- aggregate(supplies~ Species, data = df_UK_supplies_2018_all, sum)
+
+# Plot points of seafood supplies
+ggplot(df_UK_supplies_2018, aes(Species, supplies)) +
+  geom_point() +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g)") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 1.0)
+
+
+# Plot bar chart of seafood supplies
+ggplot(df_UK_supplies_2018, aes(Species, supplies)) +
+  geom_col() +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g)") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 1.0) + 
+  geom_point()
+
+purchases_18 <- subset(df_UK_seafood_purch, Year == 2018)
+df_UK_seafood_consump_18 <- subset(df_UK_seafood_consump, Year == 2018)
+str(df_UK_seafood_consump_18)
+
+df_UK_supConsump_2018 <- merge(df_UK_supplies_2018, df_UK_seafood_consump_18, by = c("Species"), all= TRUE)
+
+df_UK_seafood_2018 <- subset(df_UK_seafoodDB_food, Year == 2018)
+
+
+
+colnames(df_UK_supConsump_2018)
+
+# Plot bar chart of seafood supplies
+ggplot(df_UK_supConsump_2018, aes(Species, supplies)) +
+  geom_col() +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g)") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 1.0) + 
+  geom_point()
+
+# Plot bar chart of seafood supplies with colour shading 
+ggplot(df_UK_supplies_2018, aes(x= Species, y= supplies, fill= supplies)) + 
+  geom_bar(stat= "identity")+
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g)") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "red", size = 1.0)
+
+```
 
 
 
