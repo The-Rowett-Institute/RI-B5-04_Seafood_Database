@@ -212,7 +212,6 @@ df_UK_supplies_short$supplies <- (df_UK_supplies_short$Prod + df_UK_supplies_sho
 boxplot(supplies ~ Species, data = df_UK_supplies_short, col = "lightgray", 
         ylab = "Seafood supplied to the UK (grams)", xlab = "", las = 3, cex.axis = 1.0)
 
-
 # Plot using ggplot
 ggplot(df_UK_supplies_short, aes(Species, supplies)) +
   geom_boxplot() +
@@ -225,13 +224,41 @@ ggplot(df_UK_supplies_short, aes(SpeciesType, supplies)) +
   geom_boxplot() +
   scale_x_discrete(guide = guide_axis(angle = 90)) 
 
-```
-
-```{r Box plot of certian seafood species}
-# Subset seafood species
-
 
 ```
+
+```{r Box plot of certain seafood species (g/capita/week)}
+# Subset oily and lean fish
+# Merge UK seafood supplies with population data
+
+# Divide supplies by population size (per capita)
+
+# Divide by 52 (per capita, per week)
+
+# Aggregate supplies by species
+df_UK_supplies_SACN <- aggregate(supplies ~ SACN, data = df_UK_supplies_short, sum)
+
+
+# Plot by seafood supplies by SACN category.
+# Include estimated consumption of the categories and the dietary recommendation (140g)
+suppliesPerSACN <- ggplot(df_UK_supplies_SACN, aes(SACN, supplies)) +
+  geom_col() +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g/capita/week)") +
+  geom_hline(yintercept = 140, linetype = "dashed", color = "red", size = 1.0) + 
+  theme_classic() # axis lines but no grid line
+
+# Alter size of the axis text
+suppliesPerSACN + theme(
+  axis.text = element_text(colour = "black", size = rel(1.3)))
+
+
+```
+
+
+
+
+
 
 ```{r Barplot of UK seafood supplies in 2018}
 # Subset for most recent year (2018)
