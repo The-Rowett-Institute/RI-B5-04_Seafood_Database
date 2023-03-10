@@ -45,8 +45,8 @@ theme_set(theme_bw()%+replace%
               legend.key.size = unit(1.2, "cm"), 
               legend.title = element_text(size = 26), 
               legend.text = element_text(size = 24),
-              panel.grid.major = element_line(colour= "gray40", linetype = "dotted", size = 0.7), 
-              panel.grig.minor = element_line(colour = "gray70", linetype = "dotted", size = 0.7)
+              panel.grid.major = element_line(colour= "gray40", linetype = "dotted", linewidth = 0.7), 
+              panel.grid.minor = element_line(colour = "gray70", linetype = "dotted", linewidth = 0.7)
             ))
 # instead of "size" can also use "linewidth"
 ```
@@ -56,7 +56,7 @@ theme_set(theme_bw()%+replace%
 # Colour-blind friendly palette with grey. Try to keep the order (http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette)
 cbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
 
-# Colour will be allocated in commodity alphabetical order. 
+# Colours will be allocated in commodity alphabetical order. 
 ```
 
 
@@ -87,11 +87,46 @@ unique(df_UK_seafoodDB$SpeciesType)
 # Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove products for non-human consumption. Remove 2019 data
 df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Species != "Surimi" & Year != 2019)
 
+str(df_UK_seafoodDB_food)
+colnames(df_UK_seafoodDB_food)
+
 ```
 
 
 ```{r Change structure of the data frame}
-# See pivot()/ spread() command in tidyverse to efficiently merge data frames side-by-side. See dplyr cheatsheet.
+# See pivot_wider()/ spread() command in tidyverse to change structure. 
+# See dplyr cheat sheet.
+
+# Simplify data set and select desired columns 
+df_UK_seafoodDB_food_spec <- df_UK_seafoodDB_food[c("Species", "SpeciesType", "SACN", "Year", "Commodity", "Value" )]
+
+# Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
+df_UK_seafoodDB_food_simp <- aggregate(Value ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_food_spec, sum)
+
+# Make data frame wide and short
+df_UK_seafoodDB_short <- df_UK_seafoodDB_food_simp %>%
+  pivot_wider(names_from = Commodity, values_from = Value)
+```
+
+
+```{r Calculate seafood supplies}
+# Convert NA to zeros (otherwise supplies cannot be calculated)
+df_UK_seafoodDB_short[is.na(df_UK_seafoodDB_short)] <- 0
+
+# Calculate seafood supplies
+df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
+```
+
+
+```{r Calculate seafood supplies (g/capita/week)}
+# Merge data frame with UK population data 
+df_UK_seafoodDB_short$Pop <- merge(df_UK_seafoodDB_short, UKpop, by = "Year")
+
+# Calculate seafood supplies per capita
+df_UK_seafoodDB_short$Supplies_capWeek <- df_UK_seafoodDB_short$Supplies 
+
+# Calculate seafood supplies
+df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
 ```
 
 
@@ -102,22 +137,22 @@ df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & Spec
 
 ### Figure 2. Average UK seafood supply (g/capita/week) between 2009 and 2018  
 
-### Figure 3. Comparing seafood supplies (g/capita/week) with dietary recommendations in the UK and Scotland 
-
-### Figure 4. Caluculaing seafood wastage in the UK between 2009 and 2018. 
-
 ```{r}
-# Ensure y-axis values are on the same scale
-# Able to use facetwrap() and change the title of the strip
+# Plot using ggplot
+ggplot(df_UK_seafoodDB_short, aes(Year, Supplies)) +
+  geom_point() +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+  scale_y_continuous(name = "Seafood supplies (g)") +
+  geom_hline(yintercept = 0, linetype="dashed", color = "red", linewidth = 1.0)
+
+
 ```
 
-
-
-```{r}
-# See pivot()/ spread() command in tidyverse to efficiently merge data frames side-by-side. See dplyr cheatsheet.
-```
 
 ```{r Set y axis scale to log}
+
+
+
 # set the y axis scale to logorithmic. Allows us to explore the points cloassly aggregated to 0 and those at significantly higher values.
 ```
 
@@ -126,4 +161,17 @@ df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & Spec
 # Set "colour" to black. Colour changes the outline of the bars, whilst "fill" changes the inside colour of the bars. 
 
 ```
+
+
+### Figure 3. Comparing seafood supplies (g/capita/week) with dietary recommendations in the UK and Scotland 
+
+```{r}
+# Ensure y-axis values are on the same scale
+# Able to use facetwrap() and change the title of the strip
+```
+
+
+
+### Figure 4. Caluculaing seafood wastage in the UK between 2009 and 2018. 
+
 
