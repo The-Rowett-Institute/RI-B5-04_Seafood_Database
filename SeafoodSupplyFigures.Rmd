@@ -225,9 +225,10 @@ df_UK_supplies_SACN_avg_LO <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | S
 ggplot(df_UK_supplies_SACN_avg_LO, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "Average seafood supplies (g/capita/week)", limits = c(0,300)) +
+  scale_x_discrete(name = "") +
   scale_fill_manual(values = c("#CC79A7", "#D55E00"))+
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) +
-  geom_hline(yintercept = 140, linetype = "dashed", color = "blue", linewidth = 2.0)
+  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
 
 
 
@@ -242,9 +243,20 @@ df_UK_supplies_SACN_avg_LOS$SACN <- factor(df_UK_supplies_SACN_avg_LOS$SACN, lev
 ggplot(df_UK_supplies_SACN_avg_LOS, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "Average seafood supplies (g/capita/week)", limits = c(0,300)) +
+  scale_x_discrete(name = "")+
   scale_fill_manual(values = c("#999999","#CC79A7", "#D55E00"))+
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) +
-  geom_hline(yintercept = 140, linetype = "dashed", color = "blue", linewidth = 2.0)
+  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
+
+
+# Plot average seafood supply (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_supplies_SACN_avg_LOS, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
+  geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
+  scale_y_continuous(name = "", limits = c(0,300)) +
+  scale_x_discrete(name = "")+
+  scale_fill_manual(values = c("#999999","#CC79A7", "#D55E00"))+
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) +
+  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
 
 
 ```
