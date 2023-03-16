@@ -657,13 +657,24 @@ df_NDNS_seafood_aggregate_person_Yr1_11$gYear <- df_NDNS_seafood_aggregate_perso
 
 unique(NDNS_UK_Yr1_11_data$SurveyYear) # NA, 37 and 54 entries explored- no serial number so removed from data set
 
+NDNS_UK_Yr1_11_data_check <- subset(NDNS_UK_Yr1_11_data, SurveyYear == "NDNS Year 1" | SurveyYear == "NDNS Year 2" |
+                               SurveyYear == "NDNS Year 3" | SurveyYear == "NDNS Year 4" | 
+                               SurveyYear ==  "NDNS Year 5" | SurveyYear ==  "NDNS Year 6" | 
+                               SurveyYear ==  "NDNS Year 7" | SurveyYear ==  "NDNS Year 8" | 
+                               SurveyYear ==  "NDNS Year 9"  | SurveyYear == "NDNS Year 10" | 
+                               SurveyYear ==  "NDNS Year 11")
+
 #respondersPerYear <- NDNS_UK_Yr1_11_data %>%
 #    group_by(SurveyYear) %>%
 #    summarise(Count = n())  
+colnames(NDNS_UK_Yr1_11_data_check)
 
+unique(NDNS_UK_Yr1_11_data_check$SurveyYear)
 
-respondersPerYear <- NDNS_UK_Yr1_11_data %>%
-    group_by(SurveyYear) %>%
+library(dplyr)
+
+respondersPerYear <- NDNS_UK_Yr1_11_data_check %>% 
+  group_by(SurveyYear) %>%
     summarise(count = n_distinct(seriali)) 
 
 # Merge NDNS responses with consumption data 
