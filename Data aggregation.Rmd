@@ -28,6 +28,11 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(dplyr)
+library(sjlabelled)
 
 ```
 
@@ -551,42 +556,75 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load data (2008 to 2019)}
 # Load NDNS yrs 1 - 4
-df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4_short.csv", sep = "/"))
+#df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4_short.csv", sep = "/"))
 
 # Load NDNS yrs 5 - 6 
-df_NDNS_foodlevel_yr5_6_data <-
+#df_NDNS_foodlevel_yr5_6_data <-
   vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6_short.csv", sep = "/"))
 
 # Load NDNS yrs 7 - 8 
-df_NDNS_foodlevel_yr7_8_data <-
+#df_NDNS_foodlevel_yr7_8_data <-
   vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8_short.csv", sep = "/"))
 
 # Load NDNS yrs 9
-df_NDNS_foodlevel_yr9data <- 
+#df_NDNS_foodlevel_yr9data <- 
   vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y9_short.csv", sep = "/"))
 
 # Load NDNS yrs 10
-df_NDNS_foodlevel_yr10_data <- 
+#df_NDNS_foodlevel_yr10_data <- 
   vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y10_short.csv", sep = "/"))
 
 # Load NDNS yrs 11
-df_NDNS_foodlevel_yr11_data <- 
+#df_NDNS_foodlevel_yr11_data <- 
   vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y11_short.csv", sep = "/"))
 
 ```
 
 
-```{r Combine data sets: i) years 1 to 4; ii) years 5 to 6; and iii) years 7 to 8; iv) years 9 to 11}
-# Check column names
-colnames(df_NDNS_foodlevel_yr1_4_data)
-colnames(df_NDNS_foodlevel_yr5_6_data)
-colnames(df_NDNS_foodlevel_yr7_8_data)
-colnames(df_NDNS_foodlevel_yr9data)
-colnames(df_NDNS_foodlevel_yr10_data)
-colnames(df_NDNS_foodlevel_yr11_data)
+### Download from SPSS
 
-# Check if columns match up
-all_equal(df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr9data)
+```{r Load data (2008 to 2019)}
+# Load NDNS yrs 1 - 4
+df_NDNS_foodlevel_yr1_4_data <- 
+  read_sav(file= paste(filepath,"ndns_rp_yr1-4a_foodleveldietarydata_uk_v2.sav", sep = "/"))
+
+# Load NDNS yrs 5 - 6 
+df_NDNS_foodlevel_yr5_6_data <-
+  read_sav(file = paste(filepath,"ndns_rp_yr5-6a_foodleveldietarydata_v2.sav", sep = "/"))
+
+# Load NDNS yrs 7 - 8 
+df_NDNS_foodlevel_yr7_8_data <-
+  read_sav(file = paste(filepath,"ndns_rp_yr7-8a_foodleveldietarydata.sav", sep = "/"))
+
+# Load NDNS yrs 9
+df_NDNS_foodlevel_yr9data <- 
+  read_sav(file = paste(filepath,"ndns_rp_yr9a_foodleveldietarydata_uk.sav", sep = "/"))
+
+# Load NDNS yrs 10
+df_NDNS_foodlevel_yr10_data <- 
+  read_sav(file = paste(filepath,"ndns_rp_yr10a_foodleveldietarydata_uk.sav", sep = "/"))
+
+# Load NDNS yrs 11
+df_NDNS_foodlevel_yr11_data <- 
+  read_sav(file = paste(filepath,"ndns_rp_yr11a_foodleveldietarydata_uk.sav", sep = "/"))
+
+```
+
+
+```{r Combine data sets: i) years 1 to 4; ii) years 5 to 6; and iii) years 7 to 8; iv) years 9 to 11}
+# Quick clean to make data set
+df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(diarymth,WhoWithOther,WhereOther))
+df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
+df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
+df_NDNS_foodlevel_yr9data <- df_NDNS_foodlevel_yr9data %>% 
+  rename(Age = AgeR )
+df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
+df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>% 
+  rename(Age = AgeR)
+df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>% 
+  rename(Age = AgeR)
+df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
 
 # Join data frames
 NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
@@ -610,6 +648,9 @@ unique(NDNS_UK_Yr1_11_data$MainFoodGroupCode)
 
 # Subset seafood commodities. Seafood commodities identified as values: 33, 34 and 35 in "main food group code" column
 df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupCode == 33 | NDNS_UK_Yr1_11_data$MainFoodGroupCode == 34| NDNS_UK_Yr1_11_data$MainFoodGroupCode == 35)
+
+# Identify unique seafood species 
+write.csv(unique(df_NDNS_seafood_consumption_Yr1_11), file = paste(filepath,"NDNS_IndiSeafood.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -637,14 +678,15 @@ Now all species are in a separate column. Some species are duplicated per year i
 
 ```{r Sum seafood consumption over 4-day diet recall, by species, by year}
 # Sum seafood consumption per species per year
-df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ SeafoodSpecies + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
+df_NDNS_seafood_aggregate_person_Yr1_11 <- aggregate(totfishperprod ~ SeafoodSpecies + SurveyYear + SpeciesType + SACN + DiaryDaysCompleted, data = df_NDNS_seafood_consumption_Yr1_11, sum)
 
 ```
 
 
 ```{r Calculate the annual seafood intake, by species}
 # Divide summed seafood consumption by 4 (4-day diet recall)
-df_NDNS_seafood_aggregate_person_Yr1_11$gDay  <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ 4
+# Day number chnages
+df_NDNS_seafood_aggregate_person_Yr1_11$gDay  <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ df_NDNS_seafood_aggregate_person_Yr1_11$DiaryDaysCompleted
 
 # Calculate annual seafood intake by multiplying daily consumption by 365
 df_NDNS_seafood_aggregate_person_Yr1_11$gYear <- df_NDNS_seafood_aggregate_person_Yr1_11$gDay * 365
