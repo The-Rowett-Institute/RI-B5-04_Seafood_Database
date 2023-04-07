@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '20/02/2023'
+date: '07/04/2023'
 output: html_document
 ---
 
@@ -805,7 +805,7 @@ df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818,
 df_NDNS_seafoodintakeUK_200918 <- merge(df_NDNS_seafood_consumption_200918, df_UK_population_200918, by = "Year")
 
 # Multiply by the number of people in the country
-df_NDNS_seafoodintakeUK_200918$Value <- df_NDNS_seafoodintakeUK_200918$avgUKdailyIntake * df_NDNS_seafoodintakeUK_200918$UKPOP
+df_NDNS_seafoodintakeUK_200918$Value <- (df_NDNS_seafoodintakeUK_200918$avgUKdailyIntake * 365) * df_NDNS_seafoodintakeUK_200918$UKPOP
 
 ```
 
@@ -816,7 +816,7 @@ df_NDNS_seafoodintakeUK_200918$DataSupplier <- "NDNS"
 df_NDNS_seafoodintakeUK_200918$DataSet <- "FoodDiaries"
 df_NDNS_seafoodintakeUK_200918$Commodity <- "Consumption"
 df_NDNS_seafoodintakeUK_200918$Flag <- "ConV2"
-df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "FinancialYear"
+df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "CalendarlYear"
 df_NDNS_seafoodintakeUK_200918$Units <- "Grams/Country/Year"
 df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Units changed to Grams/Country/Year"
 
@@ -842,7 +842,6 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 write.csv(df_NDNS_seafoodintakeUK_200918_clean, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
-
 
 
 

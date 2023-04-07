@@ -959,3 +959,157 @@ exports <- aggregate(list(Exports = seafoodExports$Value),
 exports <- subset(exports, Year < 2019) # up to 2018
 
 ```
+
+
+
+
+##### Not needed
+
+## Aggregating the cleaned data sets 
+
+```{r Load data from processed data file}
+# State file path 
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+```
+
+
+```{r Load cleaned data}
+# Load UK capture production data (UK and foreign vessels landings into the UK)
+df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK aquaculture production data 
+df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK trade data (further processed)
+df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK household purchasing data 
+df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK eating out purchasing data 
+df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
+
+# Load UK consumption data 
+df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = "/"))
+```
+
+
+
+```{r Check strucure of all data frames}
+# Check structure of all data frames prior to combining
+colnames(df_allLandingsintoUK_NS_clean_data)
+colnames(df_aquaProd_Eurostat_clean_data)
+colnames(df_trade_HMRC_clean_data)
+colnames(df_eatenOutPurch_DEFRA_clean_data)
+colnames(df_housePurch_DEFRA_clean_data)
+colnames(df_consumption_NDNS_clean_data)
+
+```
+
+
+### Creating the Seafood database
+
+
+```{r Creating the Seafood database}
+df_Seafood_DB <- rbind(df_trade_HMRC_clean_data, df_allLandingsintoUK_NS_clean_data) 
+df_Seafood_DB <- rbind(df_Seafood_DB, df_aquaProd_Eurostat_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_consumption_NDNS_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_eatenOutPurch_DEFRA_clean_data)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_housePurch_DEFRA_clean_data)
+
+
+df_Seafood_CoPu_DB <- rbind(df_consumption_NDNS_clean_data,df_eatenOutPurch_DEFRA_clean_data)
+df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
+
+str(df_allLandingsintoUK_NS_clean_data)
+```
+
+
+```{r writing the seafood database}
+source("Data_filepath.R")
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_prelimary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UKSeafoodSuppliesDatabase, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
+
+```
+
+
+
+```{r Plot figures side-by-side}
+# Ensure y-axis values are on the same scale
+# UK
+#plot_UKRec <- ggplot(df_UK_supplies_SACN_avg, aes(SACN, Supplies_capWeek)) +
+#  geom_col(fill = "#D55E00", color = "black") +
+  #scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0)
+
+# Scotland 
+#plot_ScotRec <- ggplot(df_UK_supplies_SACN_avg, aes(SACN, Supplies_capWeek)) +
+#  geom_col(fill = "#D55E00", color = "black") +
+  #scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
+#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0)
+
+# Combine plots
+#plot_grid(plot_UKRec, plot_ScotRec)
+```
+
+
+
+```{r Create stacked bar plot for each recommendation}
+# Ensure y-axis values are on the same scale
+#df_UK_supplies_SACN_avg$loc <- "UK"
+#df_Scot_supplies_SACN_avg <- df_UK_supplies_SACN_avg
+#df_Scot_supplies_SACN_avg$loc <- "Scotland"
+#df_both_supplies_SACN_avg <- rbind(df_Scot_supplies_SACN_avg,df_UK_supplies_SACN_avg)
+
+
+# Both
+#ggplot(df_both_supplies_SACN_avg, aes(y = Supplies_capWeek, x= Type)) +
+#  geom_bar(aes(fill = SACN), position = "stack", stat = "identity", fill = cbPalette) +
+#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0) + 
+#  facet_wrap(~loc)
+# Able to use facetwrap() to change the title of the strip
+```
+
+
+```{r Stack bar chart of seafood types}
+# b) Oily, lean and shellfish only
+# Subset lean and oily fish only 
+#df_UK_SACN_SLO_avg <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | SACN == "Oily" | SACN == "Shellfish")
+#df_UK_SACN_SLO_avg$Type <- "Seafood type"
+
+# Convert variable to factor to specify order
+#df_UK_SACN_SLO_avg$SACN <- factor(df_UK_SACN_SLO_avg$SACN, levels = c("Shellfish", "Lean", "Oily"))
+
+# Plot barchat for Scotland
+#plot_SLO_Scot <- ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
+#  geom_bar(position = "stack", stat = "identity", color = "black", fill = c("#D55E00", "#CC79A7", "#999999")) +
+##  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0) 
+
+#plot_SLO_Scot <- ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
+#  geom_bar(position = "stack", stat = "identity", color = "black") + 
+#  scale_color_brewer(palette = cbPalette) +
+#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0) 
+
+# Plot barchat for UK
+#plot_SLO_UK <-ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
+#  geom_bar(position = "stack", stat = "identity", color = "black", fill = c("#D55E00", "#CC79A7", "#999999")) +
+#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
+#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0) 
+
+#plot_grid(plot_SLO_Scot, plot_SLO_UK)
+
+```
+

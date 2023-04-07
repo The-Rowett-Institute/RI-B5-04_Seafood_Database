@@ -14,16 +14,14 @@ knitr::opts_chunk$set(echo = TRUE)
 This is a document describes the methods and data used to create the UK Seafood supply chain database, linking  
 both capture and aquaculture), trade, consumption and purchasing behavior between 2009 and 2018.
 
-This project was part of the RESAS - Project from the Rowett Insitute at the University of Aberdeen.
+This project was part of the RESAS - Project from the Rowett Institute at the University of Aberdeen.
 
 Two data frames are created- one with seafood supplies expressed in grams and another expressed in g/ capita/ week 
 
 
-## Method
+## Preparation
 
-### Libraries
-
-```{r Libraries}
+```{r Load libraries}
 library(tidyr) # for tidying data
 library(dplyr) # base R alternative but neater
 library(vroom) # for loading and transforming data
@@ -32,13 +30,11 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(stringr) # used to replace matched patterns in a string
-#library(here)
+
 ```
 
 
-### Datasets
-
-```{r Loading data}
+```{r Load cleaned data}
 # loading filepath to the project folder on the University storage
 source("Data_filepath.R")
 
@@ -62,10 +58,9 @@ rm(i)
 ```
 
 
-### Creating the Seafood database
+## Create seafood database
 
-
-```{r Creating the Seafood database}
+```{r rbind all cleaned datasets}
 df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
 
 df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # Note df_Trade_ is the edited one
@@ -78,8 +73,9 @@ df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
 ```
 
 
-```{r writing the seafood database}
+```{r Save the seafood database}
 source("Data_filepath.R")
+# Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
 write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
 ```
@@ -88,86 +84,3 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
-
-
-##### Not needed
-
-## Aggregating the cleaned data sets 
-
-```{r Load data from processed data file}
-# State file path 
-filepath <- paste(data_dir,"ProcessedData", sep = "")
-```
-
-
-```{r Load cleaned data}
-# Load UK capture production data (UK and foreign vessels landings into the UK)
-df_allLandingsintoUK_NS_clean_data <- vroom(file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK aquaculture production data 
-df_aquaProd_Eurostat_clean_data <- vroom(file = paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK trade data (further processed)
-df_trade_HMRC_clean_data <- vroom(file = paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK household purchasing data 
-df_housePurch_DEFRA_clean_data <- vroom(file = paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK eating out purchasing data 
-df_eatenOutPurch_DEFRA_clean_data <- vroom(file = paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep = "/"))
-
-# Load UK consumption data 
-df_consumption_NDNS_clean_data <- vroom(file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = "/"))
-```
-
-
-
-```{r Check strucure of all data frames}
-# Check structure of all data frames prior to combining
-colnames(df_allLandingsintoUK_NS_clean_data)
-colnames(df_aquaProd_Eurostat_clean_data)
-colnames(df_trade_HMRC_clean_data)
-colnames(df_eatenOutPurch_DEFRA_clean_data)
-colnames(df_housePurch_DEFRA_clean_data)
-colnames(df_consumption_NDNS_clean_data)
-
-```
-
-
-### Creating the Seafood database
-
-
-```{r Creating the Seafood database}
-df_Seafood_DB <- rbind(df_trade_HMRC_clean_data, df_allLandingsintoUK_NS_clean_data) 
-df_Seafood_DB <- rbind(df_Seafood_DB, df_aquaProd_Eurostat_clean_data)
-df_Seafood_DB <- rbind(df_Seafood_DB,df_consumption_NDNS_clean_data)
-df_Seafood_DB <- rbind(df_Seafood_DB,df_eatenOutPurch_DEFRA_clean_data)
-df_Seafood_DB <- rbind(df_Seafood_DB,df_housePurch_DEFRA_clean_data)
-
-
-df_Seafood_CoPu_DB <- rbind(df_consumption_NDNS_clean_data,df_eatenOutPurch_DEFRA_clean_data)
-df_Seafood_CoPu_DB <- rbind(df_Seafood_CoPu_DB,df_Househ)
-
-str(df_allLandingsintoUK_NS_clean_data)
-```
-
-
-```{r writing the seafood database}
-source("Data_filepath.R")
-filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_prelimary.csv",sep="/"), row.names = FALSE)
-```
-
-
-
-
-
-
-
-
-```{r Save cleaned data}
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UKSeafoodSuppliesDatabase, file = paste(filepath,"UKSeafoodSupplies_clean.csv", sep = ""))
-
-```

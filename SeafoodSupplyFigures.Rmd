@@ -57,7 +57,6 @@ theme_set(theme_bw()%+replace%
 ```{r Set colour-blind palette}
 # Colour-blind friendly palette with grey. Try to keep the order (http://www.cookbook-r.com/Graphs/Colors_(ggplot2)/#a-colorblind-friendly-palette)
 cbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7", "#999999")
-# production, imports, exports, purchases, consumption 
 #consumption, exports, imports, production, purchases, supplies
 
 # Colours will be allocated in commodity alphabetical order. 
@@ -75,34 +74,23 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 # note we are able to change this to another file e.g. saving the output
 ```
 
-```{r Load the database}
+```{r Load population data}
 # Load database 
 df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
 ```
-
-
-
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
-```
-
-```{r Load the database}
-# Load consumption data
-df_UK_totSeafood_PC <- vroom(file=paste(filepath,"NDNS_UK_TotalSeafood_NDNS_PCW.csv", sep="/"), na = c("NA"))
-```
-
-
 
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
-```{r Load the database}
+```{r Load the seafood database}
 # Load database 
 df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
+
+## Final clean of the dataset
 
 Remove products for non-human consumption nor are included in the dietary recommendations 
 
@@ -128,6 +116,7 @@ df_UK_seafoodDB_food_simp <- aggregate(Value ~ Commodity + Year + Species + Spec
 # Make data frame wide and short
 df_UK_seafoodDB_short <- df_UK_seafoodDB_food_simp %>%
   pivot_wider(names_from = Commodity, values_from = Value)
+
 ```
 
 
@@ -140,54 +129,65 @@ df_UK_seafoodDB_capita <- df_UK_seafoodDB_Pop[c("Species", "SpeciesType", "SACN"
                                                    "Exports","Imports", "Consumption","Purchases",
                                                    "UKPOP")]
 
-colnames(df_UK_seafoodDB_Pop)
-str(df_UK_seafoodDB_Pop)
-df_UK_seafoodDB_capita
-
 ```
 
 
-```{r Calculate seafood supplies}
+## Calculate UK seafood supplies (g/capita/week)
+
+```{r Calculate seafood supplies (g/capita/week)}
 # Convert NA to zeros (otherwise supplies cannot be calculated)
 df_UK_seafoodDB_capita[is.na(df_UK_seafoodDB_capita)] <- 0
 
 # Calculate seafood supplies
 df_UK_seafoodDB_capita$Supplies <- (df_UK_seafoodDB_capita$Production + df_UK_seafoodDB_capita$Imports) - df_UK_seafoodDB_capita$Exports
-```
 
-
-```{r Calculate seafood supplies (g/capita/week)}
-# Calculate seafood supplies per capita
+# Calculate seafood supplied per capita per week
 df_UK_seafoodDB_capita$Supplies_capWeek <- (df_UK_seafoodDB_capita$Supplies/ df_UK_seafoodDB_capita$UKPOP)/52
 
-# Calculate seafood consummed per capita
+# Calculate seafood consumed per capita per week 
 df_UK_seafoodDB_capita$Consumption_capWeek <- (df_UK_seafoodDB_capita$Consumption/ df_UK_seafoodDB_capita$UKPOP)/52
 
 ```
 
 
 
-### Creating figures in ggplot
 
+### Figure 1. UK seafood supplied (g/capita/week) between 2009 and 2018  
 
-### Figure. Average UK seafood supply (g/capita/week) between 2009 and 2018  
-
-```{r Total national seafood supplied and consumed (g/capita/week) between 2009 and 2018}
-
-# Sum annual UK seafood supplies and intake per capita 
+```{r Total seafood supplied (g/capita/week) between 2009 and 2018}
+# Sum annual seafood supplies per capita 
 df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
-#df_UK_intake_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_supplies_tot, aes(Year, Supplies_capWeek)) +
+  geom_bar(stat= "identity", color = "black", fill= "#009E73" ) +
+  scale_y_continuous(name = "Total seafood supplies (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  #geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2) +
+  theme(legend.title = element_blank()) 
+
+```
+
+
+
+### Figure 2. Total UK seafood supplied and consummed (g/capita/week) between 2009 and 2018  
+
+```{r Total UK seafood supplied and consumed (g/capita/week) between 2009 and 2018}
+# Sum annual seafood supplies per capita 
+df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
 
 # Rename data frame variables 
 names(df_UK_supplies_tot) <- c("Year", "Value")
-names(df_UK_totSeafood_PC) <- c("Year", "Value")
+names(df_UK_consummed_tot) <- c("Year", "Value")
 
 # Add additional variable
 df_UK_supplies_tot$Commodity <- "Supplies"
-df_UK_totSeafood_PC$Commodity <- "Consumption"
+df_UK_consummed_tot$Commodity <- "Consumption"
 
 # rbind data frames
-df_UK_supplies_intake_tot<- rbind(df_UK_supplies_tot, df_UK_totSeafood_PC)
+df_UK_supplies_intake_tot<- rbind(df_UK_supplies_tot, df_UK_consummed_tot)
 
 # Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
 ggplot(df_UK_supplies_intake_tot, aes(Year, Value, fill= Commodity)) +
@@ -199,16 +199,45 @@ ggplot(df_UK_supplies_intake_tot, aes(Year, Value, fill= Commodity)) +
   scale_fill_manual(values = c("#E69F00", "#009E73")) +
   theme(legend.title = element_blank()) 
 
+```
 
+
+### Figure 3. Plot seafood supplies and intake (g/capita/week), by species in 2018
+
+## Check units here!
+
+```{r Subset seafood database to 2018}
+# Select variables 
+df_UK_seafoodCapita_suppCons <- df_UK_seafoodDB_capita[c("Supplies_capWeek", "Consumption_capWeek", "Year", "Species", "SpeciesType", "SACN")]
+
+# Sum annual seafood supplies per capita 
+df_UK_seafoodCapita_suppCons_2018 <- subset(df_UK_seafoodCapita_suppCons, Year == "2018")
+
+# Change structure of the data set 
+df_UK_seafoodCapita_suppCons_2018_long <- melt(df_UK_seafoodCapita_suppCons_2018, id.vars = c("Year", "Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
+
+# Aggregate data 
+df_UK_suppCons_2018_sum <- aggregate(Value ~ Species + SpeciesType + SACN + Commodity, data = df_UK_seafoodCapita_suppCons_2018_long, sum)
+
+# Omit zero readings
+df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_suppCons_2018_sum, aes(Species, Value, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#009E73", "#E69F00")) +
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none")
 
 ```
 
 
-
-### Figure. Comparing seafood supplies (g/capita/week) with dietary recommendations in the UK and Scotland 
+### Figure 4. Averege UK seafood supplied (g/capita/week), to SACN level between 2009 and 2018.
 
 ```{r Compare SACN supplies with dietary recommendations}
-
 # Sum UK seafood supplies per capita by SACN
 df_UK_supplies_SACN <- aggregate(Supplies_capWeek ~ SACN + Year, data = df_UK_seafoodDB_capita, sum)
 # Average UK seafood supplies per capita for each year
@@ -217,11 +246,10 @@ df_UK_supplies_SACN_avg <- aggregate(Supplies_capWeek ~ SACN, data = df_UK_suppl
 # Create a new varible
 df_UK_supplies_SACN_avg$Commodity <- "Species type"
 
-
 # a) Lean and oily fish only
 df_UK_supplies_SACN_avg_LO <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | SACN == "Oily")
 
-# Plot average seafood supply (g/capita/week) between 2009 and 2018. 
+# Plot average seafood supply (g/capita/week), to SACN level (lean and oily) between 2009 and 2018. 
 ggplot(df_UK_supplies_SACN_avg_LO, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "Average seafood supplies (g/capita/week)", limits = c(0,300)) +
@@ -230,8 +258,6 @@ ggplot(df_UK_supplies_SACN_avg_LO, aes(y = Supplies_capWeek, x = Commodity, fill
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) +
   geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
 
-
-
 # b) Lean, oily and shellfish
 df_UK_supplies_SACN_avg_LOS <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | SACN == "Oily" | 
                                        SACN == "Shellfish")
@@ -239,17 +265,7 @@ df_UK_supplies_SACN_avg_LOS <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | 
 # Convert variable to factor to specify order
 df_UK_supplies_SACN_avg_LOS$SACN <- factor(df_UK_supplies_SACN_avg_LOS$SACN, levels = c("Shellfish", "Lean", "Oily"))
 
-# Plot average seafood supply (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_SACN_avg_LOS, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
-  geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
-  scale_y_continuous(name = "Average seafood supplies (g/capita/week)", limits = c(0,300)) +
-  scale_x_discrete(name = "")+
-  scale_fill_manual(values = c("#999999","#CC79A7", "#D55E00"))+
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) +
-  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
-
-
-# Plot average seafood supply (g/capita/week) between 2009 and 2018. 
+# Plot average seafood supply (g/capita/week), to SACN level (lean, oily and shellfish) between 2009 and 2018. 
 ggplot(df_UK_supplies_SACN_avg_LOS, aes(y = Supplies_capWeek, x = Commodity, fill = SACN)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "", limits = c(0,300)) +
@@ -262,82 +278,39 @@ ggplot(df_UK_supplies_SACN_avg_LOS, aes(y = Supplies_capWeek, x = Commodity, fil
 ```
 
 
-```{r Plot figures side-by-side}
-# Ensure y-axis values are on the same scale
-# UK
-#plot_UKRec <- ggplot(df_UK_supplies_SACN_avg, aes(SACN, Supplies_capWeek)) +
-#  geom_col(fill = "#D55E00", color = "black") +
-  #scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
-#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0)
+### Figure 5. Total UK seafood supplies (g/capita/week) for oily and lean fish in 2018. 
 
-# Scotland 
-#plot_ScotRec <- ggplot(df_UK_supplies_SACN_avg, aes(SACN, Supplies_capWeek)) +
-#  geom_col(fill = "#D55E00", color = "black") +
-  #scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
-#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0)
+```{r Subset production data for 2018 only}
+# Subset production commodity 
+df_UK_seafoodProduction <- df_UK_seafoodDB_capita[c("Production", "Year", "Species", "SpeciesType", "SACN", "UKPOP")]
 
-# Combine plots
-#plot_grid(plot_UKRec, plot_ScotRec)
-```
+# Calculate UK production per capita
+df_UK_seafoodProduction$ProductionCapita <- df_UK_seafoodProduction$Production / df_UK_seafoodProduction$UKPOP
+df_UK_seafoodProduction$ProductionCapitaWeek <- df_UK_seafoodProduction$ProductionCapita / 7
 
+# Subset data for 2018
+df_UK_SFProductionCapita_18 <- subset(df_UK_seafoodProduction, Year == "2018")
 
+# Sum UK seafood production, per SACN
+df_UK_SFProduction_cap_2018_SACN <- aggregate(ProductionCapitaWeek ~ SACN + Year, data = df_UK_SFProductionCapita_18, sum)
 
-```{r Create stacked bar plot for each recommendation}
-# Ensure y-axis values are on the same scale
-#df_UK_supplies_SACN_avg$loc <- "UK"
-#df_Scot_supplies_SACN_avg <- df_UK_supplies_SACN_avg
-#df_Scot_supplies_SACN_avg$loc <- "Scotland"
-#df_both_supplies_SACN_avg <- rbind(df_Scot_supplies_SACN_avg,df_UK_supplies_SACN_avg)
+# Select for lean and oily fish only
+df_UK_production_2018 <- subset(df_UK_SFProduction_cap_2018_SACN, SACN == "Lean" | SACN == "Oily")
 
-
-# Both
-#ggplot(df_both_supplies_SACN_avg, aes(y = Supplies_capWeek, x= Type)) +
-#  geom_bar(aes(fill = SACN), position = "stack", stat = "identity", fill = cbPalette) +
-#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0) + 
-#  facet_wrap(~loc)
-# Able to use facetwrap() to change the title of the strip
-```
-
-
-```{r Stack bar chart of seafood types}
-# b) Oily, lean and shellfish only
-# Subset lean and oily fish only 
-#df_UK_SACN_SLO_avg <- subset(df_UK_supplies_SACN_avg, SACN == "Lean" | SACN == "Oily" | SACN == "Shellfish")
-#df_UK_SACN_SLO_avg$Type <- "Seafood type"
-
-# Convert variable to factor to specify order
-#df_UK_SACN_SLO_avg$SACN <- factor(df_UK_SACN_SLO_avg$SACN, levels = c("Shellfish", "Lean", "Oily"))
-
-# Plot barchat for Scotland
-#plot_SLO_Scot <- ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
-#  geom_bar(position = "stack", stat = "identity", color = "black", fill = c("#D55E00", "#CC79A7", "#999999")) +
-##  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0) 
-
-#plot_SLO_Scot <- ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
-#  geom_bar(position = "stack", stat = "identity", color = "black") + 
-#  scale_color_brewer(palette = cbPalette) +
-#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 140, linetype = "dashed", color = "red", linewidth = 1.0) 
-
-# Plot barchat for UK
-#plot_SLO_UK <-ggplot(df_UK_SACN_SLO_avg, aes(y = Supplies_capWeek, x= Type, fill = SACN))+
-#  geom_bar(position = "stack", stat = "identity", color = "black", fill = c("#D55E00", "#CC79A7", "#999999")) +
-#  scale_y_continuous(name = "Seafood supplies (g/capita/week)", limits = c(0,300)) +
-#  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 1.0) 
-
-#plot_grid(plot_SLO_Scot, plot_SLO_UK)
+# Plot average seafood supply (g/capita/week), to SACN level (lean and oily) between 2009 and 2018. 
+ggplot(df_UK_production_2018, aes(y = ProductionCapitaWeek, x = Year, fill = SACN)) +
+  geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
+  scale_y_continuous(name = "Total seafood production (g/capita/week)") +
+  scale_x_discrete(name = "") +
+  scale_fill_manual(values = c("#CC79A7", "#D55E00"))+
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0)
+  #geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2)
 
 ```
 
 
 
-
-
-### Figure 4. UK seafood variabilty (g/capita/week) betwen 2008 and 2019
+### Figure 6. UK seafood variabilty (g/capita/week) betwen 2008 and 2019
 
 ```{r UK seafood variabilty}
 # Boxplot of seafood supplies (g/capita/week)
@@ -369,7 +342,7 @@ ggplot(df_UK_seafoodDB_capita, aes(Species, Supplies)) +
 ```
 
 
-### Figure 5. Relating national seafood supplies to dietary recommendations in 2018 
+### Figure 7. UK seafood supplied and consummed (g/capita/week), to species level in 2018.  
 
 ```{r Subset desired seafood species in 2018 only}
 # Subset 2018 data only
@@ -385,19 +358,13 @@ df_UK_SOI_capita_2018 <- subset(df_UK_seafoodDB_capita_2018, Species == "Haddock
                                   Species == "Halibut"| Species == "Plaice" | Species == "Cockle" | 
                                   Species == "Seabass" | Species == "Blue whiting" | 
                                   Species == "Trout" | Species ==  "Octopus" | Species == "Cod")
-```
 
-
-
-
-```{r National seafood supplies for 2018 only (g/capita/week)}
 # Simplify data set and select desired columns 
 df_UK_SOI_capita_2018_specific <- df_UK_SOI_capita_2018[c("Species", "SpeciesType", "SACN", "Consumption_capWeek", "Supplies_capWeek")]
 
 # Change structure of the data set 
 df_UK_SOI_capita_2018_short <- melt(df_UK_SOI_capita_2018_specific, id.vars = c("Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
 
-df_UK_SOI_capita_2018$Consumption_capWeek
 df_UK_SOI_capita_2018_new <- df_UK_SOI_capita_2018[c("Species","Supplies_capWeek")]
 
 # Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018 
@@ -408,25 +375,6 @@ ggplot(df_UK_SOI_capita_2018_new, aes(x= reorder(Species, -Supplies_capWeek), Su
   scale_fill_manual(values = "#009E73") +
   theme(legend.position="none") # removes legend
   #theme(legend.title = element_blank())
-```
-
-
-
-```{r National seafood supplies for 2018 only (g/country/year)}
-# Select desired columns 
-df_UK_SOI_2018_specific <- df_UK_SOI_capita_2018[c("Species", "SpeciesType", "SACN", "Consumption", "Supplies")]
-
-# Change structure of the data set 
-df_UK_SOI_2018_grams <- melt(df_UK_SOI_2018_specific, id.vars = c("Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018 
-ggplot(df_UK_SOI_2018_grams, aes(Species, Value, fill= Commodity)) +
-  geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 45), name = "") +
-  scale_y_continuous(name = "National seafood supplies (g)") +
-  scale_fill_manual(values = c("#E69F00", "#009E73")) +
-  theme(legend.position="none") # removes legend
-  #theme(legend.title = element_blank()) 
 
 ```
 
