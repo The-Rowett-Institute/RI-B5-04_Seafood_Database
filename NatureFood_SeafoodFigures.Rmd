@@ -337,7 +337,7 @@ df_PHE_seafoodCompSimp <- df_PHE_seafoodComp[c("SampleDescription", "Protein-g10
 
 ```{r Load raw Norwegian nutrient compostion data}
 # Load data 
-df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent_V2.csv", sep="/"), na = c("M", ""))
+df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
 
 # Select desired variables
 df_Norwegian_seafoodCompSimp <- df_Norwegian_seafoodComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
@@ -386,8 +386,6 @@ df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., df_seafoodCompKey, by
 
 ```{r Join nutrient data with seafood database}
 # Rename Seafood Species to Species
-df_seafoodCompSimp_cleaned <- rename(df_seafoodCompSimp, Species = SeafoodSpecies)
-
 names(df_seafoodCompSimp)[names(df_seafoodCompSimp) == "SeafoodSpecies"] <- "Species"
 
 # Merge nutrient data with seafood database
