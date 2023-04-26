@@ -326,10 +326,12 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load raw PHE nutrient compostion data}
 # Load data
-df_PHE_seafoodComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A"))
+df_PHE_seafoodComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr"))
 
 # Select desired variables
 df_PHE_seafoodCompSimp <- df_PHE_seafoodComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g")]
+
+str(df_PHE_seafoodCompSimp)
 
 ```
 
@@ -341,6 +343,9 @@ df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrient
 
 # Select desired variables
 df_Norwegian_seafoodCompSimp <- df_Norwegian_seafoodComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
+
+str(df_Norwegian_seafoodCompSimp)
+
 ```
 
 
@@ -354,6 +359,8 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 ```{r Load translation document}
 # Load database 
 df_seafoodCompKey <- vroom(file=paste(filepath,"SeafoodComposition_translationKey.csv", sep="/"), na = c("NA"))
+
+str(df_seafoodCompKey)
 ```
 
 
@@ -366,6 +373,8 @@ names(df_Norwegian_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g",
 # Combine data frames
 df_seafoodCompSimp <- rbind(df_PHE_seafoodCompSimp,
                               df_Norwegian_seafoodCompSimp) 
+
+str(df_seafoodCompSimp)
 ```
 
 
@@ -391,15 +400,130 @@ names(df_seafoodCompSimp)[names(df_seafoodCompSimp) == "SeafoodSpecies"] <- "Spe
 # Merge nutrient data with seafood database
 df_seafood_compDB <- merge(df_UK_seafoodDB_capita, df_seafoodCompSimp, "Species")
 
-str(df_seafood_compDB)
+# Convert NA to o
+#df_seafood_compDB[is.na(df_seafood_compDB)] <- 0
+
+```
+
+
+Nutrients of interest: protein_g, totalPUFA_g, vitaminA_µg, vitaminD_µg, vitaminB12_µg, zinc_mg, iron_mg, calcium_mg, selenium_µg, iodine_µg.
+
+```{r Mutiply each production volume to nutrient value}
+df_seafood_compDB$ProteinProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Protein_g
+df_seafood_compDB$TotalPUFAProd_g <- df_seafood_compDB$Production * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitAProd_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminA_µg
+df_seafood_compDB$VitDProd_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminD_µg
+df_seafood_compDB$VitB12Prod_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminB12_µg
+df_seafood_compDB$ZincProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Zinc_mg
+df_seafood_compDB$IronProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Iron_mg
+df_seafood_compDB$CalciumProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Calcium_mg
+df_seafood_compDB$SeleniumProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Selenium_µg
+df_seafood_compDB$IodineProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Iodine_µg
+
+```
+
+
+
+```{r Mutiply each production volume to nutrient value}
+df_seafood_compDB$ProteinImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Protein_g
+df_seafood_compDB$TotalPUFAImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitAImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminA_µg
+df_seafood_compDB$VitDImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminD_µg
+df_seafood_compDB$VitB12Imports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminB12_µg
+df_seafood_compDB$ZincImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Zinc_mg
+df_seafood_compDB$IronImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Iron_mg
+df_seafood_compDB$CalciumImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Calcium_mg
+df_seafood_compDB$SeleniumImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Selenium_µg
+df_seafood_compDB$IodineImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Iodine_µg
+
+```
+
+
+```{r Mutiply each export volume to nutrient value}
+df_seafood_compDB$ProteinExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Protein_g
+df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminA_µg
+df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
+df_seafood_compDB$VitB12Exports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminB12_µg
+df_seafood_compDB$ZincExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Zinc_mg
+df_seafood_compDB$IronExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Iron_mg
+df_seafood_compDB$CalciumExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Calcium_mg
+df_seafood_compDB$SeleniumExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Selenium_µg
+df_seafood_compDB$IodineExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Iodine_µg
 
 ```
 
 
 
 
+```{r Calculate nutrient supplies each export volume to nutrient value}
+df_seafood_compDB$ProteinSupplies_g <- (df_seafood_compDB$ProteinProd_g +
+                                          df_seafood_compDB$ProteinImports_g) - df_seafood_compDB$ProteinExports_g
 
+df_seafood_compDB$TotalPUFASupplies_g <- (df_seafood_compDB$TotalPUFAProd_g +
+                                          df_seafood_compDB$TotalPUFAImports_g) - df_seafood_compDB$TotalPUFAExports_g
+
+df_seafood_compDB$VitASupplies_g <- (df_seafood_compDB$VitAProd_g +
+                                          df_seafood_compDB$VitAImports_g) - df_seafood_compDB$VitAExports_g
+
+df_seafood_compDB$VitDSupplies_g <- (df_seafood_compDB$VitDProd_g +
+                                          df_seafood_compDB$VitDImports_g) - df_seafood_compDB$VitDExports_g
+
+df_seafood_compDB$VitB12Supplies_g <- (df_seafood_compDB$VitB12Prod_g +
+                                          df_seafood_compDB$VitB12Imports_g) - df_seafood_compDB$VitB12Exports_g
+
+df_seafood_compDB$ZincSupplies_g <- (df_seafood_compDB$ZincProd_g +
+                                          df_seafood_compDB$ZincImports_g) - df_seafood_compDB$ZincExports_g
+
+df_seafood_compDB$IronSupplies_g <- (df_seafood_compDB$IronProd_g +
+                                          df_seafood_compDB$IronImports_g) - df_seafood_compDB$IronExports_g
+
+df_seafood_compDB$CalciumSupplies_g <- (df_seafood_compDB$CalciumProd_g +
+                                          df_seafood_compDB$CalciumImports_g) - df_seafood_compDB$CalciumExports_g
+
+df_seafood_compDB$SeleniumSupplies_g <- (df_seafood_compDB$SeleniumProd_g +
+                                          df_seafood_compDB$SeleniumImports_g) - df_seafood_compDB$SeleniumExports_g
+
+df_seafood_compDB$IodineSupplies_g <- (df_seafood_compDB$IodineProd_g +
+                                          df_seafood_compDB$IodineImports_g) - df_seafood_compDB$IodineExports_g
+
+```
+
+
+
+```{r Aggregate nutrient supplies}
+# Subset 2018 data only
+df_seafood_compDB2018 <- subset(df_seafood_compDB, Year == 2018)
+
+# Sum UK protein supplies
+df_UK_ProtienSupplies_2018 <- aggregate(ProteinSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_ProtienSupplies_2018, aes(Species, ProteinSupplies_g)) +
+  geom_bar(stat= "identity", color = "black") +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  scale_y_continuous(name = "UK seafood protein supplies (g)") +
+  theme(legend.title = element_blank()) 
+
+# Sum UK VitD supplies
+df_UK_VitDSupplies_g_2018 <- aggregate(VitDSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
+colnames(df_seafood_compDB2018)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
+  geom_bar(stat= "identity", color = "black") +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  scale_y_continuous(name = "UK seafood vit D supplies (g)") +
+  theme(legend.title = element_blank())
+
+
+```
 
 
 ### Figure 5. Plot the top five seafoods that contribute the most to key daily RNIs (omega-3 fatty acids, calcium, iron, vitamin D and zinc) in UK adults. Stacked bar chart for each species
+
+```{r}
+
+```
+
 
