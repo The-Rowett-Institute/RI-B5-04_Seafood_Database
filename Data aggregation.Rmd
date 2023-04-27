@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '07/04/2023'
+date: '27/04/2023'
 output: html_document
 ---
 
@@ -38,7 +38,7 @@ library(sjlabelled)
 
 
 ```{r Load data, echo=TRUE}
-# Loading file path to the data into a value 
+# Loading file path to the data into a Volume 
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
 ```
 
@@ -95,7 +95,7 @@ Here we load landings data on landings into the UK by UK and foreign vessels. Mu
 # Read in .csv file
 df_UK_AllUKLandings_201721_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-201721.csv", sep="/"), na = c(".."))
 
-# Check for missing values. Right column summed to be total number of rows in the data set
+# Check for missing Volumes. Right column summed to be total number of rows in the data set
 md.pattern(df_UK_AllUKLandings_201721_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2019)
@@ -105,7 +105,7 @@ df_UK_AllUKLandings_201718_data <- df_UK_AllUKLandings_201721_data[c("Species", 
 
 ```{r Transform data set (2017 to 2018)}
 # Change structure of the data set 
-df_UK_AllUKLandings_201718_long <- melt(df_UK_AllUKLandings_201718_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UK_AllUKLandings_201718_long <- melt(df_UK_AllUKLandings_201718_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 ```
 
 
@@ -114,7 +114,7 @@ df_UK_AllUKLandings_201718_long <- melt(df_UK_AllUKLandings_201718_data, id.vars
 # Read in .csv file
 df_UK_AllUKLandings_201216_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-201216.csv", sep="/"), na = c(".."))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_UK_AllUKLandings_201216_data, rotate.names = TRUE)
 
 ```
@@ -122,7 +122,7 @@ md.pattern(df_UK_AllUKLandings_201216_data, rotate.names = TRUE)
 
 ```{r Transform data set (2012 to 2016)}
 # Change structure of the data set 
-df_UK_AllUKLandings_201216_long <- melt(df_UK_AllUKLandings_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UK_AllUKLandings_201216_long <- melt(df_UK_AllUKLandings_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 ```
 
 
@@ -131,7 +131,7 @@ df_UK_AllUKLandings_201216_long <- melt(df_UK_AllUKLandings_201216_data, id.vars
 # Read in .csv file
 df_UK_AllUKLandings_200811_data <- vroom(file=paste(filepath,"MMO_UKForeignV_landingUK-200811.csv", sep="/"), na = c(".."))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_UK_AllUKLandings_200811_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2019)
@@ -142,7 +142,7 @@ df_UK_AllUKLandings_200911_data <- df_UK_AllUKLandings_200811_data[c("Species", 
 
 ```{r Transform data set (2009 to 2011)}
 # Change structure of the data set 
-df_UK_AllUKLandings_200911_long <- melt(df_UK_AllUKLandings_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UK_AllUKLandings_200911_long <- melt(df_UK_AllUKLandings_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 
 ```
 
@@ -155,7 +155,7 @@ df_UK_AllUKLandings_200918 <- rbind(df_UK_AllUKLandings_201718_long,
 ```
 
 
-Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Value. 
+Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
 
 We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
 
@@ -179,17 +179,17 @@ Landings provided as whole weight. Need to apply conversion factors estimate edi
 
 ```{r Apply conversion factors to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UK_AllUKLandings_200918$CF_value) # no processed data here so no 1 values
+unique(df_UK_AllUKLandings_200918$CF_value) # no processed data here so no 1 Volumes
 
-# Create new column and apply conversion factors values
-df_UK_AllUKLandings_200918$apply_CF <- df_UK_AllUKLandings_200918$Value * df_UK_AllUKLandings_200918$CF_value
+# Create new column and apply conversion factors Volumes
+df_UK_AllUKLandings_200918$apply_CF <- df_UK_AllUKLandings_200918$Volume * df_UK_AllUKLandings_200918$CF_value
 
 ```
 
 
 ```{r Convert from 1000 tonnes to grams}
-# Convert raw value from 000's tonnes to grams 
-df_UK_AllUKLandings_200918$Value <- (df_UK_AllUKLandings_200918$apply_CF * 1000) * 1000000
+# Convert raw Volume from 000's tonnes to grams 
+df_UK_AllUKLandings_200918$Volume <- (df_UK_AllUKLandings_200918$apply_CF * 1000) * 1000000
 ```
 
 
@@ -211,12 +211,10 @@ df_UK_AllUKLandings_200918$FlagDescription <- "CF applied to all or part of the 
 colnames(df_UK_AllUKLandings_200918)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_AllUKLandings_200918_clean)
-
-str(df_UK_AllUKLandings_200918_clean)
 
 # Rename "SeafoodSpecies" column 
 df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, Species = SeafoodSpecies)
@@ -254,7 +252,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 # Read in .csv file
 df_UKV_LandingUKAbroad_201721_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201721.csv", sep="/"), na = c(".."))
  
-# Check for missing values. Right column summed to be total number of rows in the data set
+# Check for missing Volumes. Right column summed to be total number of rows in the data set
 md.pattern(df_UKV_LandingUKAbroad_201721_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2019)
@@ -264,7 +262,7 @@ df_UKV_LandingUKAbroad_201718_data <- df_UKV_LandingUKAbroad_201721_data[c("Spec
 
 ```{r Transform data set (2017 to 2018)}
 # Change structure of the data set 
-df_UKV_LandingUKAbroad_201718_long <- melt(df_UKV_LandingUKAbroad_201718_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UKV_LandingUKAbroad_201718_long <- melt(df_UKV_LandingUKAbroad_201718_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 ```
 
 
@@ -273,7 +271,7 @@ df_UKV_LandingUKAbroad_201718_long <- melt(df_UKV_LandingUKAbroad_201718_data, i
 # Read in .csv file
 df_UKV_LandingUKAbroad_201216_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201216.csv", sep="/"), na = c(".."))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_UKV_LandingUKAbroad_201216_data, rotate.names = TRUE)
 
 ```
@@ -281,7 +279,7 @@ md.pattern(df_UKV_LandingUKAbroad_201216_data, rotate.names = TRUE)
 
 ```{r Transform data set (2012 to 2016)}
 # Change structure of the data set 
-df_UKV_LandingUKAbroad_201216_long <- melt(df_UKV_LandingUKAbroad_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UKV_LandingUKAbroad_201216_long <- melt(df_UKV_LandingUKAbroad_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 ```
 
 
@@ -290,7 +288,7 @@ df_UKV_LandingUKAbroad_201216_long <- melt(df_UKV_LandingUKAbroad_201216_data, i
 # Read in .csv file
 df_UKV_LandingUKAbroad_200913_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-200913.csv", sep="/"), na = c(".."))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_UKV_LandingUKAbroad_200913_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2019)
@@ -301,7 +299,7 @@ df_UKV_LandingUKAbroad_200911_data <- df_UKV_LandingUKAbroad_200913_data[c("Spec
 
 ```{r Transform data set (2009 to 2011)}
 # Change structure of the data set 
-df_UKV_LandingUKAbroad_200911_long <- melt(df_UKV_LandingUKAbroad_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UKV_LandingUKAbroad_200911_long <- melt(df_UKV_LandingUKAbroad_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 
 ```
 
@@ -314,7 +312,7 @@ df_UKV_LandingUKAbroad_200918_long <- rbind(df_UKV_LandingUKAbroad_201718_long,
 ```
 
 
-Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Value. 
+Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
 
 We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
 
@@ -338,17 +336,17 @@ Landings provided as whole weight. Need to apply conversion factors estimate edi
 
 ```{r Apply conversion factors to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UKV_LandingUKAbroad_200918_long$CF_value) # no processed data here so no 1 values
+unique(df_UKV_LandingUKAbroad_200918_long$CF_value) # no processed data here so no 1 Volumes
 
-# Create new column and apply conversion factors values
-df_UKV_LandingUKAbroad_200918_long$apply_CF <- df_UKV_LandingUKAbroad_200918_long$Value * df_UKV_LandingUKAbroad_200918_long$CF_value
+# Create new column and apply conversion factors Volumes
+df_UKV_LandingUKAbroad_200918_long$apply_CF <- df_UKV_LandingUKAbroad_200918_long$Volume * df_UKV_LandingUKAbroad_200918_long$CF_value
 
 ```
 
 
 ```{r Convert from 1000 tonnes to grams}
-# Convert raw value from 000's tonnes to grams 
-df_UKV_LandingUKAbroad_200918_long$Value <- (df_UKV_LandingUKAbroad_200918_long$apply_CF * 1000) * 1000000
+# Convert raw Volume from 000's tonnes to grams 
+df_UKV_LandingUKAbroad_200918_long$Volume <- (df_UKV_LandingUKAbroad_200918_long$apply_CF * 1000) * 1000000
 ```
 
 
@@ -370,16 +368,13 @@ df_UKV_LandingUKAbroad_200918_long$FlagDescription <- "CF applied to all or part
 colnames(df_UKV_LandingUKAbroad_200918_long)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UKV_LandingUKAbroad_200918_clean <- df_UKV_LandingUKAbroad_200918_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UKV_LandingUKAbroad_200918_clean <- df_UKV_LandingUKAbroad_200918_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UKV_LandingUKAbroad_200918_clean)
 
-str(df_UKV_LandingUKAbroad_200918_clean)
-
 # Rename "SeafoodSpecies" column 
 df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, Species = SeafoodSpecies)
-
 
 ```
 
@@ -410,7 +405,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 # Read in .csv file 
 df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918.csv", sep="/"), na = c(":"))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
 
 ```
@@ -418,7 +413,7 @@ md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
 
 ```{r Transform data set (2009 to 2018)}
 # Change structure of the data set. id.vars states the number of columns not to be stacked
-df_UKFarmed_200918 <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Value")
+df_UKFarmed_200918 <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 
 ```
 
@@ -435,17 +430,17 @@ df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by 
 
 ```{r Apply conversion factor to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UKFarmed_200918$CF_value) # no processed data here so no 1 values
+unique(df_UKFarmed_200918$CF_value) # no processed data here so no 1 Volumes
 
-# Create new column and apply conversion factors values
-df_UKFarmed_200918$apply_CF <- df_UKFarmed_200918$Value * df_UKFarmed_200918$CF_value
+# Create new column and apply conversion factors Volumes
+df_UKFarmed_200918$apply_CF <- df_UKFarmed_200918$Volume * df_UKFarmed_200918$CF_value
 
 ```
 
 
 ```{r Convert from tonnes to grams}
-# Convert raw value from tonnes to grams 
-df_UKFarmed_200918$Value <- df_UKFarmed_200918$apply_CF * 1000000
+# Convert raw Volume from tonnes to grams 
+df_UKFarmed_200918$Volume <- df_UKFarmed_200918$apply_CF * 1000000
 
 ```
 
@@ -467,7 +462,7 @@ df_UKFarmed_200918$FlagDescription <- "CF applied to all or part of the data"
 colnames(df_UKFarmed_200918)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_aquaculture_200918)
@@ -522,7 +517,7 @@ df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
 df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column to "Species"
 df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
@@ -634,7 +629,7 @@ NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
                              df_NDNS_foodlevel_yr10_data,
                              df_NDNS_foodlevel_yr11_data)
 
-# Check for missing values
+# Check for missing Volumes
 #md.pattern(NDNS_UK_Yr1_11_data)
 
 ```
@@ -646,7 +641,7 @@ Downloaded NDNS data for all food groups. Need to select just those rows related
 # Identify unique main food groups
 unique(NDNS_UK_Yr1_11_data$MainFoodGroupCode)
 
-# Subset seafood commodities. Seafood commodities identified as values: 33, 34 and 35 in "main food group code" column
+# Subset seafood commodities. Seafood commodities identified as Volumes: 33, 34 and 35 in "main food group code" column
 df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupCode == 33 | NDNS_UK_Yr1_11_data$MainFoodGroupCode == 34| NDNS_UK_Yr1_11_data$MainFoodGroupCode == 35)
 
 # Identify unique seafood species 
@@ -778,10 +773,10 @@ ggplot(df_plot_dailyIntakePerYear, aes(x = SurveyYear, y = avgUKWeeklyIntake)) +
 
 
 
-Before merging with population data need to change survey values. 
+Before merging with population data need to change survey Volumes. 
 
-```{r Allocate numerical values to survey years}
-# Create new data frame with survey years and corresponding numerical values
+```{r Allocate numerical Volumes to survey years}
+# Create new data frame with survey years and corresponding numerical Volumes
 SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7","NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
 #NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
 Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018) 
@@ -790,7 +785,7 @@ Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018)
 df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
 df_NDNSYearData$Year <- as.numeric(as.character(df_NDNSYearData$Year))
 
-# Create new data frame allocate numerical values by merging data frames
+# Create new data frame allocate numerical Volumes by merging data frames
 df_NDNS_seafood_consumption_200818 <- merge(df_NDNS_seafoodReported_Yr1_11, df_NDNSYearData, by = "SurveyYear")
 
 # Omit year 1 i.e. 2008
@@ -805,7 +800,7 @@ df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818,
 df_NDNS_seafoodintakeUK_200918 <- merge(df_NDNS_seafood_consumption_200918, df_UK_population_200918, by = "Year")
 
 # Multiply by the number of people in the country
-df_NDNS_seafoodintakeUK_200918$Value <- (df_NDNS_seafoodintakeUK_200918$avgUKdailyIntake * 365) * df_NDNS_seafoodintakeUK_200918$UKPOP
+df_NDNS_seafoodintakeUK_200918$Volume <- (df_NDNS_seafoodintakeUK_200918$avgUKdailyIntake * 365) * df_NDNS_seafoodintakeUK_200918$UKPOP
 
 ```
 
@@ -828,7 +823,7 @@ df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Units changed to Grams/Countr
 colnames(df_NDNS_seafoodintakeUK_200918)
 
 # Select desired columns for cleaned data set
-df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column 
 df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cleaned, Species = SeafoodSpecies)
@@ -863,7 +858,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 # read DEFRA purchasing (household and eating out) data (.csv)
 df_DEFRA_purchase_201620_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_DEFRA_purchase_201620_data)
 
 # State full calendar year date
@@ -933,7 +928,7 @@ df_DEFRA_household_200915_data <- vroom(file=paste(filepath,"DEFRA_UK_household-
 df_DEFRA_household_200915 <- subset(df_DEFRA_household_200915_data, 
                            select = c("MinorFoodCode", "Units", "2009", "2010", "2011", 
                                       "2012", "2013", "2014","2015"))
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
 
 ```
@@ -941,7 +936,7 @@ md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
 
 ```{r Transform data set (2009 to 2015)}
 # Change structure of the data set 
-df_DEFRA_household_200915_long <- melt(df_DEFRA_household_200915, id.vars = c("MinorFoodCode", "Units"), variable.name ="Year", value.name = "Value")
+df_DEFRA_household_200915_long <- melt(df_DEFRA_household_200915, id.vars = c("MinorFoodCode", "Units"), variable.name ="Year", value.name = "Volume")
 ```
 
 
@@ -955,12 +950,12 @@ colnames(df_DEFRA_household_200915_long)
 # Rename variables to allow data frames to merge
 # Rename codeDescription and estimate column
 df_DEFRA_household_201618_to_join <- rename(df_DEFRA_household_201618_short, 
-                                            FoodProduct = codeDESCRIPTION, Value = estimate)
+                                            FoodProduct = codeDESCRIPTION, Volume = estimate)
 
 # Rename minor food code column
 df_DEFRA_household_201915_to_join <- rename(df_DEFRA_household_200915_long, FoodProduct = MinorFoodCode)
 
-# Ensure "Year" column is a numerical value. Convert to character first, then numeric
+# Ensure "Year" column is a numerical Volume. Convert to character first, then numeric
 df_DEFRA_household_201915_to_join$Year <- as.numeric(as.character(df_DEFRA_household_201915_to_join$Year))
 df_DEFRA_household_201618_to_join$Year <- as.numeric(as.character(df_DEFRA_household_201618_to_join$Year))
 
@@ -985,7 +980,7 @@ colnames(df_DEFRA_household_200918)
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_household_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
+df_DEFRA_household_200918_agg <- aggregate(Volume ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_household_200918, sum)
 
 ```
@@ -995,8 +990,8 @@ df_DEFRA_household_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + Speci
 # Merge household purchasing data with population data 
 df_DEFRA_household_200918_aggYear <- merge(df_DEFRA_household_200918_agg, df_UK_population_200918, "Year")
 
-# Multiply value data by 52 (convert grams from week to year)
-df_DEFRA_household_200918_aggYear$PerYear <- df_DEFRA_household_200918_aggYear$Value * 52
+# Multiply Volume data by 52 (convert grams from week to year)
+df_DEFRA_household_200918_aggYear$PerYear <- df_DEFRA_household_200918_aggYear$Volume * 52
 
 # Create new column multiplying by population size
 df_DEFRA_household_200918_aggYear$totUK <- df_DEFRA_household_200918_aggYear$PerYear * df_DEFRA_household_200918_aggYear$UKPOP
@@ -1029,7 +1024,7 @@ df_DEFRA_household_200918_cleaned <- df_DEFRA_household_200918_aggYear[c("DataSu
 
 # Rename some variables
 df_DEFRA_household_200918_aggYear_cleaned <- rename(df_DEFRA_household_200918_cleaned, 
-                                                    Species = SeafoodSpecies, Value = totUK)
+                                                    Species = SeafoodSpecies, Volume = totUK)
 
 ```
 
@@ -1071,9 +1066,9 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 # read DEFRA eaten out data set
 df_DEFRA_eatenOut_200915_data <- vroom(file = paste(filepath,"DEFRA_UK_eatenOut-200915.csv", sep="/"))
 
-# Check for missing values
+# Check for missing Volumes
 md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
-# Missing values detected but not within time frame of interest
+# Missing Volumes detected but not within time frame of interest
 
 # Select only years 2009 to 2015
 df_DEFRA_eatenOut_200915 <- subset(df_DEFRA_eatenOut_200915_data, 
@@ -1085,7 +1080,7 @@ df_DEFRA_eatenOut_200915 <- subset(df_DEFRA_eatenOut_200915_data,
 
 ```{r Transform data set (2009 to 2015)}
 # Change structure of the data set 
-df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("EO_MinorCode", "Units"), variable.name = "Year", value.name = "Value")
+df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("EO_MinorCode", "Units"), variable.name = "Year", value.name = "Volume")
 
 ```
 
@@ -1099,12 +1094,12 @@ colnames(df_DEFRA_eatenOut_201618_short)
 # Rename variables to allow data frames to merge
 # Rename codeDescription and estimate column
 df_DEFRA_eatenOut_201618_to_join <- rename(df_DEFRA_eatenOut_201618_short, 
-                                            FoodProduct = codeDESCRIPTION, Value = estimate)
+                                            FoodProduct = codeDESCRIPTION, Volume = estimate)
 
 # Rename minor food code column
 df_DEFRA_eatenOut_201915_to_join <- rename(df_DEFRA_eatenOut_200915_long, FoodProduct = EO_MinorCode)
 
-# Ensure "Year" column is a numerical value. Convert to character first, then numeric
+# Ensure "Year" column is a numerical Volume. Convert to character first, then numeric
 df_DEFRA_eatenOut_201915_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201915_to_join$Year))
 df_DEFRA_eatenOut_201618_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201618_to_join$Year))
 
@@ -1133,7 +1128,7 @@ colnames(df_DEFRA_eatenOut_200918)
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_eatenOut_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
+df_DEFRA_eatenOut_200918_agg <- aggregate(Volume ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_eatenOut_200918, sum)
 
 ```
@@ -1143,8 +1138,8 @@ df_DEFRA_eatenOut_200918_agg <- aggregate(Value ~ SeafoodSpecies + Year + Specie
 # Merge household purchasing data with population data 
 df_DEFRA_eatenOut_200918_aggYear <- merge(df_DEFRA_eatenOut_200918_agg, df_UK_population_200918, "Year")
 
-# Multiply value data by 52 (convert grams from week to year)
-df_DEFRA_eatenOut_200918_aggYear$PerYear <- df_DEFRA_eatenOut_200918_aggYear$Value * 52
+# Multiply Volume data by 52 (convert grams from week to year)
+df_DEFRA_eatenOut_200918_aggYear$PerYear <- df_DEFRA_eatenOut_200918_aggYear$Volume * 52
 
 # Create new column multiplying by population size
 df_DEFRA_eatenOut_200918_aggYear$totUK <- df_DEFRA_eatenOut_200918_aggYear$PerYear * df_DEFRA_eatenOut_200918_aggYear$UKPOP
@@ -1176,7 +1171,7 @@ df_DEFRA_eatenOut_200918_cleaned <- df_DEFRA_eatenOut_200918_aggYear[c("DataSupp
 
 # Rename some variables
 df_DEFRA_eatenOut_200918_cleaned <- rename(df_DEFRA_eatenOut_200918_cleaned, 
-                                                    Species = SeafoodSpecies, Value = totUK)
+                                                    Species = SeafoodSpecies, Volume = totUK)
 
 colnames(df_DEFRA_eatenOut_200918_cleaned)
 
@@ -1258,6 +1253,8 @@ Next we downloaded seafood nutrient composition data from Public Health England 
 
 Composition analyses were conducted in 2004. Temporal changes in nutrient composition is unlikely.
 
+Note that .csv file is saved as a UT8 (otherwise an error appears. Check with Bernhard the differences in the file types)
+
 
 ```{r Specify the desired file path}
 # Select file path with raw data
@@ -1265,77 +1262,112 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 ```
 
 
-```{r Load data (2004)}
+```{r Load PHE data (2004)}
 # Read in .csv file 
-df_PHE_composition_data <- vroom(file=paste(filepath,"PHE_SeafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) # Both N/A and Tr different 
-# Note that .csv file is saved as a UT8 (otherwise an error appears. Check with Bernhard the differences in the file types)
+df_PHE_seafoodComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) 
+# Both N/A and Tr different 
 
-# Check for missing values
-md.pattern(df_PHE_composition_data, rotate.names = TRUE)
+# Check for missing Volumes
+md.pattern(df_PHE_seafoodComp, rotate.names = TRUE)
 
 # Identify column names
-colnames(df_PHE_composition_data)
+colnames(df_PHE_seafoodComp)
+
+# Specify the supplier
+df_PHE_seafoodComp$DataSupplier <- "PHE"
 
 ```
 
 
-```{r Join data frame with translation document}
-# Cleaned data set does not consider the status of the sample e.g. raw/ cooked. So new column created with such information.
-# Duplicate species name column (duplicated column entries to be duplicated)
-df_PHE_composition_data$SpeciesRevised <- df_PHE_composition_data$SampleDescription
+```{r Load Norwegian data}
+# Read in .csv file 
+df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
 
-# Merge data frame with MCS data frame by species name
-df_PHE_composition_data <- df_PHE_composition_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+# Check for missing Volumes
+md.pattern(df_Norwegian_seafoodComp, rotate.names = TRUE)
 
-# Check the structure
-str(df_PHE_composition_data)
+# Identify column names
+colnames(df_Norwegian_seafoodComp)
+
+# Specify the dataset
+df_Norwegian_seafoodComp$DataSupplier <- "Norwegian"
+
+```
+
+
+Select main nutrients. Both PHE and Norwegian datasets in g/100g.
+
+```{r Select desired variables from both datasets}
+# Select desired variables
+df_PHE_seafoodCompSimp <- df_PHE_seafoodComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g", "DataSupplier" )]
+
+# Select desired variables
+df_Norwegian_seafoodCompSimp <- df_Norwegian_seafoodComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")]
+
+```
+
+
+```{r Rename variables and join datasets}
+# Rename variables
+names(df_PHE_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")
+
+names(df_Norwegian_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")
+
+# Combine data frames
+df_seafoodCompSimp <- rbind(df_PHE_seafoodCompSimp,
+                              df_Norwegian_seafoodCompSimp) 
+
+str(df_seafoodCompSimp)
+```
+
+
+
+```{r Transform dataset}
+#Change structure of the data set 
+df_seafoodCompSimp_long <- melt(df_seafoodCompSimp, id.vars = c("FoodItem", "DataSupplier"), variable.name ="Nutrient", value.name = "Volume")
+
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load translation document}
+# Load database 
+df_seafoodCompKey <- vroom(file=paste(filepath,"SeafoodComposition_translationKey.csv", sep="/"), na = c("NA"))
+
+str(df_seafoodCompKey)
+```
+
+
+
+```{r Join data with translation document}
+# Join data frame with translation document- ensures consistent spelling across data sets
+
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_seafoodCompSimp$SpeciesRevised <- df_seafoodCompSimp$FoodItem  
+
+str(df_seafoodCompSimp)
+
+# Join data frame with MCS data frame by species name
+df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., df_seafoodCompKey, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data
+
 ```
 
 
 ```{r Add additional variables to data set}
-# Create "cleaned" data frame, defining units and data source 
-df_PHE_composition_data$DataSupplier <- "PHE"
-df_PHE_composition_data$DataSet <- "NutrientAnalysis"
-df_PHE_composition_data$Commodity <- "NutrientComposition"
-df_PHE_composition_data$Flag <- "NA"
-df_PHE_composition_data$FlagDescription <- "NA"
-
-```
-
-
-The main nutrients in fish are calcium, iron, selenium, zinc, vitamin D and omega-3 fatty acids. 
-
-```{r Select desired variables}
-# Identify columns in data frame
-colnames(df_PHE_composition_data)
-
-# Select desired columns for cleaned data set
-df_nutcomp_PHE_cleaned <- df_PHE_composition_data[c("SampleDescription", "RevisedMCS", "EUMOFA_ST", "FAO_ST", "ISSCAAP_ST", "Golden_2021_ST","Bianchi_2022_ST", "WWF_2022_ST", "SACN", "DataSupplier", "DataSet", "Commodity", "Flag", "Calcium-mg100g", "Iron-mg100g", "Selenium-µg100g", "Zinc-mg100g", "TotalPUFA-g100g", "VitaminD-µg100g", 
-                                                    "FlagDescription", "Flag")]
-
-
-#"DataSupplier", "DataSet", "Commodity", "Species", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription"
-
-# Here the main nutrients have been selected but his list can be easily changed.
-
-```
-
-
-Calculate nutrient density score of each seafood product. Nutrient density defines as the combined contribution of a 100g portion for recommended daily intakes of all five nutrients based on nutrient reference point for adults.
-
-Nutrient-dense foods are often high in dietary fiber, vitamin D, calcium, iron and potassium and lower in saturated fat, added sugars and sodium
-
-```{r Calculate nutrient density score of each fish species}
-
-# Note to AL: this may be more Cathrine's area of work.
-# Create new column calculating nutrient density score
-
-# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
-
-# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
-
-# Divide the RDA calculation by the calorie calculation 
-
+# Add additional variables
+df_PHE_seafoodComp$DataSet <- "NutrientAnalysis"
+df_PHE_seafoodComp$Commodity <- "NutrientComposition"
+df_PHE_seafoodComp$Flag <- "NA"
+df_PHE_seafoodComp$FlagDescription <- "NA"
+df_seafoodCompSimp$TemporalResolution <- "NA"
+df_seafoodCompSimp$Units <- "g/100g"
+df_seafoodCompSimp$Year <- "NA"
 
 ```
 
@@ -1343,7 +1375,7 @@ Nutrient-dense foods are often high in dietary fiber, vitamin D, calcium, iron a
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(df_nutcomp_PHE_cleaned, file =
-            paste(filepath,"NutrientComposition_PHE_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
+write.csv(df_seafoodCompSimp, file =
+            paste(filepath,"NutrientComposition_PHENor_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```

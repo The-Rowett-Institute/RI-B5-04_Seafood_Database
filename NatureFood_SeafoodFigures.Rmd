@@ -5,6 +5,8 @@ date: "18-04-23"
 output: powerpoint_presentation
 ---
 
+Code for Nature Food figures only. 
+
 ### Preparation 
 
 ```{r Load libraries, include = FALSE}
@@ -43,7 +45,7 @@ theme_set(theme_bw()%+replace%
             theme(
               title = element_text(size = 26), 
               text = element_text(size = 30), 
-              axis.text = element_text(size = 24, colour = "gray40"), 
+              axis.text = element_text(size = 24, colour = "gray40"), # increase to make readable
               legend.key.size = unit(1.2, "cm"), 
               legend.title = element_text(size = 26), 
               legend.text = element_text(size = 24),
@@ -70,16 +72,6 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load population data}
-# Load database 
-df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-```
-
-```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
@@ -88,67 +80,6 @@ filepath <- paste(data_dir,"Outputs", sep = "")
 # Load database 
 df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
-
-
-## Final clean of the dataset
-
-Remove products for non-human consumption nor are included in the dietary recommendations 
-
-```{r Final clean}
-# Check the unique species types
-unique(df_UK_seafoodDB$SpeciesType)
-
-# Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove products for non-human consumption. Remove 2019 data
-df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Species != "Surimi" & Year != 2019)
-```
-
-
-```{r Change structure of the data frame}
-# See pivot_wider()/ spread() command in tidyverse to change structure. 
-# See dplyr cheat sheet.
-
-# Simplify data set and select desired columns 
-df_UK_seafoodDB_food_spec <- df_UK_seafoodDB_food[c("Species", "SpeciesType", "SACN", "Year", "Commodity", "Value" )]
-
-# Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
-df_UK_seafoodDB_food_simp <- aggregate(Value ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_food_spec, sum)
-
-# Make data frame wide and short
-df_UK_seafoodDB_short <- df_UK_seafoodDB_food_simp %>%
-  pivot_wider(names_from = Commodity, values_from = Value)
-
-```
-
-
-```{r Combine database with UK population data}
-# Merge seafood database with UK population data
-df_UK_seafoodDB_Pop <- merge(df_UK_seafoodDB_short, df_UK_population, by = "Year")
-
-# Simplify data set and select desired columns 
-df_UK_seafoodDB_capita <- df_UK_seafoodDB_Pop[c("Species", "SpeciesType", "SACN", "Year", "Production",
-                                                   "Exports","Imports", "Consumption","Purchases",
-                                                   "UKPOP")]
-
-```
-
-
-## Calculate UK seafood supplies (g/capita/week)
-
-```{r Calculate seafood supplies (g/capita/week)}
-# Convert NA to zeros (otherwise supplies cannot be calculated)
-df_UK_seafoodDB_capita[is.na(df_UK_seafoodDB_capita)] <- 0
-
-# Calculate seafood supplies
-df_UK_seafoodDB_capita$Supplies <- (df_UK_seafoodDB_capita$Production + df_UK_seafoodDB_capita$Imports) - df_UK_seafoodDB_capita$Exports
-
-# Calculate seafood supplied per capita per week
-df_UK_seafoodDB_capita$Supplies_capWeek <- (df_UK_seafoodDB_capita$Supplies/ df_UK_seafoodDB_capita$UKPOP)/52
-
-# Calculate seafood consumed per capita per week 
-df_UK_seafoodDB_capita$Consumption_capWeek <- (df_UK_seafoodDB_capita$Consumption/ df_UK_seafoodDB_capita$UKPOP)/52
-
-```
-
 
 
 
@@ -170,36 +101,6 @@ ggplot(df_UK_supplies_tot, aes(Year, Supplies_capWeek)) +
 ```
 
 
-
-### Figure 1B. Total UK seafood supplies and consummed (g/capita/week) between 2009 and 2018  
-
-```{r Total UK seafood supplied and consumed (g/capita/week) between 2009 and 2018}
-# Sum annual seafood supplies per capita 
-df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
-df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
-
-# Rename data frame variables 
-names(df_UK_supplies_tot) <- c("Year", "Value")
-names(df_UK_consummed_tot) <- c("Year", "Value")
-
-# Add additional variable
-df_UK_supplies_tot$Commodity <- "Supplies"
-df_UK_consummed_tot$Commodity <- "Consumption"
-
-# rbind data frames
-df_UK_supplies_intake_tot<- rbind(df_UK_supplies_tot, df_UK_consummed_tot)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_intake_tot, aes(Year, Value, fill= Commodity)) +
-  geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
-  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 2)) +
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2) +
-  scale_fill_manual(values = c("#E69F00", "#009E73")) +
-  theme(legend.title = element_blank()) 
-
-```
 
 
 ### Figure 2. UK seafood supplies and consumption (g/capita/week), by species, in 2018
@@ -318,92 +219,44 @@ Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, 
 Sum nutrient produced, imported and exported to calculate supplies.
 
 
-```{r Specify the desired file path}
-# Select file path with raw data
-filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
-```
 
-
-```{r Load raw PHE nutrient compostion data}
-# Load data
-df_PHE_seafoodComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr"))
-
-# Select desired variables
-df_PHE_seafoodCompSimp <- df_PHE_seafoodComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g")]
-
-str(df_PHE_seafoodCompSimp)
+```{r Calculate nutrient supplies from seafood  nutrient value by supplies}
+# Multiply nutreint value (g/100g) bu seafood supplies (g/capita/day) and divide by 100. 
 
 ```
 
 
 
-```{r Load raw Norwegian nutrient compostion data}
-# Load data 
-df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
 
-# Select desired variables
-df_Norwegian_seafoodCompSimp <- df_Norwegian_seafoodComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
 
-str(df_Norwegian_seafoodCompSimp)
+
+```{r Join data frame with translation document}
+# Cleaned data set does not consider the status of the sample e.g. raw/ cooked. So new column created with such information.
+# Duplicate species name column (duplicated column entries to be duplicated)
+#df_seafoodCompSimp$SpeciesRevised <- df_seafoodCompSimp$SampleDescription
+
+# Merge data frame with MCS data frame by species name
+#df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+
+# Check the structure
+#str(df_seafoodCompSimp)
+```
+
+
+
+
+```{r Calculate nutrient density score of each fish species}
+
+# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
+
+# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
+
+# Divide the RDA calculation by the calorie calculation 
 
 ```
 
 
 
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-
-```{r Load translation document}
-# Load database 
-df_seafoodCompKey <- vroom(file=paste(filepath,"SeafoodComposition_translationKey.csv", sep="/"), na = c("NA"))
-
-str(df_seafoodCompKey)
-```
-
-
-```{r Combine nutrient composition data}
-# Rename variables
-names(df_PHE_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
-
-names(df_Norwegian_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
-
-# Combine data frames
-df_seafoodCompSimp <- rbind(df_PHE_seafoodCompSimp,
-                              df_Norwegian_seafoodCompSimp) 
-
-str(df_seafoodCompSimp)
-```
-
-
-
-```{r Join data with translation document}
-# Join data frame with translation document- ensures consistent spelling across data sets
-
-# Duplicate species name column (allows us to check species have been renames correctly)
-df_seafoodCompSimp$SpeciesRevised <- df_seafoodCompSimp$FoodItem  
-
-# Join data frame with MCS data frame by species name
-df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., df_seafoodCompKey, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data
-
-```
-
-
-
-```{r Join nutrient data with seafood database}
-# Rename Seafood Species to Species
-names(df_seafoodCompSimp)[names(df_seafoodCompSimp) == "SeafoodSpecies"] <- "Species"
-
-# Merge nutrient data with seafood database
-df_seafood_compDB <- merge(df_UK_seafoodDB_capita, df_seafoodCompSimp, "Species")
-
-# Convert NA to o
-#df_seafood_compDB[is.na(df_seafood_compDB)] <- 0
-
-```
 
 
 Nutrients of interest: protein_g, totalPUFA_g, vitaminA_µg, vitaminD_µg, vitaminB12_µg, zinc_mg, iron_mg, calcium_mg, selenium_µg, iodine_µg.
@@ -421,7 +274,6 @@ df_seafood_compDB$SeleniumProd_g <- df_seafood_compDB$Production * df_seafood_co
 df_seafood_compDB$IodineProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Iodine_µg
 
 ```
-
 
 
 ```{r Mutiply each production volume to nutrient value}
@@ -452,7 +304,6 @@ df_seafood_compDB$SeleniumExports_g <- df_seafood_compDB$Exports * df_seafood_co
 df_seafood_compDB$IodineExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Iodine_µg
 
 ```
-
 
 
 
@@ -491,6 +342,10 @@ df_seafood_compDB$IodineSupplies_g <- (df_seafood_compDB$IodineProd_g +
 
 
 
+
+
+
+
 ```{r Aggregate nutrient supplies}
 # Subset 2018 data only
 df_seafood_compDB2018 <- subset(df_seafood_compDB, Year == 2018)
@@ -505,7 +360,7 @@ ggplot(df_UK_ProtienSupplies_2018, aes(Species, ProteinSupplies_g)) +
   scale_y_continuous(name = "UK seafood protein supplies (g)") +
   theme(legend.title = element_blank()) 
 
-# Sum UK VitD supplies
+# Sum UK vitamin D supplies
 df_UK_VitDSupplies_g_2018 <- aggregate(VitDSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
 colnames(df_seafood_compDB2018)
 
@@ -517,6 +372,21 @@ ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
   theme(legend.title = element_blank())
 
 
+
+# Sum UK vitamin D supplies
+df_UK_CaSupplies_g_2018 <- aggregate(VitDSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
+colnames(df_seafood_compDB2018)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
+  geom_bar(stat= "identity", color = "black") +
+  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  scale_y_continuous(name = "UK seafood vit D supplies (g)") +
+  theme(legend.title = element_blank())
+
+
+df_seafood_compDB2018$VitDImports_g
+
 ```
 
 
@@ -527,3 +397,36 @@ ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
 ```
 
 
+### Exploratory graphs 
+
+
+
+### Figure 1B. Total UK seafood supplies and consummed (g/capita/week) between 2009 and 2018  
+
+```{r Total UK seafood supplied and consumed (g/capita/week) between 2009 and 2018}
+# Sum annual seafood supplies per capita 
+df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+
+# Rename data frame variables 
+names(df_UK_supplies_tot) <- c("Year", "Value")
+names(df_UK_consummed_tot) <- c("Year", "Value")
+
+# Add additional variable
+df_UK_supplies_tot$Commodity <- "Supplies"
+df_UK_consummed_tot$Commodity <- "Consumption"
+
+# rbind data frames
+df_UK_supplies_intake_tot<- rbind(df_UK_supplies_tot, df_UK_consummed_tot)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_supplies_intake_tot, aes(Year, Value, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 2)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#009E73")) +
+  theme(legend.title = element_blank()) 
+
+```
