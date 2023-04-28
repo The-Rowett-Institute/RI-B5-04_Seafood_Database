@@ -491,7 +491,7 @@ Trade data was sourced from the HMRC and includes both imports and exports. An u
 # Some edits are needed to ensure consistency with processed data sets
 
 # Read in UK trade data 
-df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = "/"))
+df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep = "/"))
 str(df_trade_HMRC_data)
 
 ```
@@ -517,7 +517,9 @@ df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
 df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType.x", "SACN.x", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+names(df_cleaned_UK_HMRC_200919) <- c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")
 
 # Rename "SeafoodSpecies" column to "Species"
 df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
@@ -527,10 +529,26 @@ colnames(df_cleaned_UK_HMRC_200919_cleaned)
 ```
 
 
+
+```{r Remove products not included in the dietary guidelines}
+# Check the unique species types
+unique(df_cleaned_UK_HMRC_200919_cleaned$SpeciesType)
+
+# Remove species type products not included in dietary recommendations e.g. "Fish meal", "white fish", "fish oil", "Seaweed and other algae". Remove products for non-human consumption. Remove 2019 data
+#df_UK_seafoodDB_food <- subset(df_UK_seafoodDB, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Species != "Fishmeal" & Species != "Caviar, livers and roes" & Species != "White fish" & Species != "Surimi" & Year != 2019)
+
+# Fish oil and seaweed and algae in Trade data- remove there and 2019 
+
+df_cleaned_UK_HMRC_200919_cleaned_again <- subset(df_cleaned_UK_HMRC_200919_cleaned, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Year != 2019)
+
+```
+
+
+
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_cleaned_UK_HMRC_200919_cleaned, file = paste(filepath,"TradeData_HMRC_PreliminaryAgainCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_cleaned_UK_HMRC_200919_cleaned_again, file = paste(filepath,"TradeData_HMRC_PreliminaryAgainCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -546,33 +564,6 @@ UK seafood consumption data is collected every financial year. Although food dia
 ```{r Specify the desired file path}
 # Select file path with raw data
 filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
-```
-
-
-```{r Load data (2008 to 2019)}
-# Load NDNS yrs 1 - 4
-#df_NDNS_foodlevel_yr1_4_data <- vroom(file= paste(filepath,"NDNS_UK_FoodLevel-Y1-4_short.csv", sep = "/"))
-
-# Load NDNS yrs 5 - 6 
-#df_NDNS_foodlevel_yr5_6_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y5-6_short.csv", sep = "/"))
-
-# Load NDNS yrs 7 - 8 
-#df_NDNS_foodlevel_yr7_8_data <-
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y7-8_short.csv", sep = "/"))
-
-# Load NDNS yrs 9
-#df_NDNS_foodlevel_yr9data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y9_short.csv", sep = "/"))
-
-# Load NDNS yrs 10
-#df_NDNS_foodlevel_yr10_data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y10_short.csv", sep = "/"))
-
-# Load NDNS yrs 11
-#df_NDNS_foodlevel_yr11_data <- 
-  vroom(file = paste(filepath,"NDNS_UK_FoodLevel-Y11_short.csv", sep = "/"))
-
 ```
 
 
@@ -1264,33 +1255,27 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load PHE data (2004)}
 # Read in .csv file 
-df_PHE_seafoodComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) 
+df_PHE_nutreintComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) 
 # Both N/A and Tr different 
 
 # Check for missing Volumes
-md.pattern(df_PHE_seafoodComp, rotate.names = TRUE)
+md.pattern(df_PHE_nutreintComp, rotate.names = TRUE)
 
 # Identify column names
-colnames(df_PHE_seafoodComp)
-
-# Specify the supplier
-df_PHE_seafoodComp$DataSupplier <- "PHE"
+colnames(df_PHE_nutreintComp)
 
 ```
 
 
 ```{r Load Norwegian data}
 # Read in .csv file 
-df_Norwegian_seafoodComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
+df_Norwegian_nutreintComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
 
 # Check for missing Volumes
-md.pattern(df_Norwegian_seafoodComp, rotate.names = TRUE)
+md.pattern(df_Norwegian_nutreintComp, rotate.names = TRUE)
 
 # Identify column names
-colnames(df_Norwegian_seafoodComp)
-
-# Specify the dataset
-df_Norwegian_seafoodComp$DataSupplier <- "Norwegian"
+colnames(df_Norwegian_nutreintComp)
 
 ```
 
@@ -1299,32 +1284,32 @@ Select main nutrients. Both PHE and Norwegian datasets in g/100g.
 
 ```{r Select desired variables from both datasets}
 # Select desired variables
-df_PHE_seafoodCompSimp <- df_PHE_seafoodComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g", "DataSupplier" )]
+df_PHE_nutreintComp_short <- df_PHE_nutreintComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
 
 # Select desired variables
-df_Norwegian_seafoodCompSimp <- df_Norwegian_seafoodComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")]
+df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
 
 ```
 
 
 ```{r Rename variables and join datasets}
 # Rename variables
-names(df_PHE_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")
+names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
 
-names(df_Norwegian_seafoodCompSimp) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg", "DataSupplier")
+names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
 
 # Combine data frames
-df_seafoodCompSimp <- rbind(df_PHE_seafoodCompSimp,
-                              df_Norwegian_seafoodCompSimp) 
+df_all_nutrientComp <- rbind(df_PHE_nutreintComp_short,
+                              df_Norwegian_nutreintComp_short) 
 
-str(df_seafoodCompSimp)
+str(df_all_nutrientComp)
 ```
 
 
 
 ```{r Transform dataset}
 #Change structure of the data set 
-df_seafoodCompSimp_long <- melt(df_seafoodCompSimp, id.vars = c("FoodItem", "DataSupplier"), variable.name ="Nutrient", value.name = "Volume")
+df_all_nutrient_long <- melt(df_all_nutrientComp, id.vars = c("FoodItem"), variable.name ="Nutrient", value.name = "Volume")
 
 ```
 
@@ -1348,12 +1333,12 @@ str(df_seafoodCompKey)
 # Join data frame with translation document- ensures consistent spelling across data sets
 
 # Duplicate species name column (allows us to check species have been renames correctly)
-df_seafoodCompSimp$SpeciesRevised <- df_seafoodCompSimp$FoodItem  
+df_all_nutrient_long$SpeciesRevised <- df_all_nutrient_long$FoodItem  
 
-str(df_seafoodCompSimp)
+str(df_all_nutrient_long)
 
 # Join data frame with MCS data frame by species name
-df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., df_seafoodCompKey, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., df_seafoodCompKey, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data
 
 ```
@@ -1361,21 +1346,38 @@ df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., df_seafoodCompKey, by
 
 ```{r Add additional variables to data set}
 # Add additional variables
-df_PHE_seafoodComp$DataSet <- "NutrientAnalysis"
-df_PHE_seafoodComp$Commodity <- "NutrientComposition"
-df_PHE_seafoodComp$Flag <- "NA"
-df_PHE_seafoodComp$FlagDescription <- "NA"
-df_seafoodCompSimp$TemporalResolution <- "NA"
-df_seafoodCompSimp$Units <- "g/100g"
-df_seafoodCompSimp$Year <- "NA"
+df_all_nutrient_long$DataSet <- "NutrientAnalysis"
+df_all_nutrient_long$Commodity <- "NutrientComposition"
+df_all_nutrient_long$Flag <- "NA"
+df_all_nutrient_long$FlagDescription <- "NA"
+df_all_nutrient_long$TemporalResolution <- "NA"
+df_all_nutrient_long$Units <- "g/100g"
+df_all_nutrient_long$Year <- "NA"
 
 ```
+
+
+```{r Select desired variables for the data set}
+# Identify columns in data frame
+colnames(df_all_nutrient_long)
+
+# Select desired columns for cleaned data set
+df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Nutrient", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename some variables
+df_all_nutrient_cleaned <- rename(df_all_nutrient_cleaned, 
+                                                    Species = SeafoodSpecies)
+
+colnames(df_all_nutrient_cleaned)
+
+```
+
 
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData", sep="")
-write.csv(df_seafoodCompSimp, file =
-            paste(filepath,"NutrientComposition_PHENor_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
+write.csv(df_all_nutrient_cleaned, file =
+            paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
