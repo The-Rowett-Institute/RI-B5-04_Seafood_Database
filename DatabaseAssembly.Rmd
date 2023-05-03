@@ -71,24 +71,43 @@ df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 ```
 
 
-
-# Merge with nutrient data
-
-```{r Combine database with nutrient data}
-# Merge seafood database with nutrient composition data
+```{r}
+# Considered merging nutrients to seafood database by species type
 df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
 
-df_seafoodCompDB <- merge(df_Nutrie, df_Seafood_DB, "Species")
+# Can unstack the 
+
 
 ```
+
+
+
+
 
 
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_seafoodCompDB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
 ```
+
+
+
+# Merge with nutrient data
+
+```{r Combine database with nutrient data}
+# Merge seafood database with nutrient composition data
+
+
+df_seafoodCompDB <- merge(df_Nutrie, df_Seafood_DB, "Species")
+
+
+colnames(df_Seafood_DB)
+colnames(df_Nutrie)
+
+```
+
 
 
 
