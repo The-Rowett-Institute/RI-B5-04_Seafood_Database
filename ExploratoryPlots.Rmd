@@ -38,6 +38,36 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 ```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load the database}
+# Load database 
+df_UK_seafoodnurient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+```
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Outputs", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load the database}
+# Load database 
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+
+# Check the structure 
+str(df_UK_seafoodDB)
+
+```
+
+
+```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
@@ -59,14 +89,15 @@ str(df_UK_seafoodDB)
 # See dplyr cheat sheet.
 
 # Simplify data set and select desired columns 
-df_UK_seafoodDB_food_spec <- df_UK_seafoodDB_food[c("Species", "SpeciesType", "SACN", "Year", "Commodity", "Value" )]
+df_UK_seafoodDB_food_spec <- df_UK_seafoodDB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
+                                                    "Volume" )]
 
 # Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
-df_UK_seafoodDB_food_simp <- aggregate(Value ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_food_spec, sum)
+df_UK_seafoodDB_food_simp <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_food_spec, sum)
 
 # Make data frame wide and short
 df_UK_seafoodDB_short <- df_UK_seafoodDB_food_simp %>%
-  pivot_wider(names_from = Commodity, values_from = Value)
+  pivot_wider(names_from = Commodity, values_from = Volume)
 
 ```
 
@@ -107,6 +138,23 @@ df_UK_seafoodDB_capita$Consumption_capWeek <- (df_UK_seafoodDB_capita$Consumptio
 
 ```
 
+
+
+# Merge with nutrient data
+```{r Combine database with nutrient data}
+# Subset desired columns
+df_UK_seafoodnurient_simp <- df_UK_seafoodnurient[,c("Species", "Nutrient", "Volume")]
+
+# Unstack nutrients data 
+# Make data frame wide and short
+df_nutrient_short <- df_UK_seafoodnurient_simp %>%
+  pivot_wider(names_from = Nutrient, values_from = Volume)
+
+# Merge nutrient data with seafood database
+df_seafood_CompDB <- merge(df_UK_seafoodDB_capita, df_nutrient_short, "Species")
+str(df_seafoodCompDB)
+
+```
 
 
 

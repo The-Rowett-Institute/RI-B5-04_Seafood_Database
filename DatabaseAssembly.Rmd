@@ -58,7 +58,7 @@ rm(i)
 ```
 
 
-## Create seafood database
+## Create seafood database (g)
 
 ```{r rbind all cleaned datasets}
 df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
@@ -71,20 +71,6 @@ df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 ```
 
 
-```{r}
-# Considered merging nutrients to seafood database by species type
-df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
-
-# Can unstack the 
-
-
-```
-
-
-
-
-
-
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
@@ -94,17 +80,38 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
+
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database-nutrients_preliminary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
 # Merge with nutrient data
 
 ```{r Combine database with nutrient data}
-# Merge seafood database with nutrient composition data
+# Considered merging nutrients to seafood database by species type but dataframe is too big 
+#df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
 
 
-df_seafoodCompDB <- merge(df_Nutrie, df_Seafood_DB, "Species")
-
-
-colnames(df_Seafood_DB)
+# Subset desired columns
 colnames(df_Nutrie)
+str(df_Nutrie)
+
+df_Nutrie_simp <- df_Nutrie[,c("Species", "Nutrient", "Volume")]
+
+# Unstack nutrients data 
+# Make data frame wide and short
+df_nutrient_short <- df_Nutrie_simp %>%
+  pivot_wider(names_from = Nutrient, values_from = Volume)
+
+# Merge nutrient data with seafood database
+df_seafoodCompDB <- merge(df_Seafood_DB, df_nutrient_short, "Species")
+str(df_seafoodCompDB)
 
 ```
 
@@ -122,7 +129,6 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 # Load database 
 df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
 ```
-
 
 
 ```{r Specify the desired file path}
@@ -153,5 +159,5 @@ df_UK_seafoodDB_capita$Units <- "gCapitaWeek"
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-per-capita_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
