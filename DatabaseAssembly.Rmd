@@ -80,44 +80,6 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
-
-
-```{r Save the seafood database}
-source("Data_filepath.R")
-# Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_Seafood_DB, paste(filepath,"Seafood-database-nutrients_preliminary.csv",sep="/"), row.names = FALSE)
-```
-
-
-
-# Merge with nutrient data
-
-```{r Combine database with nutrient data}
-# Considered merging nutrients to seafood database by species type but dataframe is too big 
-#df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
-
-
-# Subset desired columns
-colnames(df_Nutrie)
-str(df_Nutrie)
-
-df_Nutrie_simp <- df_Nutrie[,c("Species", "Nutrient", "Volume")]
-
-# Unstack nutrients data 
-# Make data frame wide and short
-df_nutrient_short <- df_Nutrie_simp %>%
-  pivot_wider(names_from = Nutrient, values_from = Volume)
-
-# Merge nutrient data with seafood database
-df_seafoodCompDB <- merge(df_Seafood_DB, df_nutrient_short, "Species")
-str(df_seafoodCompDB)
-
-```
-
-
-
-
 ## Create seafood database (g/capita/week)
 
 ```{r Specify the desired file path}
@@ -161,3 +123,86 @@ source("Data_filepath.R")
 filepath <- paste(data_dir,"Outputs", sep="")
 write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
+
+
+# Create seafood database where commodities are unstacked
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Outputs", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load the seafood database}
+# Load database 
+df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_preliminary.csv", sep="/"), na = c("NA"))
+```
+
+```{r Load the seafood database}
+# Load database 
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load population data}
+# Load database 
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+```
+
+
+
+# Considered merging nutrients to seafood database by species type but dataframe is too big 
+#df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
+
+
+# Change struucture of the dataframes
+
+```{r Combine database with nutrient data}
+# Subset desired columns
+df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
+
+# Unstack nutrients data 
+# Make data frame wide and short
+df_nutrient_short <- df_PHE_nutrient_simp %>%
+  pivot_wider(names_from = Nutrient, values_from = Volume)
+
+
+# unstack seafood database to calculate supplies
+# See dplyr cheat sheet.
+
+# Simplify data set and select desired columns 
+df_UK_seafoodDB_simp <- df_UK_seafoodDB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
+                                                    "Volume" )]
+
+# Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
+df_UK_seafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_simp, sum)
+
+# Make data frame wide and short
+df_UK_seafoodDB_short <- df_UK_seafoodDB_simp_agg %>%
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+
+df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
+
+# Merge nutrient data with seafood database
+df_seafoodDB_comp_short <- merge(df_UK_seafoodDB_short, df_nutrient_short, "Species")
+str(df_seafoodDB_comp_short)
+
+```
+
+
+
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database-nutrients_preliminary.csv",sep="/"), row.names = FALSE)
+```
+
+

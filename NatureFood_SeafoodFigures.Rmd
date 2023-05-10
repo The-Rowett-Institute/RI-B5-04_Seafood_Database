@@ -78,7 +78,7 @@ filepath <- paste(data_dir,"Outputs", sep = "")
 
 ```{r Load the seafood database}
 # Load database 
-df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
 
@@ -87,7 +87,7 @@ df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv",
 
 ```{r Total UK seafood supplies (g/capita/week) between 2009 and 2018}
 # Sum annual seafood supplies per capita. 
-df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
 
 # Plot total seafood supplies (g/capita/week) between 2009 and 2018. 
 ggplot(df_UK_supplies_tot, aes(Year, Supplies_capWeek)) +
