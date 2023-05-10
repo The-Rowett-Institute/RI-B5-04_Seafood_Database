@@ -70,7 +70,6 @@ cbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
 ```
 
-
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
 # note we are able to change this to another file e.g. saving the output
@@ -107,7 +106,7 @@ ggplot(df_UK_supplies_tot, aes(Year, Supplies_capWeek)) +
 
 ```{r Subset seafood database to 2018}
 # Select variables 
-df_UK_seafoodCapita_suppCons <- df_UK_seafoodDB_capita[c("Supplies_capWeek", "Consumption_capWeek", "Year", "Species", "SpeciesType", "SACN")]
+df_UK_seafoodCapita_suppCons <- df_UK_seafoodDB_capita[c("Supplies_capitaWeek", "Consumption_capWeek", "Year", "Species", "SpeciesType", "SACN")]
 
 # Sum annual seafood supplies per capita 
 df_UK_seafoodCapita_suppCons_2018 <- subset(df_UK_seafoodCapita_suppCons, Year == "2018")
@@ -125,7 +124,7 @@ df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum)
 ggplot(df_UK_suppCons_2018_sum, aes(Species, Value, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
   scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  scale_x_discrete(guide = guide_axis(angle = 45, name = "") +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
   scale_fill_manual(values = c("#009E73", "#E69F00")) +
   theme(legend.title = element_blank()) +
@@ -506,8 +505,10 @@ df_UK_ISupplies_2018 <- aggregate(ISupplies ~ Species, data = df_seafood_CompDB2
 
 ```{r Total UK seafood supplied and consumed (g/capita/week) between 2009 and 2018}
 # Sum annual seafood supplies per capita 
-df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
-df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_capita, sum)
+df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
+df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
+
+str(df_UK_seafoodDB_PCW)
 
 # Rename data frame variables 
 names(df_UK_supplies_tot) <- c("Year", "Value")

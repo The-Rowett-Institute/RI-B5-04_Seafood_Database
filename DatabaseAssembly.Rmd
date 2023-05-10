@@ -114,6 +114,17 @@ df_UK_seafoodDB_capita$VolumeCapita <- (df_UK_seafoodDB_capita$Volume/ df_UK_sea
 # Update units
 df_UK_seafoodDB_capita$Units <- "gCapitaWeek"
 
+str(df_UK_seafoodDB_capita)
+
+df_UK_seafoodDB_capita_simp <- df_UK_seafoodDB_capita[]
+
+# Make data frame wide and short
+df_UK_seafoodDB_capita_short <- df_UK_seafoodDB_capita %>%
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+
+df_UK_seafoodDB_capita_short$Supplies <- (df_UK_seafoodDB_capita_short$Production + df_UK_seafoodDB_capita_short$Imports) - df_UK_seafoodDB_capita_short$Exports
+
 ```
 
 
@@ -172,6 +183,13 @@ df_nutrient_short <- df_PHE_nutrient_simp %>%
   pivot_wider(names_from = Nutrient, values_from = Volume)
 
 
+# Simplify population data
+df_UK_population
+colnames(df_UK_population)
+
+df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
+
+
 # unstack seafood database to calculate supplies
 # See dplyr cheat sheet.
 
@@ -186,12 +204,28 @@ df_UK_seafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + Spec
 df_UK_seafoodDB_short <- df_UK_seafoodDB_simp_agg %>%
   pivot_wider(names_from = Commodity, values_from = Volume)
 
-
+# Caluculate supplies
 df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
 
+
+# Merge data frame with populaiton data
+df_seafoodDB_pop_short <- merge(df_UK_seafoodDB_short, df_UK_population_simp, "Year")
+str(df_seafoodDB_pop_short)
+
+df_seafoodDB_pop_short$Production_pcw <- (df_seafoodDB_pop_short$Production/
+                                            df_seafoodDB_pop_short$UKPOP)/52
+df_seafoodDB_pop_short$Imports_pcw <- (df_seafoodDB_pop_short$Imports/
+                                            df_seafoodDB_pop_short$UKPOP)/52
+df_seafoodDB_pop_short$Exports_pcw <- (df_seafoodDB_pop_short$Exports/
+                                            df_seafoodDB_pop_short$UKPOP)/52
+df_seafoodDB_pop_short$Supplies_pcw <- (df_seafoodDB_pop_short$Supplies/
+                                            df_seafoodDB_pop_short$UKPOP)/52
+df_seafoodDB_pop_short$Consumpiton_pcw <- (df_seafoodDB_pop_short$Consumption/
+                                            df_seafoodDB_pop_short$UKPOP)/52
+
 # Merge nutrient data with seafood database
-df_seafoodDB_comp_short <- merge(df_UK_seafoodDB_short, df_nutrient_short, "Species")
-str(df_seafoodDB_comp_short)
+df_seafoodDB_comp_pcw_short <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species")
+str(df_seafoodDB_comp_pcw_short)
 
 ```
 
@@ -202,7 +236,7 @@ str(df_seafoodDB_comp_short)
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_Seafood_DB, paste(filepath,"Seafood-database-nutrients_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
 
