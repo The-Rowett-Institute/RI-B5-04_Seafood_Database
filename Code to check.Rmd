@@ -1,0 +1,75 @@
+---
+title: "Untitled"
+author: "AL"
+date: "2023-05-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+## Create seafood database (g/capita/week)
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load population data}
+# Load database 
+df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Outputs", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load the seafood database}
+# Load database 
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+```
+
+
+
+
+```{r Combine database with UK population data}
+# Subset 
+df_UK_population_simp <- df_UK_population[,c("Year", "UKPOP")]
+
+# Merge seafood database with UK population data
+df_UK_seafoodDB_capita <- merge(df_UK_seafoodDB, df_UK_population_simp, by = "Year")
+
+# Calculate seafood per capita per week
+df_UK_seafoodDB_capita$VolumeCapita <- (df_UK_seafoodDB_capita$Volume/ df_UK_seafoodDB_capita$UKPOP)/52
+
+# Update units
+df_UK_seafoodDB_capita$Units <- "gCapitaWeek"
+
+str(df_UK_seafoodDB_capita)
+
+# Make data frame wide and short
+df_UK_seafoodDB_capita_short <- df_UK_seafoodDB_capita %>%
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+df_UK_seafoodDB_capita_short
+
+
+df_UK_seafoodDB_capita_short$Supplies <- (df_UK_seafoodDB_capita_short$Production + df_UK_seafoodDB_capita_short$Imports) - df_UK_seafoodDB_capita_short$Exports
+
+```
+
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+

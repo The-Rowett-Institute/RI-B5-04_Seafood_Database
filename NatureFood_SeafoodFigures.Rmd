@@ -45,7 +45,7 @@ theme_set(theme_bw()%+replace%
             theme(
               title = element_text(size = 26), 
               text = element_text(size = 30), 
-              axis.text = element_text(size = 24, colour = "gray40"), # increase to make readable
+              axis.text = element_text(size = 26, colour = "gray40"), # increase to make readable
               legend.key.size = unit(1.2, "cm"), 
               legend.title = element_text(size = 26), 
               legend.text = element_text(size = 24),
@@ -462,6 +462,21 @@ plot_grid(VitB12, vitD, labels = c("A", "B"))
 plot_grid(VitB12, vitD, labels = "AUTO")
 ```
 
+## Calculate amount of nutrients exported
+```{r Mutiply each export volume to nutrient value}
+# Production 
+df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
+
+# Imports
+df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
+
+# Exports 
+df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
+df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
+
+```
 
 
 
@@ -497,38 +512,3 @@ df_UK_ISupplies_2018 <- aggregate(ISupplies ~ Species, data = df_seafood_CompDB2
 ```
 
 
-### Exploratory graphs 
-
-
-
-### Figure 1B. Total UK seafood supplies and consummed (g/capita/week) between 2009 and 2018  
-
-```{r Total UK seafood supplied and consumed (g/capita/week) between 2009 and 2018}
-# Sum annual seafood supplies per capita 
-df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
-df_UK_consummed_tot <- aggregate(Consumption_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
-
-str(df_UK_seafoodDB_PCW)
-
-# Rename data frame variables 
-names(df_UK_supplies_tot) <- c("Year", "Value")
-names(df_UK_consummed_tot) <- c("Year", "Value")
-
-# Add additional variable
-df_UK_supplies_tot$Commodity <- "Supplies"
-df_UK_consummed_tot$Commodity <- "Consumption"
-
-# rbind data frames
-df_UK_supplies_intake_tot<- rbind(df_UK_supplies_tot, df_UK_consummed_tot)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_intake_tot, aes(Year, Value, fill= Commodity)) +
-  geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
-  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 2)) +
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2) +
-  scale_fill_manual(values = c("#E69F00", "#009E73")) +
-  theme(legend.title = element_blank()) 
-
-```

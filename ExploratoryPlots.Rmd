@@ -99,6 +99,8 @@ df_UK_seafoodDB_food_simp <- aggregate(Volume ~ Commodity + Year + Species + Spe
 df_UK_seafoodDB_short <- df_UK_seafoodDB_food_simp %>%
   pivot_wider(names_from = Commodity, values_from = Volume)
 
+str(df_UK_seafoodDB_short)
+
 ```
 
 
@@ -134,7 +136,7 @@ df_UK_seafoodDB_capita$Supplies_capitaDay <- (df_UK_seafoodDB_capita$Supplies/ d
 df_UK_seafoodDB_capita$Consumption_capWeek <- (df_UK_seafoodDB_capita$Consumption/ df_UK_seafoodDB_capita$UKPOP)/52
 
 # Calculate seafood consumed per capita per day 
-df_UK_seafoodDB_capita$Consumption_capWeek <- (df_UK_seafoodDB_capita$Consumption/ df_UK_seafoodDB_capita$UKPOP)/365
+df_UK_seafoodDB_capita$Consumption_capDay <- (df_UK_seafoodDB_capita$Consumption/ df_UK_seafoodDB_capita$UKPOP)/365
 
 ```
 

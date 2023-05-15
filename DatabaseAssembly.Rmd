@@ -80,73 +80,13 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
-## Create seafood database (g/capita/week)
-
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load population data}
-# Load database 
-df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-```
-
-
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"Outputs", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load the seafood database}
-# Load database 
-df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
-```
-
-
-```{r Combine database with UK population data}
-# Merge seafood database with UK population data
-df_UK_seafoodDB_capita <- merge(df_UK_seafoodDB, df_UK_population, by = "Year")
-
-# Calculate seafood per capita per week
-df_UK_seafoodDB_capita$VolumeCapita <- (df_UK_seafoodDB_capita$Volume/ df_UK_seafoodDB_capita$UKPOP)/52
-
-# Update units
-df_UK_seafoodDB_capita$Units <- "gCapitaWeek"
-
-str(df_UK_seafoodDB_capita)
-
-df_UK_seafoodDB_capita_simp <- df_UK_seafoodDB_capita[]
-
-# Make data frame wide and short
-df_UK_seafoodDB_capita_short <- df_UK_seafoodDB_capita %>%
-  pivot_wider(names_from = Commodity, values_from = Volume)
-
-
-df_UK_seafoodDB_capita_short$Supplies <- (df_UK_seafoodDB_capita_short$Production + df_UK_seafoodDB_capita_short$Imports) - df_UK_seafoodDB_capita_short$Exports
-
-```
-
-
-```{r Save the seafood database}
-source("Data_filepath.R")
-# Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
-```
 
 
 # Create seafood database where commodities are unstacked
 
-
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
 # note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load the seafood database}
-# Load database 
-df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
 ```{r Load the seafood database}
@@ -182,6 +122,8 @@ df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
 df_nutrient_short <- df_PHE_nutrient_simp %>%
   pivot_wider(names_from = Nutrient, values_from = Volume)
 
+str(df_nutrient_short)
+
 
 # Simplify population data
 df_UK_population
@@ -204,6 +146,9 @@ df_UK_seafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + Spec
 df_UK_seafoodDB_short <- df_UK_seafoodDB_simp_agg %>%
   pivot_wider(names_from = Commodity, values_from = Volume)
 
+# Convert NA to 0
+df_UK_seafoodDB_short[is.na(df_UK_seafoodDB_short)] <- 0
+
 # Caluculate supplies
 df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
 
@@ -220,7 +165,7 @@ df_seafoodDB_pop_short$Exports_pcw <- (df_seafoodDB_pop_short$Exports/
                                             df_seafoodDB_pop_short$UKPOP)/52
 df_seafoodDB_pop_short$Supplies_pcw <- (df_seafoodDB_pop_short$Supplies/
                                             df_seafoodDB_pop_short$UKPOP)/52
-df_seafoodDB_pop_short$Consumpiton_pcw <- (df_seafoodDB_pop_short$Consumption/
+df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
                                             df_seafoodDB_pop_short$UKPOP)/52
 
 # Merge nutrient data with seafood database
@@ -230,13 +175,13 @@ str(df_seafoodDB_comp_pcw_short)
 ```
 
 
-
-
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_seafoodDB_comp_pcw_short, paste(filepath,"Seafood-database-PCW_Nutrients_preliminary.csv",sep="/"), row.names = FALSE)
 ```
+
+
 
 
