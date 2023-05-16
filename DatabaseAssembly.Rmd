@@ -68,6 +68,8 @@ df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
+
+str(df_Seafood_DB)
 ```
 
 
@@ -93,6 +95,22 @@ filepath <- paste(data_dir,"Outputs", sep = "")
 # Load database 
 df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
+
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load population data}
+# Load database 
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+```
+
 
 
 ```{r Specify the desired file path}
@@ -126,7 +144,6 @@ str(df_nutrient_short)
 
 
 # Simplify population data
-df_UK_population
 colnames(df_UK_population)
 
 df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
@@ -145,11 +162,12 @@ df_UK_seafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + Spec
 # Make data frame wide and short
 df_UK_seafoodDB_short <- df_UK_seafoodDB_simp_agg %>%
   pivot_wider(names_from = Commodity, values_from = Volume)
+str(df_UK_seafoodDB_short)
 
 # Convert NA to 0
 df_UK_seafoodDB_short[is.na(df_UK_seafoodDB_short)] <- 0
 
-# Caluculate supplies
+# Calculate supplies
 df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
 
 
@@ -169,8 +187,9 @@ df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
                                             df_seafoodDB_pop_short$UKPOP)/52
 
 # Merge nutrient data with seafood database
-df_seafoodDB_comp_pcw_short <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species")
-str(df_seafoodDB_comp_pcw_short)
+df_seafoodDB_COMP_pcw_short <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species") 
+# Only use this dataframe when looking at nutrients as all fish are not included
+str(df_seafoodDB_COMP_pcw_short)
 
 ```
 
@@ -179,7 +198,7 @@ str(df_seafoodDB_comp_pcw_short)
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_seafoodDB_comp_pcw_short, paste(filepath,"Seafood-database-PCW_Nutrients_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_seafoodDB_COMP_pcw_short, paste(filepath,"Seafood-database-PCW_NutCOMP_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
 
