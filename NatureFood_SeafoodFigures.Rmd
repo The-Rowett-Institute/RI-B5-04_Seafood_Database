@@ -86,10 +86,10 @@ df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_prelimina
 
 ```{r Total UK seafood supplies (g/capita/week) between 2009 and 2018}
 # Sum annual seafood supplies per capita. 
-df_UK_supplies_tot <- aggregate(Supplies_capWeek ~ Year, data = df_UK_seafoodDB_PCW, sum)
+df_UK_supplies_tot <- aggregate(Supplies_pcw ~ Year, data = df_seafoodDB_pop_short, sum)
 
 # Plot total seafood supplies (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_tot, aes(Year, Supplies_capWeek)) +
+ggplot(df_UK_supplies_tot, aes(Year, Supplies_pcw)) +
   geom_bar(stat= "identity", color = "black", fill= "#009E73" ) +
   scale_y_continuous(name = "Total seafood supplies (g/capita/week)", limits = c(0,300)) +
   scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1)) +

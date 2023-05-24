@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '27/04/2023'
+date: '24/05/2023'
 output: html_document
 ---
 
@@ -548,7 +548,7 @@ df_cleaned_UK_HMRC_200919_cleaned_again <- subset(df_cleaned_UK_HMRC_200919_clea
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_cleaned_UK_HMRC_200919_cleaned_again, file = paste(filepath,"TradeData_HMRC_PreliminaryAgainCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_cleaned_UK_HMRC_200919_cleaned_again, file = paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -1294,9 +1294,9 @@ df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Prot
 
 ```{r Rename variables and join datasets}
 # Rename variables
-names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
+names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "TotalPUFA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
 
-names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g", "TotalPUFA_g", "VitaminA_µg", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")
+names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "TotalPUFA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
 
 # Combine data frames
 df_all_nutrientComp <- rbind(df_PHE_nutreintComp_short,

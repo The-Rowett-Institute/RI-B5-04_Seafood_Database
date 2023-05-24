@@ -58,10 +58,10 @@ rm(i)
 ```
 
 
-## Create seafood database (g)
+## A) Create seafood database (g)
 
 ```{r rbind all cleaned datasets}
-df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
+#df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
 
 df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # Note df_Trade_ is the edited one
 df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
@@ -69,6 +69,7 @@ df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 
+# Check the structure
 str(df_Seafood_DB)
 ```
 
@@ -82,9 +83,7 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
-
-
-# Create seafood database where commodities are unstacked
+# B) Seafood database (g/capita/week)
 
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"Outputs", sep = "") 
@@ -93,86 +92,47 @@ filepath <- paste(data_dir,"Outputs", sep = "")
 
 ```{r Load the seafood database}
 # Load database 
-df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+df_Seafood_DB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
-
 
 
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
 ```
 
 ```{r Load population data}
 # Load database 
-df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-
 df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-
 ```
 
 
 
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load population data}
-# Load database 
-df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-```
-
-
-
-# Considered merging nutrients to seafood database by species type but dataframe is too big 
-#df_seafoodCompDB <- merge(df_Seafood_DB, df_Nutrie, "Species", all= TRUE)
-
-
-# Change struucture of the dataframes
-
-```{r Combine database with nutrient data}
-# Subset desired columns
-df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
-
-# Unstack nutrients data 
-# Make data frame wide and short
-df_nutrient_short <- df_PHE_nutrient_simp %>%
-  pivot_wider(names_from = Nutrient, values_from = Volume)
-
-str(df_nutrient_short)
-
-
+```{r Change struucture of the dataframes}
 # Simplify population data
 colnames(df_UK_population)
-
 df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
 
-
-# unstack seafood database to calculate supplies
-# See dplyr cheat sheet.
-
 # Simplify data set and select desired columns 
-df_UK_seafoodDB_simp <- df_UK_seafoodDB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
+df_UK_SeafoodDB_simp <- df_Seafood_DB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
                                                     "Volume" )]
 
 # Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
-df_UK_seafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_simp, sum)
+df_UK_SeafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_SeafoodDB_simp, sum)
 
-# Make data frame wide and short
-df_UK_seafoodDB_short <- df_UK_seafoodDB_simp_agg %>%
+# Need to unstack database to calculate seafood supplied. Change structure of the dataframe- convert to wide and short
+df_UK_SeafoodDB_short <- df_UK_SeafoodDB_simp_agg %>%
   pivot_wider(names_from = Commodity, values_from = Volume)
-str(df_UK_seafoodDB_short)
+str(df_UK_SeafoodDB_short)
 
 # Convert NA to 0
-df_UK_seafoodDB_short[is.na(df_UK_seafoodDB_short)] <- 0
+df_UK_SeafoodDB_short[is.na(df_UK_SeafoodDB_short)] <- 0
 
 # Calculate supplies
-df_UK_seafoodDB_short$Supplies <- (df_UK_seafoodDB_short$Production + df_UK_seafoodDB_short$Imports) - df_UK_seafoodDB_short$Exports
+df_UK_SeafoodDB_short$Supplies <- (df_UK_SeafoodDB_short$Production + df_UK_SeafoodDB_short$Imports) - df_UK_SeafoodDB_short$Exports
 
 
-# Merge data frame with populaiton data
-df_seafoodDB_pop_short <- merge(df_UK_seafoodDB_short, df_UK_population_simp, "Year")
+# Merge data frame with population data
+df_seafoodDB_pop_short <- merge(df_UK_SeafoodDB_short, df_UK_population_simp, "Year")
 str(df_seafoodDB_pop_short)
 
 df_seafoodDB_pop_short$Production_pcw <- (df_seafoodDB_pop_short$Production/
@@ -185,12 +145,6 @@ df_seafoodDB_pop_short$Supplies_pcw <- (df_seafoodDB_pop_short$Supplies/
                                             df_seafoodDB_pop_short$UKPOP)/52
 df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
                                             df_seafoodDB_pop_short$UKPOP)/52
-
-# Merge nutrient data with seafood database
-df_seafoodDB_COMP_pcw_short <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species") 
-# Only use this dataframe when looking at nutrients as all fish are not included
-str(df_seafoodDB_COMP_pcw_short)
-
 ```
 
 
@@ -198,7 +152,52 @@ str(df_seafoodDB_COMP_pcw_short)
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_seafoodDB_COMP_pcw_short, paste(filepath,"Seafood-database-PCW_NutCOMP_preliminary.csv",sep="/"), row.names = FALSE)
+write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+
+
+## C) Create database with nutrients
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+```
+
+```{r Load nutrient data}
+# Load database 
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+```
+
+```{r Simplify nutrient dataframe and unstack}
+# Subset desired columns
+df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
+
+# Unstack nutrients data 
+# Make data frame wide and short
+df_nutrient_short <- df_PHE_nutrient_simp %>%
+  pivot_wider(names_from = Nutrient, values_from = Volume)
+
+str(df_nutrient_short)
+```
+
+```{r Change struucture of the dataframes}
+# Merge nutrient data with seafood database
+df_seafoodDB_PCW_nutreintComposition <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species") 
+# Only use this dataframe when looking at nutrients as all fish are not included
+str(df_seafoodDB_PCW_nutreintComposition)
+
+```
+
+
+Create seafood database where commodities are unstacked
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs", sep="")
+write.csv(df_seafoodDB_PCW_nutreintComposition, paste(filepath,"Seafood-database-PCW_composition_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
 
