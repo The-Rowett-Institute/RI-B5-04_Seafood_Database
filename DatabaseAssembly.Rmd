@@ -63,7 +63,7 @@ rm(i)
 ```{r rbind all cleaned datasets}
 #df_Seafood_DB <- rbind(df_Trade_, df_AllLan)# Note df_Trade_ is the edited one
 
-df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # Note df_Trade_ is the edited one
+df_Seafood_DB <- rbind(df_TradeD, df_UKVess) 
 df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
@@ -77,7 +77,7 @@ str(df_Seafood_DB)
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
 write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
@@ -86,7 +86,7 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 # B) Seafood database (g/capita/week)
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Outputs", sep = "") 
+filepath <- paste(data_dir,"Outputs/Databases", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
@@ -151,7 +151,7 @@ df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
 write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
@@ -196,7 +196,7 @@ Create seafood database where commodities are unstacked
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
 write.csv(df_seafoodDB_PCW_nutreintComposition, paste(filepath,"Seafood-database-PCW_composition_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 

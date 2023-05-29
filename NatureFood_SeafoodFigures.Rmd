@@ -71,7 +71,7 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Outputs", sep = "") 
+filepath <- paste(data_dir,"Outputs/Databases", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
@@ -86,7 +86,7 @@ df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_prelimina
 
 ```{r Total UK seafood supplies (g/capita/week) between 2009 and 2018}
 # Sum annual seafood supplies per capita. 
-df_UK_supplies_tot <- aggregate(Supplies_pcw ~ Year, data = df_seafoodDB_pop_short, sum)
+df_UK_supplies_tot <- aggregate(Supplies_pcw ~ Year, data = df_UK_seafoodDB_PCW, sum)
 
 # Plot total seafood supplies (g/capita/week) between 2009 and 2018. 
 ggplot(df_UK_supplies_tot, aes(Year, Supplies_pcw)) +

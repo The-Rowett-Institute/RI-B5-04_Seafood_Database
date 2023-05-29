@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '24/05/2023'
+date: '29/05/2023'
 output: html_document
 ---
 
@@ -55,6 +55,64 @@ MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translat
 
 # Check structure of the translation document
 str(MCS_translations)
+```
+
+
+
+
+## UK population data (ONS) 
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (1971 to 2020)}
+# Load data (1971 to 2020)
+df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
+
+str(df_UK_ONS_population_data)
+
+```
+
+
+```{r Subset data for desired years}
+# Subset UK population data between 2009 and 2018
+df_UK_pop_200918 <- subset(df_UK_ONS_population_data, 
+                      CDID > 2008 & CDID < 2019 , select= c(CDID, UKPOP))
+
+# Check years
+unique(df_UK_pop_200918$CDID)
+
+```
+
+
+```{r Add additional variables to data set}
+# Rename the "CDID" column to "Year"
+names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Year"
+#names(df_UK_pop_200918)[names(df_UK_pop_200918)=="UKPOP"] <- "Year"
+
+# Create "cleaned" data frame, defining units and data source 
+df_UK_pop_200918$DataSupplier <- "ONS"
+df_UK_pop_200918$DataSet <- "TotalUKPopulation"
+df_UK_pop_200918$Commodity <- "Population"
+df_UK_pop_200918$Flag <- "NA"
+df_UK_pop_200918$FlagDescription <- "NA"
+df_UK_pop_200918$Units <- "Capita"
+df_UK_pop_200918$TemporalResolution <- "CalendarYear"
+
+# Identify column names
+colnames(df_UK_pop_200918)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData", sep = "")
+write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
 ```
 
 
@@ -540,6 +598,10 @@ unique(df_cleaned_UK_HMRC_200919_cleaned$SpeciesType)
 # Fish oil and seaweed and algae in Trade data- remove there and 2019 
 
 df_cleaned_UK_HMRC_200919_cleaned_again <- subset(df_cleaned_UK_HMRC_200919_cleaned, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Year != 2019)
+
+unique(df_cleaned_UK_HMRC_200919_cleaned_again$SpeciesType)
+str(df_cleaned_UK_HMRC_200919_cleaned_again$Species)
+unique(df_cleaned_UK_HMRC_200919_cleaned_again$Species)
 
 ```
 
@@ -1174,64 +1236,6 @@ colnames(df_DEFRA_eatenOut_200918_cleaned)
 filepath <- paste(data_dir,"ProcessedData", sep="")
 write.csv(df_DEFRA_eatenOut_200918_cleaned, file =
             paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
-
-```
-
-
-
-## UK population data (ONS) 
-
-```{r Specify the desired file path}
-# Select file path with raw data
-filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
-```
-
-
-```{r Load data (1971 to 2020)}
-# Load data (1971 to 2020)
-df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
-
-str(df_UK_ONS_population_data)
-
-```
-
-
-```{r Subset data for desired years}
-# Subset UK population data between 2009 and 2018
-df_UK_pop_200918 <- subset(df_UK_ONS_population_data, 
-                      CDID > 2008 & CDID < 2019 , select= c(CDID, UKPOP))
-
-# Check years
-unique(df_UK_pop_200918$CDID)
-
-```
-
-
-
-```{r Add additional variables to data set}
-# Rename the "CDID" column to "Year"
-names(df_UK_pop_200918)[names(df_UK_pop_200918)=="CDID"] <- "Year"
-#names(df_UK_pop_200918)[names(df_UK_pop_200918)=="UKPOP"] <- "Year"
-
-# Create "cleaned" data frame, defining units and data source 
-df_UK_pop_200918$DataSupplier <- "ONS"
-df_UK_pop_200918$DataSet <- "TotalUKPopulation"
-df_UK_pop_200918$Commodity <- "Population"
-df_UK_pop_200918$Flag <- "NA"
-df_UK_pop_200918$FlagDescription <- "NA"
-df_UK_pop_200918$Units <- "Capita"
-df_UK_pop_200918$TemporalResolution <- "CalendarYear"
-
-# Identify column names
-colnames(df_UK_pop_200918)
-
-```
-
-
-```{r Save cleaned data}
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
-write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
 
