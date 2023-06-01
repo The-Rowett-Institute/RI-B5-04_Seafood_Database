@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '29/05/2023'
+date: '01/06/2023'
 output: html_document
 ---
 
@@ -110,7 +110,7 @@ colnames(df_UK_pop_200918)
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
@@ -118,7 +118,7 @@ write.csv(df_UK_pop_200918, file = paste(filepath,"UKPopulation_ONS_PreliminaryC
 
 ```{r Specify the desired file path}
 # Select file path with raw data
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 ```
 
 
@@ -283,7 +283,7 @@ df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, S
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 
 # Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
 write.csv(df_UK_AllUKLandings_200918_cleaned, file = paste(filepath,"AllLandingsintoUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
@@ -439,7 +439,7 @@ df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_cl
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 
 # Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
 write.csv(df_UKV_LandingUKAbroad_200918_cleaned, file = paste(filepath,"UKVesslesLandingsintoUKAbroad_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
@@ -533,7 +533,7 @@ df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, Species = S
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 write.csv(df_UK_aquaculture_200918_cleaned, file = 
             paste(filepath,"AquacultureData_Eurostat_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
@@ -547,7 +547,7 @@ Trade data was sourced from the HMRC and includes both imports and exports. An u
 
 ```{r Load data from processed data file}
 # Some edits are needed to ensure consistency with processed data sets
-
+filepath <- paste(data_dir,"ProcessedData/PreliminaryProcessed", sep = "")
 # Read in UK trade data 
 df_trade_HMRC_data <- vroom(file=paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep = "/"))
 str(df_trade_HMRC_data)
@@ -609,7 +609,7 @@ unique(df_cleaned_UK_HMRC_200919_cleaned_again$Species)
 
 ```{r Save cleaned data}
 # Save cleaned data as .csv
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 write.csv(df_cleaned_UK_HMRC_200919_cleaned_again, file = paste(filepath,"TradeData_HMRC_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
@@ -886,7 +886,7 @@ df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cl
 
 ```{r Save cleaned data}
 # Save cleaned data as .csv
-filepath <- paste(data_dir,"ProcessedData", sep = "")
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
 write.csv(df_NDNS_seafoodintakeUK_200918_clean, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
@@ -1084,7 +1084,7 @@ df_DEFRA_household_200918_aggYear_cleaned <- rename(df_DEFRA_household_200918_cl
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
-filepath <- paste(data_dir,"ProcessedData", sep="")
+filepath <- paste(data_dir,"ProcessedData/", sep="")
 write.csv(df_DEFRA_household_200918_aggYear_cleaned, file =
             paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
@@ -1233,7 +1233,7 @@ colnames(df_DEFRA_eatenOut_200918_cleaned)
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
-filepath <- paste(data_dir,"ProcessedData", sep="")
+filepath <- paste(data_dir,"ProcessedData/", sep="")
 write.csv(df_DEFRA_eatenOut_200918_cleaned, file =
             paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
@@ -1380,7 +1380,7 @@ colnames(df_all_nutrient_cleaned)
 
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
-filepath <- paste(data_dir,"ProcessedData", sep="")
+filepath <- paste(data_dir,"ProcessedData/", sep="")
 write.csv(df_all_nutrient_cleaned, file =
             paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 

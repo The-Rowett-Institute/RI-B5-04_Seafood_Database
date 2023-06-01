@@ -106,10 +106,10 @@ ggplot(df_UK_supplies_tot, aes(Year, Supplies_pcw)) +
 
 ```{r Subset seafood database to 2018}
 # Select variables 
-df_UK_seafoodCapita_suppCons <- df_UK_seafoodDB_capita[c("Supplies_capitaWeek", "Consumption_capWeek", "Year", "Species", "SpeciesType", "SACN")]
+df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Year", "Species", "SpeciesType", "SACN")]
 
 # Sum annual seafood supplies per capita 
-df_UK_seafoodCapita_suppCons_2018 <- subset(df_UK_seafoodCapita_suppCons, Year == "2018")
+df_UK_seafoodCapita_suppCons_2018 <- subset(df_UK_seafoodDB_PCW_simp, Year == "2018")
 
 # Change structure of the data set 
 df_UK_seafoodCapita_suppCons_2018_long <- melt(df_UK_seafoodCapita_suppCons_2018, id.vars = c("Year", "Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
@@ -124,7 +124,7 @@ df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum)
 ggplot(df_UK_suppCons_2018_sum, aes(Species, Value, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
   scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
-  scale_x_discrete(guide = guide_axis(angle = 45, name = "") +
+  scale_x_discrete(guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
   scale_fill_manual(values = c("#009E73", "#E69F00")) +
   theme(legend.title = element_blank()) +
