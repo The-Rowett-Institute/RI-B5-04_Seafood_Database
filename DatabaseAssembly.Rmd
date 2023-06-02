@@ -86,73 +86,73 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 # B) Seafood database (g/capita/week)
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Outputs/Databases", sep = "") 
+#filepath <- paste(data_dir,"Outputs/Databases", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
 ```{r Load the seafood database}
 # Load database 
-df_Seafood_DB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+#df_Seafood_DB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
+#filepath <- paste(data_dir,"ProcessedData", sep = "") 
 ```
 
 ```{r Load population data}
 # Load database 
-df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+#df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
 ```
 
 
 
 ```{r Change struucture of the dataframes}
 # Simplify population data
-colnames(df_UK_population)
-df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
+#colnames(df_UK_population)
+#df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
 
 # Simplify data set and select desired columns 
-df_UK_SeafoodDB_simp <- df_Seafood_DB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
+#df_UK_SeafoodDB_simp <- df_Seafood_DB[c("Species", "SpeciesType", "SACN", "Year", "Commodity", 
                                                     "Volume" )]
 
 # Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
-df_UK_SeafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_SeafoodDB_simp, sum)
+#df_UK_SeafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_SeafoodDB_simp, sum)
 
 # Need to unstack database to calculate seafood supplied. Change structure of the dataframe- convert to wide and short
-df_UK_SeafoodDB_short <- df_UK_SeafoodDB_simp_agg %>%
-  pivot_wider(names_from = Commodity, values_from = Volume)
-str(df_UK_SeafoodDB_short)
+#df_UK_SeafoodDB_short <- df_UK_SeafoodDB_simp_agg %>%
+#  pivot_wider(names_from = Commodity, values_from = Volume)
+#str(df_UK_SeafoodDB_short)
 
 # Convert NA to 0
-df_UK_SeafoodDB_short[is.na(df_UK_SeafoodDB_short)] <- 0
+#df_UK_SeafoodDB_short[is.na(df_UK_SeafoodDB_short)] <- 0
 
 # Calculate supplies
-df_UK_SeafoodDB_short$Supplies <- (df_UK_SeafoodDB_short$Production + df_UK_SeafoodDB_short$Imports) - df_UK_SeafoodDB_short$Exports
+#df_UK_SeafoodDB_short$Supplies <- (df_UK_SeafoodDB_short$Production + df_UK_SeafoodDB_short$Imports) - #df_UK_SeafoodDB_short$Exports
 
 
 # Merge data frame with population data
-df_seafoodDB_pop_short <- merge(df_UK_SeafoodDB_short, df_UK_population_simp, "Year")
-str(df_seafoodDB_pop_short)
+#df_seafoodDB_pop_short <- merge(df_UK_SeafoodDB_short, df_UK_population_simp, "Year")
+#str(df_seafoodDB_pop_short)
 
-df_seafoodDB_pop_short$Production_pcw <- (df_seafoodDB_pop_short$Production/
+#df_seafoodDB_pop_short$Production_pcw <- (df_seafoodDB_pop_short$Production/
                                             df_seafoodDB_pop_short$UKPOP)/52
-df_seafoodDB_pop_short$Imports_pcw <- (df_seafoodDB_pop_short$Imports/
+#df_seafoodDB_pop_short$Imports_pcw <- (df_seafoodDB_pop_short$Imports/
                                             df_seafoodDB_pop_short$UKPOP)/52
-df_seafoodDB_pop_short$Exports_pcw <- (df_seafoodDB_pop_short$Exports/
+#df_seafoodDB_pop_short$Exports_pcw <- (df_seafoodDB_pop_short$Exports/
                                             df_seafoodDB_pop_short$UKPOP)/52
-df_seafoodDB_pop_short$Supplies_pcw <- (df_seafoodDB_pop_short$Supplies/
+#df_seafoodDB_pop_short$Supplies_pcw <- (df_seafoodDB_pop_short$Supplies/
                                             df_seafoodDB_pop_short$UKPOP)/52
-df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
+#df_seafoodDB_pop_short$Consumption_pcw <- (df_seafoodDB_pop_short$Consumption/
                                             df_seafoodDB_pop_short$UKPOP)/52
 ```
 
 
 ```{r Save the seafood database}
-source("Data_filepath.R")
+#source("Data_filepath.R")
 # Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs/Databases", sep="")
-write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
+#filepath <- paste(data_dir,"Outputs/Databases", sep="")
+#write.csv(df_seafoodDB_pop_short, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
 
 

@@ -51,7 +51,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translationsV2.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -575,7 +575,7 @@ df_trade_HMRC_data$TemporalResolution <- "CalendarYear"
 df_trade_HMRC_data$FlagDescription <- "CF applied to all or part of the data"
 
 # Select desired columns for cleaned data set
-df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType.x", "SACN.x", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data[c("DataSupplier.y", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType.x", "SACN.y", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 names(df_cleaned_UK_HMRC_200919) <- c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")
 

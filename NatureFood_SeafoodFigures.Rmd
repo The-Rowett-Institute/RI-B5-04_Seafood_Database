@@ -1,7 +1,7 @@
 ---
 title: "NatureFood_SeafoodFigures"
 author: "Lofstedt, A."
-date: "18-04-23"
+date: "02-06-23"
 output: powerpoint_presentation
 ---
 
@@ -77,56 +77,73 @@ filepath <- paste(data_dir,"Outputs/Databases", sep = "")
 
 ```{r Load the seafood database}
 # Load database 
-df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database-PCW_preliminary.csv", sep="/"), na = c("NA"))
-```
-
-
-
-### Figure 1. Total UK seafood supplies (g/capita/week) between 2009 and 2018  
-
-```{r Total UK seafood supplies (g/capita/week) between 2009 and 2018}
-# Sum annual seafood supplies per capita. 
-df_UK_supplies_tot <- aggregate(Supplies_pcw ~ Year, data = df_UK_seafoodDB_PCW, sum)
-
-# Plot total seafood supplies (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_tot, aes(Year, Supplies_pcw)) +
-  geom_bar(stat= "identity", color = "black", fill= "#009E73" ) +
-  scale_y_continuous(name = "Total seafood supplies (g/capita/week)", limits = c(0,300)) +
-  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1)) +
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  #geom_hline(yintercept = 140, linetype = "twodash", color = "navyblue", linewidth = 2) +
-  theme(legend.title = element_blank()) 
-
+df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
 
 
 
-### Figure 2. UK seafood supplies and consumption (g/capita/week), by species, in 2018
+```{r Calculate PCW }
+# Merge database with UK population size
 
-```{r Subset seafood database to 2018}
-# Select variables 
-df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Year", "Species", "SpeciesType", "SACN")]
 
-# Sum annual seafood supplies per capita 
-df_UK_seafoodCapita_suppCons_2018 <- subset(df_UK_seafoodDB_PCW_simp, Year == "2018")
+#
+#UK_pop_2018 <- 66435600
+
+#df_figure_input <- 
+#  df_figure_input %>% 
+#  mutate(Volume = Volume/UK_pop_2018/52, Units = "g/Capita/Week")
+```
+
+
+
+```{r filter database}
+
+#df_UK_seafoodDB_commodities <- df_UK_seafoodDB %>%  
+#  filter(Year == "2018", Commodity %in% c("Production", "Imports", "Exports")) %>% 
+#  na.omit() %>% 
+#  mutate_if(is.character, factor)
+
+```
+
+
+```{r Changing Volumne to grams/Capita/Week}
+UK_pop_2018 <- 66435600
+
+df_figure_input <- 
+  df_figure_input %>% 
+  mutate(Volume = Volume/UK_pop_2018/52, Units = "g/Capita/Week")
+
+# Calculate seafood supplies whilst ignoring NA values
+df_UK_seafoodDB_PCW_sum %>%
+  rowwise() %>%  #rowwise will make sure the sum operation will occur on each row
+  mutate(sum = sum(a,b,c, na.rm=TRUE)) #then a simple sum(..., na.rm=TRUE) is enough to result in what you need
+
+#df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum) # Omit zero readings
+
+```
+
+
+
+### Figure 1A. UK seafood supplies, consumption and purchases (g/capita/week) between 2009 and 2018.
+
+```{r Seafood supplies consumption and purchases between 2009 and 2018}
+# Subset desired variables 
+df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Purchases_pcw", "Year", "Species", "SACN")]
 
 # Change structure of the data set 
-df_UK_seafoodCapita_suppCons_2018_long <- melt(df_UK_seafoodCapita_suppCons_2018, id.vars = c("Year", "Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
+df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_simp, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
 
 # Aggregate data 
-df_UK_suppCons_2018_sum <- aggregate(Value ~ Species + SpeciesType + SACN + Commodity, data = df_UK_seafoodCapita_suppCons_2018_long, sum)
-
-# Omit zero readings
-df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum)
+df_UK_seafoodDB_PCW_sum <- aggregate(Value ~ Species + SACN + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
 
 # Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_suppCons_2018_sum, aes(Species, Value, fill= Commodity)) +
+ggplot(df_UK_seafoodDB_PCW_sum, aes(Species, Volume, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
   scale_x_discrete(guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#009E73", "#E69F00")) +
+  scale_fill_manual(values = c("#009E73", "#E69F00", "#0072B2")) + # supplies, consumption, purchases
   theme(legend.title = element_blank()) +
   theme(legend.position = "none")
 
@@ -134,88 +151,65 @@ ggplot(df_UK_suppCons_2018_sum, aes(Species, Value, fill= Commodity)) +
 
 
 
-### Figure 2B. Selected UK seafood supplied and consummed (g/capita/week), to species level in 2018.  
 
-```{r Subset desired seafood species in 2018 only}
-# Subset 2018 data only
-df_UK_seafoodDB_capita_2018 <- subset(df_UK_seafoodCapita_suppCons, Year == 2018)
+### Figure 1B. UK seafood supplies and consumption (g/capita/week), by species, in 2018
 
-# Identify seafood species 
-unique(df_UK_seafoodDB_capita$Species)
-
-# Subset specific species of interest
-df_UK_SOI_capita_2018 <- subset(df_UK_seafoodDB_capita_2018, Species == "Haddock" | 
-                                  Species == "Mackerel" | Species == "Salmon" | Species == "Tuna" | 
-                                  Species == "Whiting"| Species == "Shrimp"| Species == "Herring" |
-                                  Species == "Halibut"| Species == "Plaice" | Species == "Cockle" | 
-                                  Species == "Seabass" | Species == "Blue whiting" | 
-                                  Species == "Trout" | Species ==  "Octopus" | Species == "Cod")
-
-# Simplify data set and select desired columns 
-df_UK_SOI_capita_2018_specific <- df_UK_SOI_capita_2018[c("Species", "SpeciesType", "SACN", "Consumption_capWeek", "Supplies_capWeek")]
+```{r Seafood supplies and consumption between 2009 and 2018}
+# Subset desired variables 
+df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Year", "Species", "SACN")]
 
 # Change structure of the data set 
-df_UK_SOI_capita_2018_short <- melt(df_UK_SOI_capita_2018_specific, id.vars = c("Species", "SpeciesType", "SACN"), variable.name = "Commodity", value.name = "Value")
+df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_simp, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
 
-# Plot total seafood supplied and consumed (g/capita/week) in 2018 
-ggplot(df_UK_SOI_capita_2018_short, aes(Species, Value, fill= Commodity)) +
+# Aggregate data 
+df_UK_seafoodDB_PCW_sum <- aggregate(Value ~ Species + SACN + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_seafoodDB_PCW_sum, aes(Species, Volume, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_discrete(guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#009E73", "#E69F00")) +
+  scale_fill_manual(values = c("#009E73", "#E69F00")) + # supplies, consumption, 
   theme(legend.title = element_blank()) +
   theme(legend.position = "none")
 
-
-# Same plot but reorder species
-ggplot(df_UK_SOI_capita_2018_short, aes(reorder(Species, -Value), Value, fill= Commodity)) +
-  geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,35)) +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#009E73", "#E69F00")) +
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "none")
-  
 ```
 
 
-### Figure 3. Total UK seafood produced (g/capita/week) for oily and lean fish in 2018. 
 
-```{r Subset production data for 2018 only}
+### Figure 3. Total UK domestic UK seafood production (g/capita/week), bu species type between 2009 and 2018.
+
+```{r Domestic seafood production}
 # Subset production commodity 
-df_UK_seafoodProduction <- df_UK_seafoodDB_capita[c("Production", "Year", "Species", "SpeciesType", "SACN", "UKPOP")]
-
-# Calculate UK production per capita
-df_UK_seafoodProduction$ProductionCapita <- df_UK_seafoodProduction$Production / df_UK_seafoodProduction$UKPOP
-df_UK_seafoodProduction$ProductionCapitaWeek <- df_UK_seafoodProduction$ProductionCapita / 7
-
-# Subset data for 2018
-df_UK_SFProductionCapita_18 <- subset(df_UK_seafoodProduction, Year == "2018")
+df_UK_seafoodProduction_PCW <- df_UK_seafoodDB_PCW[c("Production", "Year", "Species", "SACN")]
 
 # Sum UK seafood production, per SACN
-df_UK_SFProduction_cap_2018_SACN <- aggregate(ProductionCapitaWeek ~ SACN + Year, data = df_UK_SFProductionCapita_18, sum)
+df_UK_seafoodProduction_SACN <- aggregate(Production ~ SACN + Year, data = df_UK_seafoodProduction_PCW, sum)
 
 # Select for lean and oily fish only
-df_UK_production_2018 <- subset(df_UK_SFProduction_cap_2018_SACN, SACN == "Lean" | SACN == "Oily")
+# Include "other" seafood types e.g. cephalopods and unknowns? 
+df_UK_seafoodProduction_LOS <- subset(df_UK_seafoodProduction_SACN, SACN == "Lean" | SACN == "Oily", SACN == "Shellfish")
 
 # Plot average seafood supply (g/capita/week), to SACN level (lean and oily) between 2009 and 2018. 
-ggplot(df_UK_production_2018, aes(y = ProductionCapitaWeek, x = Year, fill = SACN)) +
+ggplot(df_UK_seafoodProduction_LOS, aes(y = Production, x = Year, fill = SACN)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "Total seafood production (g/capita/week)") +
   scale_x_discrete(name = "") +
-  scale_fill_manual(values = c("#CC79A7", "#D55E00"))+
+  scale_fill_manual(values = c("#CC79A7", "#D55E00", "#999999"))+
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0)
 
 ```
 
 
 
-### Figure 4. Nutrient supply, by species, in 2018. 
+
+### Figure 5. Species contibutions to RNIs Nutrient supply, by species, in 2018. 
 
 Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc
-Sum nutrient produced, imported and exported to calculate supplies.
+
+Create radar chart  diagram of plots
+
 
 
 
@@ -253,262 +247,4 @@ Sum nutrient produced, imported and exported to calculate supplies.
 # Divide the RDA calculation by the calorie calculation 
 
 ```
-
-
-
-
-
-Nutrients of interest: protein_g, totalPUFA_g, vitaminA_µg, vitaminD_µg, vitaminB12_µg, zinc_mg, iron_mg, calcium_mg, selenium_µg, iodine_µg.
-
-```{r Mutiply each production volume to nutrient value}
-df_seafood_compDB$ProteinProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Protein_g
-df_seafood_compDB$TotalPUFAProd_g <- df_seafood_compDB$Production * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitAProd_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminA_µg
-df_seafood_compDB$VitDProd_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminD_µg
-df_seafood_compDB$VitB12Prod_g <- df_seafood_compDB$Production * df_seafood_compDB$VitaminB12_µg
-df_seafood_compDB$ZincProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Zinc_mg
-df_seafood_compDB$IronProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Iron_mg
-df_seafood_compDB$CalciumProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Calcium_mg
-df_seafood_compDB$SeleniumProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Selenium_µg
-df_seafood_compDB$IodineProd_g <- df_seafood_compDB$Production * df_seafood_compDB$Iodine_µg
-
-```
-
-
-```{r Mutiply each production volume to nutrient value}
-df_seafood_compDB$ProteinImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Protein_g
-df_seafood_compDB$TotalPUFAImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitAImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminA_µg
-df_seafood_compDB$VitDImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminD_µg
-df_seafood_compDB$VitB12Imports_g <- df_seafood_compDB$Imports * df_seafood_compDB$VitaminB12_µg
-df_seafood_compDB$ZincImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Zinc_mg
-df_seafood_compDB$IronImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Iron_mg
-df_seafood_compDB$CalciumImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Calcium_mg
-df_seafood_compDB$SeleniumImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Selenium_µg
-df_seafood_compDB$IodineImports_g <- df_seafood_compDB$Imports * df_seafood_compDB$Iodine_µg
-
-```
-
-
-```{r Mutiply each export volume to nutrient value}
-df_seafood_compDB$ProteinExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Protein_g
-df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminA_µg
-df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
-df_seafood_compDB$VitB12Exports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminB12_µg
-df_seafood_compDB$ZincExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Zinc_mg
-df_seafood_compDB$IronExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Iron_mg
-df_seafood_compDB$CalciumExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Calcium_mg
-df_seafood_compDB$SeleniumExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Selenium_µg
-df_seafood_compDB$IodineExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$Iodine_µg
-
-```
-
-
-
-```{r Calculate nutrient supplies each export volume to nutrient value}
-df_seafood_compDB$ProteinSupplies_g <- (df_seafood_compDB$ProteinProd_g +
-                                          df_seafood_compDB$ProteinImports_g) - df_seafood_compDB$ProteinExports_g
-
-df_seafood_compDB$TotalPUFASupplies_g <- (df_seafood_compDB$TotalPUFAProd_g +
-                                          df_seafood_compDB$TotalPUFAImports_g) - df_seafood_compDB$TotalPUFAExports_g
-
-df_seafood_compDB$VitASupplies_g <- (df_seafood_compDB$VitAProd_g +
-                                          df_seafood_compDB$VitAImports_g) - df_seafood_compDB$VitAExports_g
-
-df_seafood_compDB$VitDSupplies_g <- (df_seafood_compDB$VitDProd_g +
-                                          df_seafood_compDB$VitDImports_g) - df_seafood_compDB$VitDExports_g
-
-df_seafood_compDB$VitB12Supplies_g <- (df_seafood_compDB$VitB12Prod_g +
-                                          df_seafood_compDB$VitB12Imports_g) - df_seafood_compDB$VitB12Exports_g
-
-df_seafood_compDB$ZincSupplies_g <- (df_seafood_compDB$ZincProd_g +
-                                          df_seafood_compDB$ZincImports_g) - df_seafood_compDB$ZincExports_g
-
-df_seafood_compDB$IronSupplies_g <- (df_seafood_compDB$IronProd_g +
-                                          df_seafood_compDB$IronImports_g) - df_seafood_compDB$IronExports_g
-
-df_seafood_compDB$CalciumSupplies_g <- (df_seafood_compDB$CalciumProd_g +
-                                          df_seafood_compDB$CalciumImports_g) - df_seafood_compDB$CalciumExports_g
-
-df_seafood_compDB$SeleniumSupplies_g <- (df_seafood_compDB$SeleniumProd_g +
-                                          df_seafood_compDB$SeleniumImports_g) - df_seafood_compDB$SeleniumExports_g
-
-df_seafood_compDB$IodineSupplies_g <- (df_seafood_compDB$IodineProd_g +
-                                          df_seafood_compDB$IodineImports_g) - df_seafood_compDB$IodineExports_g
-
-```
-
-
-
-##
-
-
-
-
-
-```{r Aggregate nutrient supplies}
-# Subset 2018 data only
-df_seafood_compDB2018 <- subset(df_seafood_compDB, Year == 2018)
-
-# Sum UK protein supplies
-df_UK_ProtienSupplies_2018 <- aggregate(ProteinSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_ProtienSupplies_2018, aes(Species, ProteinSupplies_g)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood protein supplies (g)") +
-  theme(legend.title = element_blank()) 
-
-# Sum UK vitamin D supplies
-df_UK_VitDSupplies_g_2018 <- aggregate(VitDSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
-colnames(df_seafood_compDB2018)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood vit D supplies (g)") +
-  theme(legend.title = element_blank())
-
-
-
-# Sum UK vitamin D supplies
-df_UK_CaSupplies_g_2018 <- aggregate(VitDSupplies_g ~ Species, data = df_seafood_compDB2018, sum)
-colnames(df_seafood_compDB2018)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_VitDSupplies_g_2018, aes(Species, VitDSupplies_g)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood vit D supplies (g)") +
-  theme(legend.title = element_blank())
-
-
-df_seafood_compDB2018$VitDImports_g
-
-```
-
-
-```{r}
-# Subset 2018 data only
-df_seafood_CompDB2018 <- subset(df_seafood_CompDB, Year == 2018 & Supplies > 0)
-
-range(df_seafood_CompDB2018$Supplies)
-
-# Calculate all nutrient supplies
-df_seafood_CompDB2018$ProteinSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Protein_g)/100
-df_seafood_CompDB2018$TotalPUFASupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$TotalPUFA_g)/100
-df_seafood_CompDB2018$VitASupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminA_µg)/100
-df_seafood_CompDB2018$VitB12Supplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminB12_µg)/100
-df_seafood_CompDB2018$VitDSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminD_µg)/100
-df_seafood_CompDB2018$ZnSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Zinc_mg)/100
-df_seafood_CompDB2018$FeSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Iron_mg)/100
-df_seafood_CompDB2018$CaSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Calcium_mg)/100
-df_seafood_CompDB2018$SeSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Selenium_µg)/100
-df_seafood_CompDB2018$ISupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Iodine_µg)/100
-
-# Aggregate UK protein supplies
-df_UK_ProtienSupplies_2018 <- aggregate(ProteinSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_TotalPUFASupplies_2018 <- aggregate(TotalPUFASupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitASupplies_2018 <- aggregate(VitASupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitB12Supplies_2018 <- aggregate(VitB12Supplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitDSupplies_2018 <- aggregate(VitDSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_ZnSupplies_2018 <- aggregate(ZnSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_FeSupplies_2018 <- aggregate(FeSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_SeSupplies_2018 <- aggregate(SeSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_ISupplies_2018 <- aggregate(ISupplies ~ Species, data = df_seafood_CompDB2018, sum)
-
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_ProtienSupplies_2018, aes(Species, ProteinSupplies)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood protein supplies (g)") +
-  theme(legend.title = element_blank()) 
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_TotalPUFASupplies_2018, aes(Species, TotalPUFASupplies)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood total PUFA supplies (g)") +
-  theme(legend.title = element_blank()) 
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_VitASupplies_2018, aes(Species, VitASupplies)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "UK seafood vitamin A supplies (µg)") +
-  theme(legend.title = element_blank()) 
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-VitB12 <- ggplot(df_UK_VitB12Supplies_2018, aes(x = Species, y = VitB12Supplies)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") +
-  scale_y_continuous(name = "") 
-  # scale_y_continuous(name = "UK seafood vitamin B12 supplies (µg)") +
- # theme(legend.title = element_blank()) 
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-vitD <- ggplot(df_UK_VitDSupplies_2018, aes(x= Species, y = VitDSupplies)) +
-  geom_bar(stat= "identity", color = "black") +
-  scale_x_discrete(guide = guide_axis(angle = 90), name = "") + 
-  scale_y_continuous(name = "UK seafood vitamin D supplies (µg)") +
-  theme(legend.title = element_blank()) 
-
-library(cowplot)
-plot_grid(VitB12, vitD, labels = c("A", "B"))
-plot_grid(VitB12, vitD, labels = "AUTO")
-```
-
-## Calculate amount of nutrients exported
-```{r Mutiply each export volume to nutrient value}
-# Production 
-df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
-
-# Imports
-df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
-
-# Exports 
-df_seafood_compDB$TotalPUFAExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$TotalPUFA_g
-df_seafood_compDB$VitDExports_g <- df_seafood_compDB$Exports * df_seafood_compDB$VitaminD_µg
-
-```
-
-
-
-
-### Figure 5. Plot the top five seafoods that contribute the most to key daily RNIs (omega-3 fatty acids, calcium, iron, vitamin D and zinc) in UK adults. Stacked bar chart for each species
-
-```{r}
-# Calculate all nutrient supplies
-df_seafood_CompDB2018$ProteinSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Protein_g)/100
-df_seafood_CompDB2018$TotalPUFASupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$TotalPUFA_g)/100
-df_seafood_CompDB2018$VitASupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminA_µg)/100
-df_seafood_CompDB2018$VitB12Supplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminB12_µg)/100
-df_seafood_CompDB2018$VitDSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$VitaminD_µg)/100
-df_seafood_CompDB2018$ZnSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Zinc_mg)/100
-df_seafood_CompDB2018$FeSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Iron_mg)/100
-df_seafood_CompDB2018$CaSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Calcium_mg)/100
-df_seafood_CompDB2018$SeSupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Selenium_µg)/100
-df_seafood_CompDB2018$ISupplies <- (df_seafood_CompDB2018$Supplies * df_seafood_CompDB2018$Iodine_µg)/100
-
-# Aggregate UK protein supplies
-df_UK_ProtienSupplies_2018 <- aggregate(ProteinSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_TotalPUFASupplies_2018 <- aggregate(TotalPUFASupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitASupplies_2018 <- aggregate(VitASupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitB12Supplies_2018 <- aggregate(VitB12Supplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_VitDSupplies_2018 <- aggregate(VitDSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_ZnSupplies_2018 <- aggregate(ZnSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_FeSupplies_2018 <- aggregate(FeSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_SeSupplies_2018 <- aggregate(SeSupplies ~ Species, data = df_seafood_CompDB2018, sum)
-df_UK_ISupplies_2018 <- aggregate(ISupplies ~ Species, data = df_seafood_CompDB2018, sum)
-
-
-
-```
-
 
