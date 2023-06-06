@@ -213,6 +213,19 @@ df_UK_AllUKLandings_200918 <- rbind(df_UK_AllUKLandings_201718_long,
 ```
 
 
+```{r DELETE LATER}
+# Create dataframe of unique species 
+MMOSpeciesALLUKLandings <- as.data.frame(unique(df_UK_AllUKLandings_200918$Species))
+
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+
+# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
+write.csv(MMOSpeciesALLUKLandings, file = paste(filepath,"UniqueMMOSpecies.csv", sep = ""), row.names = FALSE)
+
+```
+
+
 Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
 
 We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
@@ -368,6 +381,22 @@ df_UKV_LandingUKAbroad_200918_long <- rbind(df_UKV_LandingUKAbroad_201718_long,
                               df_UKV_LandingUKAbroad_201216_long, 
                               df_UKV_LandingUKAbroad_200911_long)
 ```
+
+
+```{r DELETE LATER}
+# Create dataframe of unique species 
+MMOSpeciesUKVesselsLandings <- as.data.frame(unique(df_UKV_LandingUKAbroad_200918_long$Species))
+
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+
+# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
+write.csv(MMOSpeciesUKVesselsLandings, file = paste(filepath,"UniqueMMOSpeciesUKVessels.csv", sep = ""), row.names = FALSE)
+
+```
+
+
+
 
 
 Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
@@ -582,8 +611,8 @@ df_trade_HMRC_data_edit$FlagDescription <- "CF applied to all or part of the dat
 df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data_edit[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column to "Species"
-df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
-df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919, Volume = Value)
+df_cleaned_UK_HMRC_200919_clean <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
+df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919_clean, Volume = Value)
 
 colnames(df_cleaned_UK_HMRC_200919_cleaned)
 
@@ -602,8 +631,7 @@ unique(df_cleaned_UK_HMRC_200919_cleaned$SpeciesType)
 
 df_cleaned_UK_HMRC_200919_cleaned_again <- subset(df_cleaned_UK_HMRC_200919_cleaned, SpeciesType != "Fish oil" & SpeciesType != "Seaweed and other algae" & Year != 2019)
 
-unique(df_cleaned_UK_HMRC_200919_cleaned_again$SpeciesType)
-unique(df_cleaned_UK_HMRC_200919_cleaned_again$Species) # fishmeal present here
+#unique(df_cleaned_UK_HMRC_200919_cleaned_again$Species) # fishmeal present here
 
 ```
 

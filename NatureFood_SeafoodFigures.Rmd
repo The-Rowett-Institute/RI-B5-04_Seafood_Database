@@ -78,10 +78,8 @@ filepath <- paste(data_dir,"Outputs/Databases", sep = "")
 
 ```{r Load the seafood database}
 # Load database 
-df_UK_seafoodDB_PCW <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
+df_UK_seafoodDB<- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 ```
-
-
 
 
 ```{r Calculate PCW }
