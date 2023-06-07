@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '05/06/2023'
+date: '07/06/2023'
 output: html_document
 ---
 
@@ -288,7 +288,7 @@ df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier",
 colnames(df_UK_AllUKLandings_200918_clean)
 
 # Rename "SeafoodSpecies" column 
-df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, Species = SeafoodSpecies)
+df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, c("SeafoodSpecies" = "Species"))
 
 
 ```
@@ -461,7 +461,7 @@ df_UKV_LandingUKAbroad_200918_clean <- df_UKV_LandingUKAbroad_200918_long[c("Dat
 colnames(df_UKV_LandingUKAbroad_200918_clean)
 
 # Rename "SeafoodSpecies" column 
-df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, Species = SeafoodSpecies)
+df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
 
 ```
 
@@ -555,7 +555,7 @@ df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Com
 colnames(df_UK_aquaculture_200918)
 
 # Rename "SeafoodSpecies" column to "Species"
-df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, Species = SeafoodSpecies)
+df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, c("SeafoodSpecies" = "Species"))
 
 ```
 
@@ -611,8 +611,8 @@ df_trade_HMRC_data_edit$FlagDescription <- "CF applied to all or part of the dat
 df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data_edit[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column to "Species"
-df_cleaned_UK_HMRC_200919_clean <- rename(df_cleaned_UK_HMRC_200919, Species = SeafoodSpecies)
-df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919_clean, Volume = Value)
+df_cleaned_UK_HMRC_200919_clean <- rename(df_cleaned_UK_HMRC_200919, c("SeafoodSpecies" = "Species"))
+df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919_clean,c("Value" = "Volume"))
 
 colnames(df_cleaned_UK_HMRC_200919_cleaned)
 
@@ -895,7 +895,7 @@ df_NDNS_seafoodintakeUK_200918$DataSet <- "FoodDiaries"
 df_NDNS_seafoodintakeUK_200918$Commodity <- "Consumption"
 df_NDNS_seafoodintakeUK_200918$Flag <- "ConV2"
 df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "CalendarlYear"
-df_NDNS_seafoodintakeUK_200918$Units <- "Grams/Country/Year"
+df_NDNS_seafoodintakeUK_200918$Units <- "Grams"
 df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Units changed to Grams/Country/Year"
 
 ```
@@ -1306,7 +1306,7 @@ colnames(df_PHE_nutreintComp)
 df_Norwegian_nutreintComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
 
 # Check for missing Volumes
-md.pattern(df_Norwegian_nutreintComp, rotate.names = TRUE)
+#md.pattern(df_Norwegian_nutreintComp, rotate.names = TRUE)
 
 # Identify column names
 colnames(df_Norwegian_nutreintComp)

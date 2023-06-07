@@ -1,7 +1,7 @@
 ---
 title: "NatureFood_SeafoodFigures"
 author: "Lofstedt, A."
-date: "02-06-23"
+date: "07-06-23"
 output: powerpoint_presentation
 ---
 
@@ -66,6 +66,9 @@ cbPalette <- c( "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00"
 ```
 
 
+# Add in per capita per week 
+
+
 ```{r Load file path, echo=TRUE}
 # Loading file path to the data into a value 
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
@@ -78,48 +81,49 @@ filepath <- paste(data_dir,"Outputs/Databases", sep = "")
 
 ```{r Load the seafood database}
 # Load database 
-df_UK_seafoodDB<- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
-```
+df_UK_seafoodDB <- vroom(file=paste(filepath,"Seafood-database_preliminary.csv", sep="/"), na = c("NA"))
 
-
-```{r Calculate PCW }
-# Merge database with UK population size
-
-
-#
-#UK_pop_2018 <- 66435600
-
-#df_figure_input <- 
-#  df_figure_input %>% 
-#  mutate(Volume = Volume/UK_pop_2018/52, Units = "g/Capita/Week")
+df_UK_seafoodDBNC <- vroom(file=paste(filepath,"Seafood-database-PCW_composition_preliminary.csv", sep="/"), na = c("NA"))
 ```
 
 
 
-```{r filter database}
+```{r Load population data}
+#Specify the file path
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
 
-#df_UK_seafoodDB_commodities <- df_UK_seafoodDB %>%  
-#  filter(Year == "2018", Commodity %in% c("Production", "Imports", "Exports")) %>% 
-#  na.omit() %>% 
-#  mutate_if(is.character, factor)
+# Load database 
+df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+# Simplify population data
+df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
+
+```
+
+```{r Merge SFDB with UK population}
+
+df_UK_seafoodDB_Y <- merge(df_UK_seafoodDB, df_UK_population_simp, "Year")
 
 ```
 
 
-```{r Changing Volumne to grams/Capita/Week}
-UK_pop_2018 <- 66435600
+```{r Changing volumne units to grams/capita/week}
+# Calcualte g/capita/week
+df_UK_seafoodDB_PCW <- 
+  df_UK_seafoodDB_Y %>% 
+  mutate(Volume = Volume/UKPOP/52, Units = "g/capita/week")
 
-df_figure_input <- 
-  df_figure_input %>% 
-  mutate(Volume = Volume/UK_pop_2018/52, Units = "g/Capita/Week")
+# Change structure of the database (short and wide)
+# Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
+df_UK_seafoodDB_PCW_simp <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_PCW, sum)
+
+# Need to unstack database to calculate seafood supplied. Change structure of the dataframe- convert to wide and short
+df_UK_seafoodDB_PCW_short <- df_UK_seafoodDB_PCW_simp %>%
+  pivot_wider(names_from = Commodity, values_from = Volume)
 
 # Calculate seafood supplies whilst ignoring NA values
-df_UK_seafoodDB_PCW_sum %>%
-  rowwise() %>%  #rowwise will make sure the sum operation will occur on each row
-  mutate(sum = sum(a,b,c, na.rm=TRUE)) #then a simple sum(..., na.rm=TRUE) is enough to result in what you need
-
-#df_UK_suppCons_2018_sum <- na.omit(df_UK_suppCons_2018_sum) # Omit zero readings
-
+df_UK_seafoodDB_PCW_short <- df_UK_seafoodDB_PCW_short %>% 
+  mutate(Supply = Production + Imports - Exports )
 ```
 
 
@@ -128,52 +132,29 @@ df_UK_seafoodDB_PCW_sum %>%
 
 ```{r Seafood supplies consumption and purchases between 2009 and 2018}
 # Subset desired variables 
-df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Purchases_pcw", "Year", "Species", "SACN")]
+df_UK_seafoodDB_PCW_shorter <- df_UK_seafoodDB_PCW_short[c("Supply", "Consumption", "Purchases", "Year", "Species", "SACN")]
 
 # Change structure of the data set 
-df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_simp, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
+df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_shorter, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
 
 # Aggregate data 
-df_UK_seafoodDB_PCW_sum <- aggregate(Value ~ Species + SACN + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
+df_UK_seafoodDB_PCW_sum <- aggregate(Volume ~ Year + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
 
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_seafoodDB_PCW_sum, aes(Species, Volume, fill= Commodity)) +
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_seafoodDB_PCW_sum, aes(Year, Volume, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
   scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
-  scale_x_discrete(guide = guide_axis(angle = 45)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
   scale_fill_manual(values = c("#009E73", "#E69F00", "#0072B2")) + # supplies, consumption, purchases
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "none")
+  theme(legend.title = element_blank()) 
+  #theme(legend.position = "none")
+
 
 ```
 
 
-
-
-### Figure 1B. UK seafood supplies and consumption (g/capita/week), by species, in 2018
-
-```{r Seafood supplies and consumption between 2009 and 2018}
-# Subset desired variables 
-df_UK_seafoodDB_PCW_simp <- df_UK_seafoodDB_PCW[c("Supplies_pcw", "Consumption_pcw", "Year", "Species", "SACN")]
-
-# Change structure of the data set 
-df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_simp, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
-
-# Aggregate data 
-df_UK_seafoodDB_PCW_sum <- aggregate(Value ~ Species + SACN + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
-
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_seafoodDB_PCW_sum, aes(Species, Volume, fill= Commodity)) +
-  geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
-  scale_x_discrete(guide = guide_axis(angle = 45)) +
-  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#009E73", "#E69F00")) + # supplies, consumption, 
-  theme(legend.title = element_blank()) +
-  theme(legend.position = "none")
-
-```
 
 
 
@@ -181,21 +162,32 @@ ggplot(df_UK_seafoodDB_PCW_sum, aes(Species, Volume, fill= Commodity)) +
 
 ```{r Domestic seafood production}
 # Subset production commodity 
-df_UK_seafoodProduction_PCW <- df_UK_seafoodDB_PCW[c("Production", "Year", "Species", "SACN")]
+df_UK_seafoodProduction_PCW <- df_UK_seafoodDB_PCW_short[c("Production", "Year", "Species", "SACN")]
 
 # Sum UK seafood production, per SACN
 df_UK_seafoodProduction_SACN <- aggregate(Production ~ SACN + Year, data = df_UK_seafoodProduction_PCW, sum)
 
 # Select for lean and oily fish only
 # Include "other" seafood types e.g. cephalopods and unknowns? 
-df_UK_seafoodProduction_LOS <- subset(df_UK_seafoodProduction_SACN, SACN == "Lean" | SACN == "Oily", SACN == "Shellfish")
+df_UK_seafoodProduction_LOS <- subset(df_UK_seafoodProduction_SACN, SACN == "Lean" | SACN == "Oily" | SACN == "Shellfish")
+
+df_UK_seafoodProduction_LOSO <- subset(df_UK_seafoodProduction_SACN, SACN == "Lean" | SACN == "Oily" | SACN == "Shellfish" 
+                                        | SACN == "Other" )
+
+# State order of the seafood types
+df_UK_seafoodProduction_LOS$SACN_f <-  factor(df_UK_seafoodProduction_LOS$SACN, levels = c("Shellfish", "Lean", "Oily"))
+
+df_UK_seafoodProduction_LOSO$SACN_f <-  factor(df_UK_seafoodProduction_LOSO$SACN, levels = c("Other", "Shellfish", 
+                                                                                             "Lean", "Oily"))
+
 
 # Plot average seafood supply (g/capita/week), to SACN level (lean and oily) between 2009 and 2018. 
-ggplot(df_UK_seafoodProduction_LOS, aes(y = Production, x = Year, fill = SACN)) +
+ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f)) +
   geom_bar(position = "stack", stat = "identity", color = "black", width = 0.5) + 
   scale_y_continuous(name = "Total seafood production (g/capita/week)") +
-  scale_x_discrete(name = "") +
-  scale_fill_manual(values = c("#CC79A7", "#D55E00", "#999999"))+
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  scale_fill_manual(values = c("#999999", "#DDCC77",  "#CC79A7","#D55E00")) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0)
 
 ```
@@ -205,21 +197,15 @@ ggplot(df_UK_seafoodProduction_LOS, aes(y = Production, x = Year, fill = SACN)) 
 
 ### Figure 5. Species contibutions to RNIs Nutrient supply, by species, in 2018. 
 
-Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc
+Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc.
 
-Create radar chart  diagram of plots
-
-
+# Create radar charts  
 
 
 ```{r Calculate nutrient supplies from seafood  nutrient value by supplies}
-# Multiply nutreint value (g/100g) bu seafood supplies (g/capita/day) and divide by 100. 
+# Multiply nutrient value (g/100g) bu seafood supplies (g/capita/day) and divide by 100. 
 
 ```
-
-
-
-
 
 
 ```{r Join data frame with translation document}
@@ -245,18 +231,53 @@ Create radar chart  diagram of plots
 
 # Divide the RDA calculation by the calorie calculation 
 
+
+
+```{r filter data for figure 4}
+df_figure_input <- df_SFDB_PCW_composition %>%  
+  filter(Year == "2018", !SACN == "Other", !is.na(Production), !is.na(Imports), !is.na(Exports), !is.na(VitaminD_µg100g), !is.na(Zinc_mg100g), !is.na(TotalPUFA_g100g), !is.na(Calcium_mg100g), !is.na(Iron_mg100g)) %>% 
+  mutate_if(is.character, factor) %>% 
+  select(Species, Year, SpeciesType, SACN, Production, Exports, Imports, UKPOP, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g)
+
+
 ```
 
 
+```{r Calculation for Figure 4}
 
+df_figure_input <- df_figure_input %>% 
+  mutate(Supply = Production + Imports - Exports ) %>% 
+  mutate(Supply = Supply/UKPOP/52) %>% # g/capita/week
+  relocate(Supply, .after= SACN) %>% 
+  select(-Production, - Imports, - Exports, - UKPOP)
+
+```
+
+
+omega-3 fatty acids, calcium, iron, vitamin D and zinc
 
 ```{r Radar Plot}
-#Data needs to be structured in a certain way. First row: maximum values for each variable; 
+# Load nutrient composition data
+df_UK_seafoodDBNC 
+
+df_UK_NC_SOI <- subset(df_UK_seafoodDBNC, Species == "Herring" | Species == "Mackerel"| Species == "Salmon")
+
+# Select desired nutrients
+df_UK_NC_NOI <- df_UK_NC_SOI %>%  
+  select(Species, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g) %>%
+  group_by(Species) %>%
+  filter(row_number()==1)
+
+
+
+## up to here
+
+# Data needs to be structured in a certain way. First row: maximum values for each variable; 
 # Second row: minimum values for each variable, Third row: Data for variables  
 
 # Define the variable ranges: maximum and minimum for each nutrient. Set max to recommended RNI 
 max_min <- data.frame(
-  Biology = c(20, 0), Physics = c(20, 0), Maths = c(20, 0),
+  PUFA = c(20, 0), calcium = c(20, 0), Maths = c(20, 0),
   Sport = c(20, 0), English = c(20, 0), Geography = c(20, 0),
   Art = c(20, 0), Programming = c(20, 0), Music = c(20, 0)
 ) # change subject to nutrients
@@ -317,3 +338,31 @@ ggradar(
 
 
 https://www.datanovia.com/en/blog/beautiful-radar-chart-in-r-using-fmsb-and-ggplot-packages/#:~:text=A%20radar%20chart%2C%20also%20known%20as%20a%20spider,packages%3A%20the%20fmsb%20or%20the%20ggradar%20R%20packages.
+
+
+
+### Figure 1B. UK seafood supplies and consumption (g/capita/week), by species, in 2018
+
+```{r Seafood supplies and consumption between 2009 and 2018}
+# Subset desired variables 
+df_UK_seafoodDB_PCW_CS <- df_UK_seafoodDB_PCW_short[c("Supply", "Consumption", "Year", "Species", "SACN")]
+
+# Change structure of the data set 
+df_UK_seafoodDB_PCW_CS_long <- melt(df_UK_seafoodDB_PCW_CS, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
+
+# Aggregate data 
+df_UK_seafoodDB_PCW_CS_sum <- aggregate(Volume ~ Year + Commodity, data = df_UK_seafoodDB_PCW_CS_long, sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_seafoodDB_PCW_CS_sum, aes(Year, Volume, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_discrete(guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#009E73", "#E69F00")) + # supplies, consumption, 
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none")
+
+```
+
+
