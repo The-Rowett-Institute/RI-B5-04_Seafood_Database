@@ -257,8 +257,8 @@ df_figure_input <- df_figure_input %>%
 omega-3 fatty acids, calcium, iron, vitamin D and zinc
 
 ```{r Radar Plot}
-# Load nutrient composition data
-df_UK_seafoodDBNC 
+# Subset specific species
+
 
 df_UK_NC_SOI <- subset(df_UK_seafoodDBNC, Species == "Herring" | Species == "Mackerel"| Species == "Salmon")
 
@@ -267,6 +267,51 @@ df_UK_NC_NOI <- df_UK_NC_SOI %>%
   select(Species, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g) %>%
   group_by(Species) %>%
   filter(row_number()==1)
+
+# Multiply values by 2.8 to calculate nutrients in 280g seafood (weekly)
+
+df_UK_NC_NOI$TotalPUFA_280g <- df_UK_NC_NOI$TotalPUFA_g100g * 2.8
+df_UK_NC_NOI$Calcium_280g <- df_UK_NC_NOI$Calcium_mg100g * 2.8
+df_UK_NC_NOI$Iron_280g <- df_UK_NC_NOI$Iron_mg100g * 2.8
+df_UK_NC_NOI$VitaminD_280g <- df_UK_NC_NOI$VitaminD_µg100g * 2.8
+df_UK_NC_NOI$Zinc_280g <- df_UK_NC_NOI$Zinc_mg100g * 2.8
+
+# Select specific columns 
+df_UK_NC_NOI_PW <- df_UK_NC_NOI %>%  
+  select(Species, TotalPUFA_280g, Calcium_280g, Iron_280g, VitaminD_280g, Zinc_280g)
+
+
+# Make first column row names
+df_UK_NC_NOI_PW<- df_UK_NC_NOI_PW %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="Species")
+
+# Advised nutrient intake
+# Create data frame of max and min RNI's per week
+# Average for males and females
+df_max_min <- data.frame(
+  TotalPUFA_280g = c(1750, 0), Calcium_280g = c(4900, 0), Iron_280g = c(82.6, 0),
+  VitaminD_280g = c(70, 0), Zinc_280g = c(58.1, 0)) 
+rownames(df_max_min) <- c("Max", "Min") # State row names
+
+
+# Combine data frames by row
+df_mainFish_NC <- rbind(df_max_min, df_UK_NC_NOI_PW)
+
+# Plot the data for one fish 
+df_salmon <- df_mainFish_NC[c("Max", "Min", "Salmon"),]
+radarchart(df_salmon)
+
+
+
+# tranfom dataset ? 
+
+# Calculate percentage contribution 
+# (fish nutrient/ advise RNI) * 100
+
+
+
+
 
 
 
