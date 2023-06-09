@@ -199,122 +199,107 @@ ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f
 
 Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc.
 
-# Create radar charts  
+```{r Calculate nutrient contributions to weekly recommended intakes}
+# Read in data frame
+str(df_all_nutrient_cleaned)
 
+# Select specific variables and nutrients 
+df_UK_seafoodDBNC <- df_all_nutrient_cleaned %>%  
+  select(SeafoodSpecies, SACN, Nutrient, Volume) %>%
+  filter(Nutrient == "TotalPUFA_g100g"| Nutrient == "Calcium_mg100g"| Nutrient == "Iron_mg100g"| 
+         Nutrient == "VitaminD_µg100g"| Nutrient == "Zinc_mg100g")
 
-```{r Calculate nutrient supplies from seafood  nutrient value by supplies}
-# Multiply nutrient value (g/100g) bu seafood supplies (g/capita/day) and divide by 100. 
+# Calculate nutrient content in 280g of fish
+df_UK_seafoodDBNC$Volume_PW <- df_UK_seafoodDBNC$Volume * 2.8
+df_UK_seafoodDBNC$Nutrient <- as.character(df_UK_seafoodDBNC$Nutrient)
 
-```
+# Create a data frame of weekly RNIS
+df_RNI_week <- data.frame(Nutrient = c("TotalPUFA_g100g", "Calcium_mg100g", "Iron_mg100g", 
+                                       "VitaminD_µg100g",  "Zinc_mg100g"),
+                       RNI_PW_MAX = c(112, 4900, 82.6, 70, 58.1), 
+                       RNI_PW_MIN = c(0, 0, 0, 0, 0))
 
+# Merge nutrient values and recommendations
+df_nutrients_recs <- merge(df_UK_seafoodDBNC, df_RNI_week, by = "Nutrient")
 
-```{r Join data frame with translation document}
-# Cleaned data set does not consider the status of the sample e.g. raw/ cooked. So new column created with such information.
-# Duplicate species name column (duplicated column entries to be duplicated)
-#df_seafoodCompSimp$SpeciesRevised <- df_seafoodCompSimp$SampleDescription
-
-# Merge data frame with MCS data frame by species name
-#df_seafoodCompSimp <- df_seafoodCompSimp %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-
-# Check the structure
-#str(df_seafoodCompSimp)
-```
-
-
-
-
-```{r Calculate nutrient density score of each fish species}
-
-# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
-
-# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
-
-# Divide the RDA calculation by the calorie calculation 
-
-
-
-```{r filter data for figure 4}
-df_figure_input <- df_SFDB_PCW_composition %>%  
-  filter(Year == "2018", !SACN == "Other", !is.na(Production), !is.na(Imports), !is.na(Exports), !is.na(VitaminD_µg100g), !is.na(Zinc_mg100g), !is.na(TotalPUFA_g100g), !is.na(Calcium_mg100g), !is.na(Iron_mg100g)) %>% 
-  mutate_if(is.character, factor) %>% 
-  select(Species, Year, SpeciesType, SACN, Production, Exports, Imports, UKPOP, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g)
-
+# Calculate nutrient contribution 
+df_nutrients_recs$nutrient_cont <- (df_nutrients_recs$Volume_PW / df_nutrients_recs$RNI_PW_MAX) * 100
 
 ```
 
 
-```{r Calculation for Figure 4}
 
-df_figure_input <- df_figure_input %>% 
-  mutate(Supply = Production + Imports - Exports ) %>% 
-  mutate(Supply = Supply/UKPOP/52) %>% # g/capita/week
-  relocate(Supply, .after= SACN) %>% 
-  select(-Production, - Imports, - Exports, - UKPOP)
-
-```
-
-
-omega-3 fatty acids, calcium, iron, vitamin D and zinc
-
-```{r Radar Plot}
-# Subset specific species
-
-
-df_UK_NC_SOI <- subset(df_UK_seafoodDBNC, Species == "Herring" | Species == "Mackerel"| Species == "Salmon")
-
-# Select desired nutrients
-df_UK_NC_NOI <- df_UK_NC_SOI %>%  
-  select(Species, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g) %>%
-  group_by(Species) %>%
-  filter(row_number()==1)
-
-# Multiply values by 2.8 to calculate nutrients in 280g seafood (weekly)
-
-df_UK_NC_NOI$TotalPUFA_280g <- df_UK_NC_NOI$TotalPUFA_g100g * 2.8
-df_UK_NC_NOI$Calcium_280g <- df_UK_NC_NOI$Calcium_mg100g * 2.8
-df_UK_NC_NOI$Iron_280g <- df_UK_NC_NOI$Iron_mg100g * 2.8
-df_UK_NC_NOI$VitaminD_280g <- df_UK_NC_NOI$VitaminD_µg100g * 2.8
-df_UK_NC_NOI$Zinc_280g <- df_UK_NC_NOI$Zinc_mg100g * 2.8
-
-# Select specific columns 
-df_UK_NC_NOI_PW <- df_UK_NC_NOI %>%  
-  select(Species, TotalPUFA_280g, Calcium_280g, Iron_280g, VitaminD_280g, Zinc_280g)
-
-
+```{r Create radar plots}
+# Restructure data set (nutrients along the top )
+# Need to unstack database to calculate seafood supplied. 
+# Change structure of the dataframe- convert to wide and short
+df_nutrients_recs_short <- df_nutrients_recs %>%
+  select(Nutrient, SeafoodSpecies, nutrient_cont)  %>%
+  pivot_wider(names_from = Nutrient, values_from = nutrient_cont) 
+  
 # Make first column row names
-df_UK_NC_NOI_PW<- df_UK_NC_NOI_PW %>% 
+df_nutrients_recs_short<- df_nutrients_recs_short %>% 
   remove_rownames %>% 
-  column_to_rownames(var="Species")
+  column_to_rownames(var="SeafoodSpecies")
 
 # Advised nutrient intake
 # Create data frame of max and min RNI's per week
 # Average for males and females
 df_max_min <- data.frame(
-  TotalPUFA_280g = c(1750, 0), Calcium_280g = c(4900, 0), Iron_280g = c(82.6, 0),
-  VitaminD_280g = c(70, 0), Zinc_280g = c(58.1, 0)) 
+  TotalPUFA_g100g = c(100, 0), Calcium_mg100g = c(100, 0), Iron_mg100g = c(100, 0),
+  VitaminD_µg100g = c(100, 0), Zinc_mg100g = c(100, 0)) 
 rownames(df_max_min) <- c("Max", "Min") # State row names
+
+colnames(df_nutrients_recs_short)
 
 
 # Combine data frames by row
-df_mainFish_NC <- rbind(df_max_min, df_UK_NC_NOI_PW)
+df_mainFish_NC <- rbind(df_max_min, df_nutrients_recs_short)
 
+# Rename columns 
+colnames(df_mainFish_NC) <- c("Total PUFA", "Calcium", "Iron", "VitaminD", "Zinc")
+  
 # Plot the data for one fish 
 df_salmon <- df_mainFish_NC[c("Max", "Min", "Salmon"),]
-radarchart(df_salmon)
+
+# Create the radar charts
+radarchart(df_salmon, axistype = 1, # custom polygon
+    pcol = rgb(0.2,0.5,0.5,0.9) , pfcol = rgb(0.2,0.5,0.5,0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+# Plot the data for one fish 
+df_mackerel <- df_mainFish_NC[c("Max", "Min", "Mackerel"),]
+
+# Create the radar charts
+radarchart(df_mackerel, axistype = 1, # custom polygon
+    pcol=rgb(0.2,0.5,0.5,0.9) , pfcol=rgb(0.2,0.5,0.5,0.5) , plwd=4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+# Plot the data for one fish 
+df_herring <- df_mainFish_NC[c("Max", "Min", "Herring"),]
+
+# Create the radar charts
+radarchart(df_herring, axistype = 1, # custom polygon
+    pcol = rgb(0.2,0.5,0.5,0.9) , pfcol = rgb(0.2,0.5,0.5,0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+
+```
 
 
 
-# tranfom dataset ? 
-
-# Calculate percentage contribution 
-# (fish nutrient/ advise RNI) * 100
 
 
 
 
 
-
-
+```{r Create radar plots}
 ## up to here
 
 # Data needs to be structured in a certain way. First row: maximum values for each variable; 
@@ -352,41 +337,8 @@ par(op)
 ```
 
 
-```{r Seperate radar plots}
-# Define colors and titles
-colors <- c("#00AFBB", "#E7B800", "#FC4E07")
-titles <- c("Student.1", "Student.2", "Student.3") # change to fish 
-
-# Reduce plot margin using par()
-# Split the screen in 3 parts
-op <- par(mar = c(1, 1, 1, 1))
-par(mfrow = c(1,3))
-
-# Create the radar chart
-for(i in 1:3){
-  create_beautiful_radarchart(
-    data = df[c(1, 2, i+2), ], caxislabels = c(0, 5, 10, 15, 20),
-    color = colors[i], title = titles[i]
-    )
-}
-par(op)
 
 
-# Or ggradar plot
-# Plot for one student
-ggradar(
-  df[1, ], 
-  values.radar = c("0", "10", "20"),
-  grid.min = 0, grid.mid = 10, grid.max = 20
-  )
-```
-
-
-https://www.datanovia.com/en/blog/beautiful-radar-chart-in-r-using-fmsb-and-ggplot-packages/#:~:text=A%20radar%20chart%2C%20also%20known%20as%20a%20spider,packages%3A%20the%20fmsb%20or%20the%20ggradar%20R%20packages.
-
-
-
-### Figure 1B. UK seafood supplies and consumption (g/capita/week), by species, in 2018
 
 ```{r Seafood supplies and consumption between 2009 and 2018}
 # Subset desired variables 
@@ -408,6 +360,32 @@ ggplot(df_UK_seafoodDB_PCW_CS_sum, aes(Year, Volume, fill= Commodity)) +
   theme(legend.title = element_blank()) +
   theme(legend.position = "none")
 
+
+# Select desired nutrients
+df_UK_NC_NOI <- df_UK_NC_SOI %>%  
+  select(Species, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g) %>%
+  group_by(Species) %>%
+  filter(row_number()==1)
 ```
 
+
+
+
+```{r filter data for figure 4}
+df_figure_input <- df_SFDB_PCW_composition %>%  
+  filter(Year == "2018", !SACN == "Other", !is.na(Production), !is.na(Imports), !is.na(Exports), !is.na(VitaminD_µg100g), !is.na(Zinc_mg100g), !is.na(TotalPUFA_g100g), !is.na(Calcium_mg100g), !is.na(Iron_mg100g)) %>% 
+  mutate_if(is.character, factor) %>% 
+  select(Species, Year, SpeciesType, SACN, Production, Exports, Imports, UKPOP, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g)
+
+```
+
+
+
+```{r Calculate nutrient density score of each fish species}
+# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
+
+# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
+
+# Divide the RDA calculation by the calorie calculation
+```
 
