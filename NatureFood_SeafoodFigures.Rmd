@@ -140,14 +140,30 @@ df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_shorter, id.vars = c("Year"
 # Aggregate data 
 df_UK_seafoodDB_PCW_sum <- aggregate(Volume ~ Year + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
 
+df_UK_seafoodDB_PCW_sum$Commodity_f <-  factor(df_UK_seafoodDB_PCW_sum$Commodity, levels = c("Consumption", "Purchases", "Supply"))
+
 # Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_seafoodDB_PCW_sum, aes(Year, Volume, fill= Commodity)) +
+ggplot(df_UK_seafoodDB_PCW_sum, aes(Year, Volume, fill= Commodity_f)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
   scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
   scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
                      guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#009E73", "#E69F00", "#0072B2")) + # supplies, consumption, purchases
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
+  #theme(legend.position = "none")
+
+
+df_UK_seafoodDB_PCW_sum$Commodity_f <-  factor(df_UK_seafoodDB_PCW_sum$Commodity, levels = c("Supply", "Purchases", "Consumption"))
+
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_seafoodDB_PCW_sum, aes(Year, Volume, fill= Commodity_f)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#009E73", "#0072B2", "#E69F00")) + # supplies, consumption, purchases
   theme(legend.title = element_blank()) 
   #theme(legend.position = "none")
 
@@ -264,7 +280,30 @@ df_salmon <- df_mainFish_NC[c("Max", "Min", "Salmon"),]
 
 # Create the radar charts
 radarchart(df_salmon, axistype = 1, # custom polygon
-    pcol = rgb(0.2,0.5,0.5,0.9) , pfcol = rgb(0.2,0.5,0.5,0.5) , plwd = 4 , 
+    pcol = rgb(0.3372549, 0.7058824, 0.9137255,0.9) , pfcol = rgb(0.2,0.5,0.5,0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+
+"#338080E6" 
+"#33808080"
+"#54B3E8E6"
+ "#57B5E8E6"
+"#56B4E9E6"
+"#56B4E900"
+ 
+86/255 # ensure 2.55
+180/255
+233/255
+
+
+
+library(plotrix)
+color.id("#56B4E9"))
+
+radarchart(df_salmon, axistype = 1, # custom polygon
+    pcol = rgb("#56B4E9", 0.9) , pfcol = rgb(0.2,0.5,0.5,0.5) , plwd = 4 , 
     cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
     vlcex = 1.5 #custom labels
     )
@@ -299,47 +338,6 @@ radarchart(df_herring, axistype = 1, # custom polygon
 
 
 
-```{r Create radar plots}
-## up to here
-
-# Data needs to be structured in a certain way. First row: maximum values for each variable; 
-# Second row: minimum values for each variable, Third row: Data for variables  
-
-# Define the variable ranges: maximum and minimum for each nutrient. Set max to recommended RNI 
-max_min <- data.frame(
-  PUFA = c(20, 0), calcium = c(20, 0), Maths = c(20, 0),
-  Sport = c(20, 0), English = c(20, 0), Geography = c(20, 0),
-  Art = c(20, 0), Programming = c(20, 0), Music = c(20, 0)
-) # change subject to nutrients
-rownames(max_min) <- c("Max", "Min") # State row names
-
-# Plot the data for one fish 
-student1_data <- df[c("Max", "Min", "Student.1"), ]
-radarchart(student1_data)
-
-# Plot the data for three fish in the same plot
-
-# Reduce plot margin using par()
-op <- par(mar = c(1, 2, 2, 2))
-
-# Create the radar charts
-create_beautiful_radarchart(
-  data = df, caxislabels = c(0, 5, 10, 15, 20), # state labels- change to nutrient values
-  color = c("#00AFBB", "#E7B800", "#FC4E07") # States colors
-)
-# Add an horizontal legend 
-legend(
-  x = "bottom", legend = rownames(df[-c(1,2),]), horiz = TRUE,
-  bty = "n", pch = 20 , col = c("#00AFBB", "#E7B800", "#FC4E07"),
-  text.col = "black", cex = 1, pt.cex = 1.5
-  )
-par(op)
-```
-
-
-
-
-
 ```{r Seafood supplies and consumption between 2009 and 2018}
 # Subset desired variables 
 df_UK_seafoodDB_PCW_CS <- df_UK_seafoodDB_PCW_short[c("Supply", "Consumption", "Year", "Species", "SACN")]
@@ -369,15 +367,6 @@ df_UK_NC_NOI <- df_UK_NC_SOI %>%
 ```
 
 
-
-
-```{r filter data for figure 4}
-df_figure_input <- df_SFDB_PCW_composition %>%  
-  filter(Year == "2018", !SACN == "Other", !is.na(Production), !is.na(Imports), !is.na(Exports), !is.na(VitaminD_µg100g), !is.na(Zinc_mg100g), !is.na(TotalPUFA_g100g), !is.na(Calcium_mg100g), !is.na(Iron_mg100g)) %>% 
-  mutate_if(is.character, factor) %>% 
-  select(Species, Year, SpeciesType, SACN, Production, Exports, Imports, UKPOP, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g)
-
-```
 
 
 

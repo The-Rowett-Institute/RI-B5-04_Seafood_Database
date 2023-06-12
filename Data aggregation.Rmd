@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '07/06/2023'
+date: '12/06/2023'
 output: html_document
 ---
 
@@ -31,7 +31,6 @@ library(stringr) # used to replace matched patterns in a string
 library(haven) #Read SAV files
 library(readxl)
 library(readr) # CSV file I/O, e.g. the read_csv function
-library(dplyr)
 library(sjlabelled)
 
 ```
@@ -288,8 +287,10 @@ df_UK_AllUKLandings_200918_clean <- df_UK_AllUKLandings_200918[c("DataSupplier",
 colnames(df_UK_AllUKLandings_200918_clean)
 
 # Rename "SeafoodSpecies" column 
-df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, c("SeafoodSpecies" = "Species"))
+#df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, c("SeafoodSpecies" = "Species"))
+#df_UK_AllUKLandings_200918_cleaned <- rename(df_UK_AllUKLandings_200918_clean, SeafoodSpecies = Species)
 
+df_UK_AllUKLandings_200918_cleaned <- df_UK_AllUKLandings_200918_clean %>% rename(Species = SeafoodSpecies)
 
 ```
 
@@ -441,7 +442,7 @@ df_UKV_LandingUKAbroad_200918_long$Volume <- (df_UKV_LandingUKAbroad_200918_long
 # Create "cleaned" data frame, defining units and data source 
 df_UKV_LandingUKAbroad_200918_long$Units <- "Grams"
 df_UKV_LandingUKAbroad_200918_long$DataSupplier <- "MMO"
-df_UKV_LandingUKAbroad_200918_long$DataSet <- "Capture_SeaFisheriesStatistics"
+df_UKV_LandingUKAbroad_200918_long$DataSet <- "Sea Fisheries Statistics"
 df_UKV_LandingUKAbroad_200918_long$Commodity <- "Production"
 df_UKV_LandingUKAbroad_200918_long$Flag <- "ConV1"
 df_UKV_LandingUKAbroad_200918_long$TemporalResolution <- "CalendarYear"
@@ -461,7 +462,9 @@ df_UKV_LandingUKAbroad_200918_clean <- df_UKV_LandingUKAbroad_200918_long[c("Dat
 colnames(df_UKV_LandingUKAbroad_200918_clean)
 
 # Rename "SeafoodSpecies" column 
-df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
+#df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
+
+df_UKV_LandingUKAbroad_200918_cleaned <- df_UKV_LandingUKAbroad_200918_clean %>% rename(Species = SeafoodSpecies)
 
 ```
 
@@ -535,7 +538,7 @@ df_UKFarmed_200918$Volume <- df_UKFarmed_200918$apply_CF * 1000000
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
 df_UKFarmed_200918$DataSupplier <- "Eurostat"
-df_UKFarmed_200918$DataSet <- "Aquaculture"
+df_UKFarmed_200918$DataSet <- "Aquaculture excluding hatcheries and nurseries "
 df_UKFarmed_200918$Commodity <- "Production"
 df_UKFarmed_200918$Flag <- "ConV1"
 df_UKFarmed_200918$Units <- "Grams"
@@ -555,7 +558,8 @@ df_UK_aquaculture_200918 <- df_UKFarmed_200918[c("DataSupplier", "DataSet", "Com
 colnames(df_UK_aquaculture_200918)
 
 # Rename "SeafoodSpecies" column to "Species"
-df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, c("SeafoodSpecies" = "Species"))
+#df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, c("SeafoodSpecies" = "Species"))
+df_UK_aquaculture_200918_cleaned <- df_UK_aquaculture_200918 %>% rename(Species = SeafoodSpecies)
 
 ```
 
@@ -611,8 +615,10 @@ df_trade_HMRC_data_edit$FlagDescription <- "CF applied to all or part of the dat
 df_cleaned_UK_HMRC_200919 <- df_trade_HMRC_data_edit[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Value", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column to "Species"
-df_cleaned_UK_HMRC_200919_clean <- rename(df_cleaned_UK_HMRC_200919, c("SeafoodSpecies" = "Species"))
-df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919_clean,c("Value" = "Volume"))
+df_cleaned_UK_HMRC_200919_cleaned <- df_cleaned_UK_HMRC_200919 %>% rename(Species = SeafoodSpecies, Volume = Value)
+
+#df_cleaned_UK_HMRC_200919_clean <- rename(df_cleaned_UK_HMRC_200919, c("SeafoodSpecies" = "Species"))
+#df_cleaned_UK_HMRC_200919_cleaned <- rename(df_cleaned_UK_HMRC_200919_clean,c("Value" = "Volume"))
 
 colnames(df_cleaned_UK_HMRC_200919_cleaned)
 
@@ -659,7 +665,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 ```
 
 
-### Download from SPSS
+Download from SPSS.
 
 ```{r Load data (2008 to 2019)}
 # Load NDNS yrs 1 - 4
@@ -695,7 +701,7 @@ df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(
 df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
 df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
 df_NDNS_foodlevel_yr9data <- df_NDNS_foodlevel_yr9data %>% 
-  rename(Age = AgeR )
+  rename(Age = AgeR)
 df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
 df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>% 
   rename(Age = AgeR)
@@ -891,12 +897,12 @@ df_NDNS_seafoodintakeUK_200918$Volume <- (df_NDNS_seafoodintakeUK_200918$avgUKda
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
 df_NDNS_seafoodintakeUK_200918$DataSupplier <- "NDNS"
-df_NDNS_seafoodintakeUK_200918$DataSet <- "FoodDiaries"
+df_NDNS_seafoodintakeUK_200918$DataSet <- "Food Diaries"
 df_NDNS_seafoodintakeUK_200918$Commodity <- "Consumption"
 df_NDNS_seafoodintakeUK_200918$Flag <- "ConV2"
-df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "CalendarlYear"
+df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "CalendarYear"
 df_NDNS_seafoodintakeUK_200918$Units <- "Grams"
-df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Units changed to Grams/Country/Year"
+df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
 
 ```
 
@@ -1087,12 +1093,12 @@ str(df_DEFRA_household_200918_aggYear)
 ```{r Add additional variables to data set}
 # Add additional variables
 df_DEFRA_household_200918_aggYear$DataSupplier <- "DEFRA"
-df_DEFRA_household_200918_aggYear$DataSet <- "FamilyFoods_household"
+df_DEFRA_household_200918_aggYear$DataSet <- "Family Foods Household"
 df_DEFRA_household_200918_aggYear$Commodity <- "Purchases"
 df_DEFRA_household_200918_aggYear$Flag <- "ConV2"
 df_DEFRA_household_200918_aggYear$TemporalResolution <- "CalendarYear"
-df_DEFRA_household_200918_aggYear$Units <- "Grams/Country/Year"
-df_DEFRA_household_200918_aggYear$FlagDescription <- "Unit converted to Grams/Country/Year"
+df_DEFRA_household_200918_aggYear$Units <- "Grams"
+df_DEFRA_household_200918_aggYear$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
 
 
 ```
@@ -1131,7 +1137,7 @@ df_DEFRA_eatenOut_201618_short <- subset(df_DEFRA_eatenOut_201618,
                            select = c("Year", "codeDESCRIPTION", "estimate"))
 
 # Allocate units
-df_DEFRA_eatenOut_201618_short$Units <- "Grams/Capita/Week"
+df_DEFRA_eatenOut_201618_short$Units <- "g/capita/week"
 
 ```
 
@@ -1235,12 +1241,12 @@ str(df_DEFRA_eatenOut_200918_aggYear)
 ```{r Add additional variables to data set}
 # Add additional variables
 df_DEFRA_eatenOut_200918_aggYear$DataSupplier <- "DEFRA"
-df_DEFRA_eatenOut_200918_aggYear$DataSet <- "FamilyFoods_eatenOut"
+df_DEFRA_eatenOut_200918_aggYear$DataSet <- "Family Foods Eaten Out"
 df_DEFRA_eatenOut_200918_aggYear$Commodity <- "Purchases"
 df_DEFRA_eatenOut_200918_aggYear$Flag <- "ConV2"
 df_DEFRA_eatenOut_200918_aggYear$TemporalResolution <- "CalendarYear"
-df_DEFRA_eatenOut_200918_aggYear$Units <- "Grams/Country/Year"
-df_DEFRA_eatenOut_200918_aggYear$FlagDescription <- "Unit converted to Grams/Country/Year"
+df_DEFRA_eatenOut_200918_aggYear$Units <- "Grams"
+df_DEFRA_eatenOut_200918_aggYear$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
 
 ```
 
@@ -1318,7 +1324,8 @@ Select main nutrients. Both PHE and Norwegian datasets in g/100g.
 
 ```{r Select desired variables from both datasets}
 # Select desired variables
-df_PHE_nutreintComp_short <- df_PHE_nutreintComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
+Issue here!
+#df_PHE_nutreintComp_short <- df_PHE_nutreintComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
 
 # Select desired variables
 df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
