@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '12/06/2023'
+date: '14/06/2023'
 output: html_document
 ---
 
@@ -53,7 +53,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 #MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
 
 
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translationsNewCFMMO.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translationsNewCFMMO_edit.csv", sep="/"))
 # Check structure of the translation document
 str(MCS_translations)
 ```
@@ -990,6 +990,7 @@ df_DEFRA_eatenOut_201618 <- subset(df_DEFRA_purchase_201618_data, DataSupplier =
 
 ```
 
+
 Household and eaten-out purchase data are now separated.
 
 
@@ -999,12 +1000,11 @@ Household and eaten-out purchase data are now separated.
 # Select only years 2016 to 2018
 df_DEFRA_household_201618_short <- subset(df_DEFRA_household_201618, 
                            select = c("Year", "codeDESCRIPTION", "estimate"))
+unique(df_DEFRA_household_201618_short$codeDESCRIPTION)
 
-# Allocate units
-df_DEFRA_household_201618_short$Units <- "Grams/Capita/Week"
+df_DEFRA_household_201618_short$Units <- "g"
 
 ```
-
 
 
 ### iii) Household data (2009 to 2015)
@@ -1063,7 +1063,9 @@ df_DEFRA_household_200918$SpeciesRevised <- df_DEFRA_household_200918$FoodProduc
 df_DEFRA_household_200918 <- df_DEFRA_household_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
-# Cehck column names
+# Observations in the data frame will be less as original table included "sum" of some species. 
+
+# Check column names
 colnames(df_DEFRA_household_200918)
 
 ```
@@ -1127,6 +1129,26 @@ write.csv(df_DEFRA_household_200918_aggYear_cleaned, file =
             paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
+
+
+```{r Delete later}
+# Ascertain annual seafood purchases
+#annual_purchase_201620 <- aggregate(estimate ~ Year, data = df_DEFRA_purchase_201620_data, sum)
+#annual_purchase_HH_200915 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200915_long, sum)
+#annual_purchase_EO_200915 <- aggregate(Volume ~ Year, data = df_DEFRA_eatenOut_200915_long, sum)
+
+#annual_purchases_HH_201618 <- aggregate(estimate ~ Year, data = df_DEFRA_household_201618, sum)
+#annual_purchases_EO_201618 <- aggregate(estimate ~ Year, data = df_DEFRA_eatenOut_201618, sum)
+
+# Households
+#annual_purchase_HH_200915J <- aggregate(Volume ~ Year, data = df_DEFRA_household_201915_to_join, sum)
+#annual_purchase_HH_201618J <- aggregate(Volume ~ Year, data = df_DEFRA_household_201618_to_join, sum)
+#annual_purchase_HH_200918 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200918, sum)
+
+#annual_household_200918 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200918_agg, sum)
+
+```
+
 
 
 
@@ -1327,6 +1349,7 @@ Select main nutrients. Both PHE and Norwegian datasets in g/100g.
 ```{r Select desired variables from both datasets}
 # Select desired variables
 Issue here!
+  
 #df_PHE_nutreintComp_short <- df_PHE_nutreintComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
 
 # Select desired variables
@@ -1358,7 +1381,7 @@ df_all_nutrient_long <- melt(df_all_nutrientComp, id.vars = c("FoodItem"), varia
 
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification/SeafoodNutrientComposition", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
