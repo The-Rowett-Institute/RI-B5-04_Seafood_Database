@@ -1,7 +1,7 @@
 ---
 title: "NatureFood_SeafoodFigures"
 author: "Lofstedt, A."
-date: "07-06-23"
+date: "15-06-23"
 output: powerpoint_presentation
 ---
 
@@ -66,8 +66,6 @@ cbPalette <- c("#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00",
 ```
 
 
-# Add in per capita per week 
-
 
 ```{r Load file path, echo=TRUE}
 # Loading file path to the data into a value 
@@ -100,10 +98,9 @@ df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
 
 ```
 
+
 ```{r Merge SFDB with UK population}
-
 df_UK_seafoodDB_Y <- merge(df_UK_seafoodDB, df_UK_population_simp, "Year")
-
 ```
 
 
@@ -140,6 +137,8 @@ df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_shorter, id.vars = c("Year"
 # Aggregate data 
 df_UK_seafoodDB_PCW_sum <- aggregate(Volume ~ Year + Commodity, data = df_UK_seafoodDB_PCW_long, sum)
 
+
+# Plot figure. Two option below- low to high or high to low
 df_UK_seafoodDB_PCW_sum$Commodity_f <-  factor(df_UK_seafoodDB_PCW_sum$Commodity, levels = c("Consumption", "Purchases", "Supply"))
 
 # Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
@@ -227,7 +226,24 @@ ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f
 
 
 
+### Figure 5. Nutrients supplied and exported per species in 2018. 
 
+To include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, and zinc
+
+```{r}
+calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, and zinc
+```
+
+
+
+
+
+
+
+
+
+
+#### Old code
 ### Figure 5. Species contibutions to RNIs Nutrient supply, by species, in 2018. 
 
 Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc.
@@ -291,8 +307,6 @@ df_mainFish_NC <- rbind(df_max_min, df_nutrients_recs_short)
 
 # Rename columns 
 colnames(df_mainFish_NC) <- c("Total PUFA", "Calcium", "Iron", "VitaminD", "Zinc")
-
-
 
 # Exports  
 # Plot the data for one fish 
@@ -389,12 +403,6 @@ f + legend("topright",legend = rownames(df_topExports[-c(1,2),]), bty = "n", pch
 ```
 
 
-
-
-
-
-
-
 ```{r Seafood supplies and consumption between 2009 and 2018}
 # Subset desired variables 
 df_UK_seafoodDB_PCW_CS <- df_UK_seafoodDB_PCW_short[c("Supply", "Consumption", "Year", "Species", "SACN")]
@@ -422,9 +430,6 @@ df_UK_NC_NOI <- df_UK_NC_SOI %>%
   group_by(Species) %>%
   filter(row_number()==1)
 ```
-
-
-
 
 
 ```{r Calculate nutrient density score of each fish species}
