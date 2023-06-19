@@ -1,0 +1,219 @@
+---
+title: "HMRC_UK_Trade_Cleaning"
+author: "AL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Part 2: Cleaning of the trade data set (imports & exports) from the HMRC 
+
+This R Markdown document outlines how the trade data set from HRMC was processed and cleaned. The data set details the imports and exports of seafood products between the years 2009 and 2019. 
+
+The justification for the data included in this data set can be found in the supporting excel document.  
+
+## Preparation
+
+```{r Loading Libraries, echo=TRUE}
+library(tidyr)
+library(tidyverse)
+library(vroom) #for loading and transforming data
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+
+```
+
+```{r Loading filepath to Raw data}
+#Loading file path to project folder
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+
+```
+
+## Loading the HMRC trade data
+
+```{r Loading HMRC data}
+# Set file path to RawData 
+filepath <- paste(data_dir,"RawData/csv-files", sep="") 
+
+# reading the HRMC trade data dataset (.csv)
+#df_HRMC_2009 <- vroom(file=paste(filepath,"HMRC_UK_trade-2009.csv", sep="/"))
+vec_filenames_HMRC <- list.files(filepath, pattern = "HMRC_UK_trade", full.names = TRUE)
+
+
+
+print("The following files were loaded:")
+i = 1
+# Loading the cleaned dataset
+for(f in vec_filenames_HMRC){
+
+    temp <- fread(f) # storing the data in a temporary 
+    assign(paste("df_HMRC_",i,sep=""),temp) # assigning the df a name based on input dataset
+    print(paste(i,". ",sub(paste(".*",filepath,sep=""),"",f),sep="")) # print out which dataset files had been used
+    i = i+1
+    rm(temp)# removing temp object
+}
+rm(i)
+
+# Next step is to combine this all into big HMRC data.frame
+df_HRMC_2009_to_2019 <- bind_rows(df_HMRC_1, df_HMRC_2, df_HMRC_3, df_HMRC_4, df_HMRC_5, df_HMRC_6)
+
+rm(df_HMRC_1, df_HMRC_2, df_HMRC_3, df_HMRC_4, df_HMRC_5, df_HMRC_6) # removing the unneeded df
+
+```
+
+#### Checking for missing values
+
+
+```{r Check for missing values in HMRC data}
+md.pattern(df_HRMC_2009_to_2019, rotate.names = TRUE)
+```
+
+
+### Loading the EUMOFA data
+
+We use the EUMOFA data as a help to facilitate the classification and translation of the HRMC CN-8 codes in to our desired species and species type. The EUMOFA has a classification mapped to each CN-8 code. Using this, instead of crawling through the HMRC "Product name"-column and searching for specific key words its text, will mitigate a lot of potential miss-classification. As the HMRC "Product name", does not seem to use controlled vocabulary and has various spelling version of the same word (plural & single) included.  
+
+[MAYBE MORE DETAILS ON EUMOFA DATA HERE]
+
+```{r loading EUMOFA data}
+############### EUMOFA-file
+
+# Filepath to EUMOFA-file with complete CN-8 codes
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification/", sep="")
+# reading the EUMOFA-file
+df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
+## Note: the CN8 codes are related to the respective year, and have change over time.
+
+# We are also loading the Annex 4 from the Metadata 2 - Data management EUFOMA https://www.eumofa.eu/supply-balance-and-other-methodologies
+# ANNEX 4 Correlation between Main commercial species(MCS)/Commodity Groups (CG) and CN-8 from 2001 to 2022 Revision 1.2
+
+df_EUMOFA_CN8_MCS_CG <- vroom(file=paste(filepath,"EUMOFA_Annex4.csv", sep="/"))
+
+# loading Species classification - translation from EUMOFA MCS & CG to the classification we want to use.
+df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep=""))
+
+df_Species_Class$CF_value <- as.numeric(df_Species_Class$CF_value) # forcing numeric-class for calculation later and to turn the NoData values into NA 
+
+```
+
+#### Checking for missing values
+
+```{r Check for misisng values in EUMOFA data and our classification}
+
+md.pattern(df_EUMOFA_CN8_MCS_CG, rotate.names = TRUE)
+
+md.pattern(df_Species_Class, rotate.names = TRUE)
+
+md.pattern(df_EUMOFA_CN8, rotate.names = TRUE)
+
+```
+We have 25 missing (NA) values in the EUMOFA dataset, 20 in the "Explanation"-column and 5 in the "CN-8 product name"-column. As annoying as NA-values are, in this instance we can ignore them. As these values are irrelevant for us and the next steps, since the EUMOFA Annex 4 dataset has no NA-values and the main commercial species (MCS) and commodity groups (CG) for the respective CN-8 code.  
+
+## Processing the data
+
+```{r preparing EUOFA CN8 data.frame}
+
+# need to remove the space from the 'CN-8'-column. But leave it as character, so we don't loose the "0" at the beginning of the CN8 code
+# https://stackoverflow.com/questions/20309876/r-how-to-replace-in-a-string
+
+df_EUMOFA_CN8$`CN-8` <- gsub("\\ ","", df_EUMOFA_CN8$`CN-8`)
+
+#df_EUMOFA_CN8_2009 <- df_EUMOFA_CN8 %>% filter(Year %in% "2009" )
+
+print("FYI: In the EUMOFA CN-8 product name-Column are large - symbols, which R does not recognize replaces them with ? in a square")
+
+```
+
+```{r Preparing HRMC trade data data.frame part 1}
+# Need to separate the CN8 code from the description in the CN8-column of the HMRC data
+df_HRMC_2009_to_2019$Subset_aid_CN8 <- gsub(" .*$", "", df_HRMC_2009_to_2019$CN8) # subset string before white space
+
+# Thanks to our psychic abilities, we know that one of the CN8-codes in the HRMC Uk trade is missing its lead 0. And we need to deal with that.  
+
+# Check what will not be joined
+df_HMRC_anti <- df_HRMC_2009_to_2019 %>% select('Net Mass (Kg)', 'Flow Type', 'Year','Month', 'Subset_aid_CN8', 'CN8') %>%  anti_join(.,df_EUMOFA_CN8, by = c('Subset_aid_CN8' = 'CN-8'))
+#The following CN8 code items were not joined
+unique(df_HMRC_anti$CN8)
+
+# Need to include "03 HS2 Below Threshold Trade" as per WWF risky seafood business report
+```
+
+It is item [2] "3074959", were we need to add a lead zero. 
+
+```{r Preparing HRMC trade data data.frame part 2}
+# Add the lead 0 to "3074959" in the HRMC UK trade data
+df_HRMC_2009_to_2019$Subset_aid_CN8 <- str_replace(df_HRMC_2009_to_2019$Subset_aid_CN8,"3074959","03074959")
+
+# The "Flow Type" is also separate into "EU" and "Non-EU" Imports and Exports
+df_HRMC_2009_to_2019$`Flow Type` <- str_replace(df_HRMC_2009_to_2019$`Flow Type`,"Non EU - ","") # needs to be first. Or else line 83 will remove "EU" from "Non EU -"
+df_HRMC_2009_to_2019$`Flow Type` <- str_replace(df_HRMC_2009_to_2019$`Flow Type`,"EU - ","")
+
+
+# Now, we can join the HMRC trade data and the EUMOFA data
+df_HMRC_inner <- df_HRMC_2009_to_2019 %>% select('Net Mass (Kg)', 'Flow Type', 'Year','Month', 'Subset_aid_CN8') %>%  inner_join(.,df_EUMOFA_CN8, by = c('Subset_aid_CN8' = 'CN-8', 'Year' ))
+
+```
+
+
+```{r Calculating annual sum based on CN8 code / Species}
+# Calculate annual sum, selecting needed columns and converting to Net Mass from kg to 1000 tonnes
+df_HRMC.sum <- df_HMRC_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year, Commodity =`Flow Type`, CF) %>% summarise(`Net Mass (g)`= sum(`Net Mass (Kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (Kg)`))
+
+rm(df_HMRC_inner)
+
+df_HMRC_4DB <-df_HRMC.sum
+
+```
+
+
+
+```{r Assigning species & species Type}
+
+# Mapping EUMOFA Main Commercial Species (MCS) and Commodity Group (CG) classification
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
+
+# Mapping our desired Species Species Type classification
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'MCS (DO NOT TOUCH)'))
+
+## converting the whole fishing weight into its edible weight
+## When "CF == 1", then it is the whole fish
+df_HMRC_4DB$`Net Mass (g)` <- ifelse(df_HMRC_4DB$CF==1,df_HMRC_4DB$`Net Mass (g)`*df_HMRC_4DB$CF_value,df_HMRC_4DB$`Net Mass (g)`)
+
+# We will now need to aggregate the weight values for some species again e.g. converting Atlantic & Pacific salmon to just "salmon".
+df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = SeafoodSpecies, SpeciesType, Year, Commodity, SACN) %>% summarise(`Net Mass (g)`= sum(`Net Mass (kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
+
+df_HMRC_4DB <- df_HRMC.sum
+
+```
+
+
+```{r Add additional variables to the data set}
+df_HMRC_4DB$DataSupplier <- "HMRC"
+df_HMRC_4DB$DataSet <- "HMRC Overseas Trade data table - UK Trade Info"
+#determining if the Fish is for Human consumption or not based on the CF from the EUMOFA-file
+df_HMRC_4DB <- rename(df_HMRC_4DB, Value =`Net Mass (g)`)
+df_HMRC_4DB$Units <- "Grams"
+df_HMRC_4DB$TemporalResolution <- "Annual"
+df_HMRC_4DB$Flag <- "ConV1"
+df_HMRC_4DB$FlagDescription <- "ConV1: Conversion factors were applied to all or part of the data (i.e., whole fish to edible portion)"
+
+```
+
+
+```{r Selecting Columns, removing non-food uses and Saving to .csv}
+# Selecting Columns
+df_HMRC_4DB <- df_HMRC_4DB %>% ungroup %>%  select(DataSupplier, DataSet, Commodity, Species, SpeciesType, SACN, Value, Units, Year, TemporalResolution, Flag, FlagDescription)
+
+# Removing non-food uses from trade data- Check if still needed
+df_HMRC_4DB <- df_HMRC_4DB %>%  filter(!Species %in% "Other non-food use")
+
+unique(df_HMRC_4DB$Species)
+
+filepath <- paste(data_dir,"ProcessedData", sep="")
+
+write.csv(df_HMRC_4DB, paste(filepath,"TradeData_HMRC_Preliminary-Cleaned.csv", sep="/"), row.names = FALSE)
+
+```

@@ -125,6 +125,24 @@ df_UK_seafoodDB_PCW_short <- df_UK_seafoodDB_PCW_short %>%
 
 
 
+```{r Delete later}
+
+# Aggregate data 
+df_UK_seafoodDB_PCW_test <- aggregate(Supply ~ Year + Species, data = df_UK_seafoodDB_PCW_short, sum)
+df_UK_seafoodDB_PCW_test18 <- subset(df_UK_seafoodDB_PCW_test, Year == 2018)
+
+ggplot(df_UK_seafoodDB_PCW_test18, aes(Species, Supply)) +
+  geom_bar(position = "stack", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,100)) +
+  scale_x_discrete(name = "Year", 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  theme(legend.title = element_blank()) 
+
+```
+
+
+
 ### Figure 1A. UK seafood supplies, consumption and purchases (g/capita/week) between 2009 and 2018.
 
 ```{r Seafood supplies consumption and purchases between 2009 and 2018}
@@ -231,7 +249,25 @@ ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f
 To include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, and zinc
 
 ```{r}
-calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, and zinc
+
+# Multiply nutrient content by supplies and exports
+
+# Calcium 
+X$supplies_Ca <- x$Supplies * (x$Supplies/ 100)
+x$export_Ca <- x$Exports * (x$Supplies/ 100)
+
+# Iron 
+
+
+# Subset nutrient supplies and exports 
+
+
+# Bar chart of nutrient supplies
+
+# Bar chart of nutrient exports
+
+
+
 ```
 
 
