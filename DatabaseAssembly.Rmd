@@ -146,6 +146,9 @@ df_all_nutrient_clean <- df_PHE_nutrient %>% rename(Species = SeafoodSpecies)
 ```
 
 ```{r Simplify nutrient dataframe and unstack}
+# Rename 
+df_PHE_nutrient <- df_PHE_nutrient %>% rename(Species = SeafoodSpecies)
+
 # Subset desired columns
 df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
 

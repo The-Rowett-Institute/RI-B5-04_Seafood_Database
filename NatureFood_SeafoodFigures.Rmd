@@ -248,21 +248,145 @@ ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f
 
 To include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, and zinc
 
-```{r}
+```{r Calcualte nutrient supplies and exports in PCW}
 
-# Multiply nutrient content by supplies and exports
+# Calculate supplies 
+df_UK_seafoodDBNC$Supply <- (df_UK_seafoodDBNC$Production + 
+                               df_UK_seafoodDBNC$Imports)- df_UK_seafoodDBNC$Exports
 
-# Calcium 
-X$supplies_Ca <- x$Supplies * (x$Supplies/ 100)
-x$export_Ca <- x$Exports * (x$Supplies/ 100)
+# Divide nutrients by 100g and multiply nutrient content by supplies
+df_UK_seafoodDBNC$SupplyPUFA_g <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$TotalPUFA_g100g/ 100)
 
-# Iron 
+df_UK_seafoodDBNC$SupplyVitaminA_ug <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$VitaminA_µg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyVitaminD_ug <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$VitaminD_µg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyVitaminB12_ug <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$VitaminB12_µg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyZinc_mg <- df_UK_seafoodDBNC$Supply * 
+  (df_UK_seafoodDBNC$Zinc_mg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyIron_mg <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$Iron_mg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyCalcium_mg <- df_UK_seafoodDBNC$Supply *
+  (df_UK_seafoodDBNC$Calcium_mg100g/ 100)
+
+df_UK_seafoodDBNC$SupplySelenium_ug <- df_UK_seafoodDBNC$Supply * 
+  (df_UK_seafoodDBNC$Selenium_µg100g/ 100)
+
+df_UK_seafoodDBNC$SupplyIodine_ug <- df_UK_seafoodDBNC$Supply * 
+  (df_UK_seafoodDBNC$Iodine_µg100g/ 100)
 
 
-# Subset nutrient supplies and exports 
+# Divide nutrients by 100g and multiply nutrient content by exports
+df_UK_seafoodDBNC$ExportsPUFA_g <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$TotalPUFA_g100g/ 100)
 
+df_UK_seafoodDBNC$ExportsVitaminA_ug <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$VitaminA_µg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsVitaminD_ug <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$VitaminD_µg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsVitaminB12_ug <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$VitaminB12_µg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsZinc_mg <- df_UK_seafoodDBNC$Exports * 
+  (df_UK_seafoodDBNC$Zinc_mg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsIron_mg <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$Iron_mg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsCalcium_mg <- df_UK_seafoodDBNC$Exports *
+  (df_UK_seafoodDBNC$Calcium_mg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsSelenium_ug <- df_UK_seafoodDBNC$Exports * 
+  (df_UK_seafoodDBNC$Selenium_µg100g/ 100)
+
+df_UK_seafoodDBNC$ExportsIodine_ug <- df_UK_seafoodDBNC$Exports * 
+  (df_UK_seafoodDBNC$Iodine_µg100g/ 100)
+
+
+# Divide nutrient commodities by population size, and 52 to get to g/capita/day
+df_UK_seafoodDBNC$SupplyPUFA_gPCW <- (df_UK_seafoodDBNC$SupplyPUFA_g/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyVitaminA_ugPCW <- (df_UK_seafoodDBNC$SupplyVitaminA_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyVitaminD_ugPCW <- (df_UK_seafoodDBNC$SupplyVitaminD_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyVitaminB12_ugPCW <- (df_UK_seafoodDBNC$SupplyVitaminB12_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyIron_mgPCW <- (df_UK_seafoodDBNC$SupplyIron_mg/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyCalcium_mgPCW <- (df_UK_seafoodDBNC$SupplyCalcium_mg/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplySelenium_ugPCW <- (df_UK_seafoodDBNC$SupplySelenium_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$SupplyIodine_ugPCW <- (df_UK_seafoodDBNC$SupplyIodine_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+
+
+# Exports
+df_UK_seafoodDBNC$ExportsPUFA_gPCW <- (df_UK_seafoodDBNC$ExportsPUFA_g/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsVitaminA_ugPCW <- (df_UK_seafoodDBNC$ExportsVitaminA_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsVitaminD_ugPCW <- (df_UK_seafoodDBNC$ExportsVitaminD_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsVitaminB12_ugPCW <- (df_UK_seafoodDBNC$ExportsVitaminB12_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsIron_mgPCW <- (df_UK_seafoodDBNC$ExportsIron_mg/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsCalcium_mgPCW <- (df_UK_seafoodDBNC$ExportsCalcium_mg/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsSelenium_ugPCW <- (df_UK_seafoodDBNC$ExportsSelenium_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+df_UK_seafoodDBNC$ExportsIodine_ugPCW <- (df_UK_seafoodDBNC$ExportsIodine_ug/
+                                   df_UK_seafoodDBNC$UKPOP) / 52
+
+# Subset for 2018 inly (most recent)
+df_UK_seafoodDBNC_2018 <- subset(df_UK_seafoodDBNC, Year == 2018)
+unique(df_UK_seafoodDBNC_2018$Year)
+
+
+# Subset supply
+df_nutrientSupply <- df_UK_seafoodDBNC_2018 %>% select(Species, Year, SACN,
+                                                  SupplyPUFA_gPCW,SupplyVitaminA_ugPCW, 
+                                         SupplyVitaminD_ugPCW, SupplyVitaminB12_ugPCW,
+                                         SupplyIron_mgPCW, SupplyCalcium_mgPCW,   
+                                         SupplySelenium_ugPCW, SupplyIodine_ugPCW)
+                                         
+# Subset exports
+df_nutrientExports <- df_UK_seafoodDBNC_2018 %>% select(Species, Year, SACN,
+                                                   ExportsPUFA_gPCW,ExportsVitaminA_ugPCW,
+                                         ExportsVitaminD_ugPCW, ExportsVitaminB12_ugPCW,
+                                         ExportsIron_mgPCW, ExportsCalcium_mgPCW,
+                                         ExportsSelenium_ugPCW, ExportsIodine_ugPCW)
+
+# Restructure dataset
+# Change structure of the data set 
+df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_shorter, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
 
 # Bar chart of nutrient supplies
+str(df_nutrientExports)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_supplies_nutrients, aes(Species, PCW, fill= Nutrient)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of nutrient (g/capita/day)", limits = c(0, 0.005)) + # axis bounds set differently
+  scale_x_discrete(name = "", guide = guide_axis(angle = 45)) +
+  #geom_hline(yintercept = 250, linetype = "dashed", color = "#E69F00", linewidth = 2) +
+  #geom_hline(yintercept = 10, linetype = "twodash", color = "#009E73", linewidth = 2) +
+  scale_fill_manual(values = c("#AA4499", "#44AA99")) +
+  theme(legend.title = element_blank()) +
+  facet_wrap(~SACN, scales = "free_x") +
+  theme(legend.position = "none", strip.background = element_rect(fill= c("#CC79A7", "#999999")),
+  strip.text=element_text(color="black"))
 
 # Bar chart of nutrient exports
 
