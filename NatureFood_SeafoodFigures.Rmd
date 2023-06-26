@@ -349,48 +349,72 @@ df_UK_seafoodDBNC$ExportsSelenium_ugPCW <- (df_UK_seafoodDBNC$ExportsSelenium_ug
 df_UK_seafoodDBNC$ExportsIodine_ugPCW <- (df_UK_seafoodDBNC$ExportsIodine_ug/
                                    df_UK_seafoodDBNC$UKPOP) / 52
 
-# Subset for 2018 inly (most recent)
+
+
+# Convert to same nutrients (mg)
+df_UK_seafoodDBNC$ExportsVitaminA_mgPCW <- df_UK_seafoodDBNC$ExportsVitaminA_ugPCW / 1000
+df_UK_seafoodDBNC$ExportsVitaminD_mgPCW <- df_UK_seafoodDBNC$ExportsVitaminD_ugPCW / 1000
+df_UK_seafoodDBNC$ExportsVitaminB12_mgPCW <- df_UK_seafoodDBNC$ExportsVitaminB12_ugPCW / 1000
+df_UK_seafoodDBNC$ExportsSelenium_mgPCW <- df_UK_seafoodDBNC$ExportsSelenium_ugPCW / 1000
+df_UK_seafoodDBNC$ExportsIodine_mgPCW <- df_UK_seafoodDBNC$ExportsIodine_ugPCW / 1000
+
+
+# Subset for 2018 only (most recent)
 df_UK_seafoodDBNC_2018 <- subset(df_UK_seafoodDBNC, Year == 2018)
 unique(df_UK_seafoodDBNC_2018$Year)
 
-
 # Subset supply
 df_nutrientSupply <- df_UK_seafoodDBNC_2018 %>% select(Species, Year, SACN,
-                                                  SupplyPUFA_gPCW,SupplyVitaminA_ugPCW, 
-                                         SupplyVitaminD_ugPCW, SupplyVitaminB12_ugPCW,
+                                                  SupplyPUFA_gPCW,SupplyVitaminA_mgPCW, 
+                                         SupplyVitaminD_mgPCW, SupplyVitaminB12_mgPCW,
                                          SupplyIron_mgPCW, SupplyCalcium_mgPCW,   
-                                         SupplySelenium_ugPCW, SupplyIodine_ugPCW)
+                                         SupplySelenium_mgPCW, SupplyIodine_mgPCW)
                                          
 # Subset exports
 df_nutrientExports <- df_UK_seafoodDBNC_2018 %>% select(Species, Year, SACN,
-                                                   ExportsPUFA_gPCW,ExportsVitaminA_ugPCW,
-                                         ExportsVitaminD_ugPCW, ExportsVitaminB12_ugPCW,
+                                                   ExportsPUFA_gPCW,ExportsVitaminA_mgPCW,
+                                         ExportsVitaminD_mgPCW, ExportsVitaminB12_mgPCW,
                                          ExportsIron_mgPCW, ExportsCalcium_mgPCW,
-                                         ExportsSelenium_ugPCW, ExportsIodine_ugPCW)
+                                         ExportsSelenium_mgPCW, ExportsIodine_mgPCW)
 
-# Restructure dataset
-# Change structure of the data set 
-df_UK_seafoodDB_PCW_long <- melt(df_UK_seafoodDB_PCW_shorter, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
 
-# Bar chart of nutrient supplies
-str(df_nutrientExports)
 
-# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_supplies_nutrients, aes(Species, PCW, fill= Nutrient)) +
+# Restructure data set
+df_UK_nutrientExports <- melt(df_nutrientExports, id.vars = c("Year", "Species", "SACN"), variable.name = "Nutrient", value.name = "Volume")
+
+
+# Only include nutrients if volume is greater than 0.
+df_UK_nutrientExports_values <- subset(df_UK_nutrientExports, Volume > 0)
+
+# Plot amount of nutrients exported (g/capita/week) in 2018 
+ggplot(df_UK_nutrientExports_values, aes(Species, Volume, fill= Nutrient)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of nutrient (g/capita/day)", limits = c(0, 0.005)) + # axis bounds set differently
+  scale_y_continuous(name = "Amount of nutrient exported (capita/day)", limits = c(0, 12)) + # set axis limits
   scale_x_discrete(name = "", guide = guide_axis(angle = 45)) +
-  #geom_hline(yintercept = 250, linetype = "dashed", color = "#E69F00", linewidth = 2) +
-  #geom_hline(yintercept = 10, linetype = "twodash", color = "#009E73", linewidth = 2) +
-  scale_fill_manual(values = c("#AA4499", "#44AA99")) +
+  scale_fill_manual(values = c("#AA4499", "#44AA99", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00")) +
+  #theme(legend.title = element_blank()) +
+  facet_grid(.~SACN, scales = "free_x", space = "free_x") +
+  theme(legend.position = "none") +
+  #theme(legend.position = "none", strip.background = element_rect(fill= c("#CC79A7", "#999999")),
+  #strip.text=element_text(color="black")
+  
+  
+# Plot amount of nutrients exported (capita/week) in 2018
+# Log scale
+ggplot(df_UK_nutrientExports_values, aes(Species, Volume, fill= Nutrient)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_x_discrete(name = "", guide = guide_axis(angle = 45)) +
+  scale_fill_manual(values = c("#AA4499", "#44AA99", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00")) +
   theme(legend.title = element_blank()) +
-  facet_wrap(~SACN, scales = "free_x") +
-  theme(legend.position = "none", strip.background = element_rect(fill= c("#CC79A7", "#999999")),
-  strip.text=element_text(color="black"))
-
-# Bar chart of nutrient exports
-
-
+  facet_grid(.~SACN, scales = "free_x", space = "free_x") +
+  theme(legend.position = "none") +
+  scale_y_log10(breaks = c(seq(0.01, 0.09, 0.01), seq(0.1, 0.9, 0.1), seq(1,9,1), seq(10,90,10),
+                           seq(100,900,100), seq(1000,9000,1000), seq(10000, 90000, 10000), 
+                           seq(1000000, 10000000, 1000000)), 
+                labels = c("0.01","","","","","","","","","0.1","","","","","","","","","1 µg","",
+                           "","","","","","","","10 µg","","","","","","","","","100 µg","","","","","",
+                           "","","","1 mg","","","","","","","","","10 mg","11 mg","","","","","","","",
+                           "100 g","","","","","","","","","1 kg"))
 
 ```
 
