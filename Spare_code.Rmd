@@ -1544,3 +1544,204 @@ ggplot(df_UK_SOI_capita_2018_short, aes(reorder(Species, -Value), Value, fill= C
   theme(legend.position = "none")
   
 ```
+
+
+
+
+#### Old code
+### Figure 5. Species contibutions to RNIs Nutrient supply, by species, in 2018. 
+
+Key nutrients include calcium, iron, vitamin D, vitamin A, vitamin B12, iodine, selenium, omega-3 fatty acids and zinc.
+
+```{r Calculate nutrient contributions to weekly recommended intakes}
+# Read in data frame
+str(df_all_nutrient_cleaned)
+
+# Select specific variables and nutrients 
+df_UK_seafoodDBNC <- df_all_nutrient_cleaned %>%  
+  select(SeafoodSpecies, SACN, Nutrient, Volume) %>%
+  filter(Nutrient == "TotalPUFA_g100g"| Nutrient == "Calcium_mg100g"| Nutrient == "Iron_mg100g"| 
+         Nutrient == "VitaminD_µg100g"| Nutrient == "Zinc_mg100g")
+
+# Calculate nutrient content in 280g of fish
+df_UK_seafoodDBNC$Volume_PW <- df_UK_seafoodDBNC$Volume * 2.8
+df_UK_seafoodDBNC$Nutrient <- as.character(df_UK_seafoodDBNC$Nutrient)
+
+# Create a data frame of weekly RNIS
+df_RNI_week <- data.frame(Nutrient = c("TotalPUFA_g100g", "Calcium_mg100g", "Iron_mg100g", 
+                                       "VitaminD_µg100g",  "Zinc_mg100g"),
+                       RNI_PW_MAX = c(112, 4900, 82.6, 70, 58.1), 
+                       RNI_PW_MIN = c(0, 0, 0, 0, 0))
+
+# Merge nutrient values and recommendations
+df_nutrients_recs <- merge(df_UK_seafoodDBNC, df_RNI_week, by = "Nutrient")
+
+# Calculate nutrient contribution 
+df_nutrients_recs$nutrient_cont <- (df_nutrients_recs$Volume_PW / df_nutrients_recs$RNI_PW_MAX) * 100
+
+```
+
+
+
+```{r Create radar plots}
+# Restructure data set (nutrients along the top )
+# Need to unstack database to calculate seafood supplied. 
+# Change structure of the dataframe- convert to wide and short
+df_nutrients_recs_short <- df_nutrients_recs %>%
+  select(Nutrient, SeafoodSpecies, nutrient_cont)  %>%
+  pivot_wider(names_from = Nutrient, values_from = nutrient_cont) 
+  
+# Make first column row names
+df_nutrients_recs_short<- df_nutrients_recs_short %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="SeafoodSpecies")
+
+# Advised nutrient intake
+# Create data frame of max and min RNI's per week
+# Average for males and females
+df_max_min <- data.frame(
+  TotalPUFA_g100g = c(50, 0), Calcium_mg100g = c(50, 0), Iron_mg100g = c(50, 0),
+  VitaminD_µg100g = c(50, 0), Zinc_mg100g = c(50, 0)) ## change made here
+rownames(df_max_min) <- c("Max", "Min") # State row names
+
+colnames(df_nutrients_recs_short)
+
+
+# Combine data frames by row
+df_mainFish_NC <- rbind(df_max_min, df_nutrients_recs_short)
+
+# Rename columns 
+colnames(df_mainFish_NC) <- c("Total PUFA", "Calcium", "Iron", "VitaminD", "Zinc")
+
+# Exports  
+# Plot the data for one fish 
+df_salmon <- df_mainFish_NC[c("Max", "Min", "Salmon"),]
+
+# Create the radar charts
+radarchart(df_salmon, axistype = 1, # custom polygon
+    pcol = rgb(0.3372549, 0.7058824, 0.9137255,0.9) , pfcol = 
+      rgb(0.34, 0.71, 0.91, 0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+
+# Plot the data for one fish 
+df_mackerel <- df_mainFish_NC[c("Max", "Min", "Mackerel"),]
+
+# Create the radar charts
+radarchart(df_mackerel, axistype = 1, # custom polygon
+    pcol=rgb(0.34, 0.71, 0.91,0.9) , pfcol=rgb(0.34, 0.71, 0.91, 0.5) , plwd=4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+# Plot the data for one fish 
+df_herring <- df_mainFish_NC[c("Max", "Min", "Herring"),]
+
+# Create the radar charts
+radarchart(df_herring, axistype = 1, # custom polygon
+    pcol = rgb(0.34, 0.71, 0.91,0.9) , pfcol = rgb(0.34, 0.71, 0.91, 0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+
+
+# Plot the data for one fish 
+df_scallop <- df_mainFish_NC[c("Max", "Min", "Scallop"),]
+
+# Create the radar charts
+radarchart(df_scallop, axistype = 1, # custom polygon
+    pcol = rgb(0.34, 0.71, 0.91,0.9) , pfcol = rgb(0.34, 0.71, 0.91, 0.5) , plwd = 4 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,100,25), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+# Nephrops also in top 5
+
+
+# Reduce plot margin using par()
+# Split the screen in 3 parts
+op <- par(mar = c(1, 1, 1, 1))
+par(mfrow = c(1,3))
+```
+
+
+```{r Radar chart: top 4 exports Create radar plots}
+# Create dataframe 
+df_topExports <- df_mainFish_NC[c("Max", "Min", "Scallop", "Herring", "Mackerel", "Salmon"),]
+
+# Color vector
+colors_border = c(rgb(0.34, 0.71, 0.91, 0.9), rgb(0.94, 0.89, 0.26, 0.9), 
+                  rgb(0.8, 0.47, 0.65, 0.9), rgb(0, 0.62, 0.45, 0.9)) # 0.9 transparency
+
+colors_in = c( rgb(0.34, 0.71, 0.91, 0.5), rgb(0.94, 0.89, 0.26, 0.5) , 
+               rgb(0.8, 0.47, 0.65, 0.5), rgb(0, 0.62, 0.45, 0.5)) # 0.5 transparency
+
+width <- c(4,4,4,4)
+
+radarchart(df_topExports, axistype = 1, # custom polygon
+    pcol = colors_border , pfcol = colors_in , plwd = 4, plty = 1 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,50,10), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+radarchart(df_topExports, axistype = 1, # custom polygon
+    pcol = colors_border , plwd = 4 , plty = 1,
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,50,10), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5 #custom labels
+    )
+
+# Add a legend
+
+f <- radarchart(df_topExports, axistype = 1, # custom polygon
+    pcol = colors_border , pfcol = colors_in , plwd = 4, plty = 1 , 
+    cglcol = "grey", cglty = 1, axislabcol="grey", caxislabels = seq(0,50,12.5), cglwd = 0.8,  #custom the grid
+    vlcex = 1.5) #custom labels
+   
+    
+f + legend("topright",legend = rownames(df_topExports[-c(1,2),]), bty = "n", pch = 20 , col=colors_in , 
+       text.col = "grey", cex = 1.2, pt.cex = 3)
+
+
+
+```
+
+
+```{r Seafood supplies and consumption between 2009 and 2018}
+# Subset desired variables 
+df_UK_seafoodDB_PCW_CS <- df_UK_seafoodDB_PCW_short[c("Supply", "Consumption", "Year", "Species", "SACN")]
+
+# Change structure of the data set 
+df_UK_seafoodDB_PCW_CS_long <- melt(df_UK_seafoodDB_PCW_CS, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
+
+# Aggregate data 
+df_UK_seafoodDB_PCW_CS_sum <- aggregate(Volume ~ Year + Commodity, data = df_UK_seafoodDB_PCW_CS_long, sum)
+
+# Plot total seafood supplied and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_seafoodDB_PCW_CS_sum, aes(Year, Volume, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_discrete(guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#009E73", "#E69F00")) + # supplies, consumption, 
+  theme(legend.title = element_blank()) +
+  theme(legend.position = "none")
+
+
+# Select desired nutrients
+df_UK_NC_NOI <- df_UK_NC_SOI %>%  
+  select(Species, TotalPUFA_g100g, Calcium_mg100g, Iron_mg100g, VitaminD_µg100g, Zinc_mg100g) %>%
+  group_by(Species) %>%
+  filter(row_number()==1)
+```
+
+
+```{r Calculate nutrient density score of each fish species}
+# Divide nutrient (grams per 100 grams of food) by the recommended daily allowance (RDA) for that nutrient.
+
+# Then divide calories (per 100 grams of the food) by the reference calorie intake (2,000 calories per day).
+
+# Divide the RDA calculation by the calorie calculation
+```
+
