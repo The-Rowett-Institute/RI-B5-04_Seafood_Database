@@ -451,3 +451,84 @@ ggplot(df_nutrientExports_ug_10000, aes(Species, Volume_10000, fill= Nutrient)) 
 
 ```
 
+
+### Additional code added here. Need to calucate the percentage contribution of nutrients to the RNIs
+
+
+```{r Calculate nutrient contributions to weekly recommended intakes}
+# Read in data frame
+str(df_all_nutrient_cleaned)
+
+# Select specific variables and nutrients 
+df_UK_seafoodDBNC <- df_all_nutrient_cleaned %>%  
+  select(SeafoodSpecies, SACN, Nutrient, Volume) %>%
+  filter(Nutrient == "TotalPUFA_g100g"| Nutrient == "Calcium_mg100g"| Nutrient == "Iron_mg100g"| 
+         Nutrient == "VitaminD_µg100g"| Nutrient == "Zinc_mg100g")
+
+# Calculate nutrient content in 280g of fish
+df_UK_seafoodDBNC$Volume_PW <- df_UK_seafoodDBNC$Volume * 2.8
+df_UK_seafoodDBNC$Nutrient <- as.character(df_UK_seafoodDBNC$Nutrient)
+
+# Create a data frame of weekly RNIS
+df_RNI_week <- data.frame(Nutrient = c("TotalPUFA_g100g", "Calcium_mg100g", "Iron_mg100g", 
+                                       "VitaminD_µg100g",  "Zinc_mg100g"),
+                       RNI_PW_MAX = c(112, 4900, 82.6, 70, 58.1), 
+                       RNI_PW_MIN = c(0, 0, 0, 0, 0))
+
+# Merge nutrient values and recommendations
+df_nutrients_recs <- merge(df_UK_seafoodDBNC, df_RNI_week, by = "Nutrient")
+
+# Calculate nutrient contribution 
+df_nutrients_recs$nutrient_cont <- (df_nutrients_recs$Volume_PW / df_nutrients_recs$RNI_PW_MAX) * 100
+
+```
+
+
+
+```{r Create radar plots}
+# Restructure data set (nutrients along the top )
+# Need to unstack database to calculate seafood supplied. 
+# Change structure of the dataframe- convert to wide and short
+df_nutrients_recs_short <- df_nutrients_recs %>%
+  select(Nutrient, SeafoodSpecies, nutrient_cont)  %>%
+  pivot_wider(names_from = Nutrient, values_from = nutrient_cont) 
+  
+# Make first column row names
+df_nutrients_recs_short<- df_nutrients_recs_short %>% 
+  remove_rownames %>% 
+  column_to_rownames(var="SeafoodSpecies")
+
+
+# Average nutrient values for each species type
+avg_nutrient_exports <- aggregate(Volume ~ Nutrient + SACN, data = df_nutrientExports_ug_values, mean)
+
+# Subset by fish type 
+avg_nutrient_exports_oily <- subset(avg_nutrient_exports, SACN == "Oily")
+
+str(avg_nutrient_exports_oily)
+
+# Plot oily fish exports only
+ggplot(avg_nutrient_exports_oily,aes(Nutrient, Volume)) + #select the columns to plot
+  geom_bar(position = "dodge", stat= "identity", color = "black", width = 1,
+           alpha = 0.5) +   #change alpha to make it more or less visible #insert the values 
+  coord_polar() +                                                                       #make it round
+  geom_label(aes(label = Per90,fill=stat), size = 2,color = "white", show.legend = FALSE)+     #add a label for the value. Change 'label=Per.90' to 'label=Percentile' to show the percentiles
+ scale_fill_manual(values=c("ProteinFats" = "#D70232", #choose colors to fill the pizza parts
+                             "Minerals" = "#1A78CF",
+                             "Vitamins" = "#FF9300")) +                                                              
+  theme_minimal() +                                                                     
+  theme(legend.position = "top",
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.text.y = element_blank(),
+        plot.title = element_text(hjust=0.5),
+        plot.caption = element_text(hjust=0.5,size=6),
+        panel.grid.major = element_blank(), 
+        panel.grid.minor = element_blank())
+
+
+
+
+
+```
+
