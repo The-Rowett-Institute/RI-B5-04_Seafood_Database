@@ -172,10 +172,11 @@ ggplot(df_UK_CPS_total, aes(Year, Volume, fill= Commodity_f)) +
 
 
 ```{r Change order of bars. Seafood supplies consumption and purchases between 2009 and 2018}
-df_UK_seafoodDB_PCW_sum$Commodity_f <-  factor(df_UK_seafoodDB_PCW_sum$Commodity, levels = c("Supply", "Purchases", "Consumption"))
+
+df_UK_CPS_total$Commodity_f <-  factor(df_UK_CPS_total$Commodity, levels = c("Supply", "Purchases", "Consumption"))
 
 # Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_seafoodDB_PCW_sum, aes(Year, Volume, fill= Commodity_f)) +
+ggplot(df_UK_CPS_total, aes(Year, Volume, fill= Commodity_f)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
   scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
   scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
@@ -238,6 +239,68 @@ ggplot(df_UK_CPIE_total, aes(Year, Volume, fill= Commodity_f)) +
   theme(legend.title = element_blank()) 
   #theme(legend.position = "none")
 ```
+
+
+
+```{r Create stacked bar plot of SACN}
+# Subset desired variables 
+df_UK_seafoodDB_PCW_trade <- df_UK_seafoodDB_PCW_short[c("Imports", "Exports", "Consumption", "Purchases", "Year", "Species", "SACN")]
+
+# Change structure of the data set 
+df_UK_seafoodDB_PCW_trade_long <- melt(df_UK_seafoodDB_PCW_trade, id.vars = c("Year", "Species", "SACN"), variable.name = "Commodity", value.name = "Volume")
+
+# Aggregate data 
+df_UK_CPIE_total <- aggregate(Volume ~ Year + Commodity + SACN, data = df_UK_seafoodDB_PCW_trade_long, sum)
+
+str(df_UK_CPIE_total)
+
+# Plot figure. Two option below- low to high or high to low
+df_UK_CPIE_total$SACN_f <-  factor(df_UK_CPIE_total$SACN, levels = c("Oily", "Lean", "Shellfish", "Other"))
+
+df_UK_CPIE_total$Commodity_f <-  factor(df_UK_CPIE_total$Commodity, levels = c("Consumption", "Purchases", "Consumption"))
+
+
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_CPIE_total, aes(Year, Volume, fill= SACN_f)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,400)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73", "#F0E442")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
+  #theme(legend.position = "none")
+
+str(df_UK_CPIE_total)
+
+
+# Aggregate data to include SACN
+df_UK_CPS_SACN_total <- aggregate(Volume ~ Year + Commodity + SACN, data = df_UK_seafoodDB_PCW_long, sum)
+
+# Convert commodity to a factor
+df_UK_CPS_SACN_total$Commodity_f <-  factor(df_UK_CPS_SACN_total$Commodity, levels = c("Consumption", "Purchases", "Supply"))
+
+# Convert 
+df_UK_CPS_SACN_total$SACN_f <-  factor(df_UK_CPS_SACN_total$SACN, levels = c("Other", "Shellfish", "Lean", "Oily"))
+
+ggplot(df_UK_CPS_SACN_total, aes(x = as.numeric(interaction(Commodity_f,Year)), y = Volume, fill = SACN_f)) + 
+  geom_bar(stat = "identity", color="black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     labels = c("2009", "2010", "2011", "2012", "2013", 
+                                "2014", "2015", "2016", "2017", "2018"), 
+                     guide = guide_axis(angle = 45)) + 
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#999999", "#DDCC77",  "#CC79A7","#D55E00"))
+  
+  
+#scale_x_continuous(breaks=c(1.5,3.5,5.5),labels=c("oak","birch","cedar"))
+
+```
+
+
+
+
 
 
 ```{r Seafood imports exports consumption and purchases by SACN between 2009 and 2018}
