@@ -1500,7 +1500,7 @@ df_PHE_nutreintComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv
 # Both N/A and Tr different 
 
 # Check for missing Volumes
-md.pattern(df_PHE_nutreintComp, rotate.names = TRUE)
+#md.pattern(df_PHE_nutreintComp, rotate.names = TRUE)
 
 # Identify column names
 colnames(df_PHE_nutreintComp)
