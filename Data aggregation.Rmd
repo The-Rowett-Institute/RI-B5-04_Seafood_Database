@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Part 1. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '14/06/2023'
+date: '14/07/2023'
 output: html_document
 ---
 
@@ -50,10 +50,8 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-#MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
-
-
 MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+
 # Check structure of the translation document
 str(MCS_translations)
 ```
@@ -1505,6 +1503,15 @@ df_PHE_nutreintComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv
 # Identify column names
 colnames(df_PHE_nutreintComp)
 
+# Read in fatty acid data
+df_PHE_FAComp <- vroom(file=paste(filepath,"PHE_seafoodFAContent.csv", sep="/"), na = c("N/A", "Tr")) 
+
+# Create new column for omega-3 (sum EPA and DHA)
+df_PHE_FAComp$Omega3_EPADHA_g100g <- df_PHE_FAComp$`cis n-3 C20:5_EPA` + df_PHE_FAComp$`cis n-3 C22:6_DHA`
+
+# Join PHE nutrient composition data frame with fatty acid data frame 
+df_PHE_nutreintCompFA <- df_PHE_nutreintComp %>% left_join(., df_PHE_FAComp, by = c('SampleDescription' = 'FoodGroup'))
+
 ```
 
 
@@ -1518,6 +1525,9 @@ df_Norwegian_nutreintComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrien
 # Identify column names
 colnames(df_Norwegian_nutreintComp)
 
+# Create new column for omega-3 (sum EPA and DHA)
+df_Norwegian_nutreintComp$Omega3_EPADHA_g <- df_Norwegian_nutreintComp$`C20:5n-3_EPA_g` + df_Norwegian_nutreintComp$`C22:6n-3_DHA_g`
+
 ```
 
 
@@ -1525,22 +1535,19 @@ Select main nutrients. Both PHE and Norwegian datasets in g/100g.
 
 ```{r Select desired variables from both datasets}
 # Select desired variables
-Issue here!
-  
-#df_PHE_nutreintComp_short <- df_PHE_nutreintComp[c("SampleDescription", "Protein-g100g", "TotalPUFA-g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
+df_PHE_nutreintComp_short <- df_PHE_nutreintCompFA[c("SampleDescription", "Protein-g100g", "Omega3_EPADHA_g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
 
 # Select desired variables
-df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Protein_g", "Omega3_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
-
+df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Protein_g", "Omega3_EPADHA_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
 
 ```
 
 
 ```{r Rename variables and join datasets}
 # Rename variables
-names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "TotalPUFA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
+names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "Omega3_DHAEPA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
 
-names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "TotalPUFA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
+names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "Omega3_DHAEPA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
 
 # Combine data frames
 df_all_nutrientComp <- rbind(df_PHE_nutreintComp_short,
@@ -1595,7 +1602,7 @@ df_all_nutrient_long$Commodity <- "NutrientComposition"
 df_all_nutrient_long$Flag <- "NA"
 df_all_nutrient_long$FlagDescription <- "NA"
 df_all_nutrient_long$TemporalResolution <- "NA"
-df_all_nutrient_long$Units <- "g/100g"
+df_all_nutrient_long$Units <- "weight/100g"
 df_all_nutrient_long$Year <- "NA"
 ```
 
@@ -1611,9 +1618,10 @@ df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Co
 df_all_nutrient_clean <- rename(df_all_nutrient_cleaned, 
                                                     Species = SeafoodSpecies)
 
-df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("Species" == "SeafoodSpecies")
-df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("SeafoodSpecies" == "Species")
-df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename(SeafoodSpecies = Species)
+str(df_all_nutrient_clean)
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("Species" == "SeafoodSpecies")
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("SeafoodSpecies" == "Species")
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename(SeafoodSpecies = Species)
 
 ```
 
