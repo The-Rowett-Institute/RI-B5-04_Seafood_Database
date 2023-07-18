@@ -25,6 +25,7 @@ library(ggthemes) # contains extra themes, scales and functions for and related 
 library(gridExtra)
 library(cowplot) # Plots two figures one output
 library(fmsb) # for radar plots
+library(ggpattern) # cross marking on plots
 
 ```
 
@@ -279,25 +280,84 @@ ggplot(df_UK_CPIE_total, aes(x = as.numeric(interaction(Commodity_f,Year)), y = 
 
 
 ```{r Seafood imports exports consumption and purchases by SACN between 2009 and 2018}
+# Create new column stating finfish and shellfish
+df_UK_seafoodDB_PCW_trade_long_finfish <- subset(df_UK_seafoodDB_PCW_trade_long, SACN == "Lean" | SACN == "Oily")
+df_UK_seafoodDB_PCW_trade_long_finfish$SACNType <- "Finfish"
+
+df_UK_seafoodDB_PCW_trade_long_OtherSeafood <- subset(df_UK_seafoodDB_PCW_trade_long, SACN == "Shellfish" | SACN == "Other")
+df_UK_seafoodDB_PCW_trade_long_OtherSeafood$SACNType <- "OtherSeafood"
+
+# Combine two data frames
+df_UK_seafoodDB_PCW_long_SCANT <- rbind(df_UK_seafoodDB_PCW_trade_long_finfish, df_UK_seafoodDB_PCW_trade_long_OtherSeafood)
 
 # Aggregate data 
-df_UK_CPIE_SACN_total <- aggregate(Volume ~ Year + Commodity +SACN, data = df_UK_seafoodDB_PCW_trade_long, sum)
+df_UK_CPS_SACN_total <- aggregate(Volume ~ Year + Commodity + SACNType, data = df_UK_seafoodDB_PCW_long_SCANT, sum)
 
+##
 
+ggplot(df_UK_CPS_SACN_total) +
+  geom_col_pattern(
+    aes(Year, Volume, pattern_fill = SACNType), 
+    pattern = 'stripe',
+    fill    = 'white',
+    colour  = 'black'
+  ) +
+  theme_bw(18) +
+  theme(legend.position = 'none') + 
+  coord_fixed(ratio = 1/2)
+
+##
 
 # Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
-ggplot(df_UK_CPIE_SACN_total, aes(Year, Volume, fill= Commodity_f)) +
+ggplot(df_UK_CPS_SACN_total, aes(Year, Volume, fill= Commodity)) +
   geom_bar(position = "dodge", stat= "identity", color = "black") +
-  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,400)) +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
   scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
                      guide = guide_axis(angle = 45)) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
-  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73", "#F0E442")) + # supplies, consumption, purchases
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
   theme(legend.title = element_blank()) 
   #theme(legend.position = "none")
 
 
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_CPS_SACN_total, aes(Year, Volume, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
 
+ggplot(df_UK_CPS_SACN_total) +
+  geom_col_pattern(aes(Year, Volume, pattern_fill = SACNType), pattern = 'stripe', fill = 'white',
+                   colour  = 'black') +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
+
+# Overlaying two plots
+ggplot(df_UK_CPS_SACN_total) +
+  geom_bar(aes(Year, Volume, fill= Commodity), position = "dodge", stat= "identity", color = "black") +
+  geom_col_pattern(aes(Year, Volume, pattern_fill = SACNType), pattern = 'stripe', fill = "#009E73",
+                   colour  = 'black', width = 0.3, position = position_nudge(x = 0.3)) +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank())
+
+# How to remove from R?
+```
+
+
+
+```{r Seafood imports exports consumption and purchases by SACN between 2009 and 2018}
 # Aggregate data to include SACN
 df_UK_CPIE_SACN_total <- aggregate(Volume ~ Year + Commodity + SACN, data = df_UK_seafoodDB_PCW_trade_long, sum)
 
@@ -317,9 +377,6 @@ ggplot(df_UK_CPIE_SACN_total, aes(x = Year, y = Volume, fill = SACN_f)) +
                      guide = guide_axis(angle = 45)) +
   scale_fill_manual(values = c("#999999", "#DDCC77",  "#CC79A7","#D55E00")) +
   geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2)
-
-
-
 ```
 
 
