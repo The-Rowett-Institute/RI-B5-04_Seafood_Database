@@ -1745,3 +1745,42 @@ df_UK_NC_NOI <- df_UK_NC_SOI %>%
 # Divide the RDA calculation by the calorie calculation
 ```
 
+
+```{r Seafood imports exports consumption and purchases by SACN between 2009 and 2018}
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_CPS_SACN_total, aes(Year, Volume, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
+  #theme(legend.position = "none")
+
+
+# Plot total seafood supplied, purchases and consumed (g/capita/week) between 2009 and 2018. 
+ggplot(df_UK_CPS_SACN_total, aes(Year, Volume, fill= Commodity)) +
+  geom_bar(position = "dodge", stat= "identity", color = "black") +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank()) 
+
+ggplot(df_UK_CPS_SACN_total) +
+  geom_col_pattern(aes(Year, Volume, pattern_fill = SACNType), pattern = 'stripe', fill = 'white',
+                   colour  = 'black') +
+  scale_y_continuous(name = "Amount of seafood (g/capita/week)", limits = c(0,300)) +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2) +
+  scale_fill_manual(values = c("#E69F00", "#0072B2", "#009E73")) + # supplies, consumption, purchases
+  theme(legend.title = element_blank())
+```
+
+
+
+
+
