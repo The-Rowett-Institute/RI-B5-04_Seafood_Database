@@ -551,6 +551,32 @@ ggplot(df_UK_seafoodSupplies_LOS_18, aes(y = Supply, x = Year, fill = SACN_f)) +
 
 
 
+```{r}
+# Check structure
+str(df_UK_seafoodDB_PCW_short)
+
+# Subset of herring, mackerel and salmon
+df_selectedSpecies <- subset(df_UK_seafoodDB_PCW_short, Species == "Herring" | Species == "Mackerel" | Species == "Salmon")
+
+# Sum UK seafood production, imports and exports by species
+df_UK_selectedSpecies <- aggregate(Year ~ Exports + Imports + Production + Species, data = df_selectedSpecies, sum)
+
+# Create new column
+df_UK_selectedSpecies$Supply <- (df_UK_selectedSpecies$Imports + df_UK_selectedSpecies$Production) - df_UK_selectedSpecies$Exports
+
+# Plot the deficit of each species per year
+ggplot(df_UK_selectedSpecies, aes(y = Supply, x = Year, fill = Species)) +
+  geom_bar(position = "dodge", stat = "identity", color = "black", width = 0.4) + 
+  scale_y_continuous(name = "Finfish deficit of selected species (g/capita/week)") +
+  scale_x_continuous(name = "Year", breaks = seq(2009, 2018, 1), 
+                     guide = guide_axis(angle = 45)) +
+  scale_fill_manual(values = c("#DDCC77", "#CC79A7","#D55E00")) +
+  #geom_hline(yintercept = 280, linetype = "dashed", color = "red", linewidth = 2.0) + 
+  #theme(legend.title = element_blank())
+
+
+
+```
 
 
 
