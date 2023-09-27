@@ -47,7 +47,7 @@ theme_set(theme_bw()%+replace%
             theme(
               title = element_text(size = 26), 
               text = element_text(size = 30), 
-              axis.text = element_text(size = 26, colour = "gray40"), # increase to make readable
+              axis.text = element_text(size = 26, colour = "black"), # increase to make readable
               legend.key.size = unit(1.2, "cm"), 
               legend.title = element_text(size = 26), 
               legend.text = element_text(size = 24),
@@ -97,6 +97,10 @@ df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryClean
 # Simplify population data
 df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
 
+62260500- 66435600
+66435600- 62260500
+
+(4175100/66435600)*100
 ```
 
 
@@ -122,6 +126,7 @@ df_UK_seafoodDB_PCW_short <- df_UK_seafoodDB_PCW_simp %>%
 # Calculate seafood supplies whilst ignoring NA values
 df_UK_seafoodDB_PCW_short <- df_UK_seafoodDB_PCW_short %>% 
   mutate(Supply = Production + Imports - Exports )
+
 ```
 
 
@@ -206,6 +211,19 @@ ggplot(df_UK_CPS_total, aes(Year, Volume, fill= Commodity_f)) +
 
 
 ```
+
+```{r Calculate seafood wasted at the household level (purchases less consumption)}
+df_UK_seafoodDB_PCW_short
+str(df_UK_seafoodDB_PCW_short)
+
+df_UK_seafoodWaste <- df_UK_seafoodDB_PCW_short$Consumption %>% select(Year, Purchases, Consumption)
+
+aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_UK_seafoodDB_PCW, sum)
+
+```
+
+
+
 
 
 ```{r Seafood supplies consumption and purchases by SACN category between 2009 and 2018}
@@ -405,6 +423,8 @@ df_UK_seafoodDB_PCW_short$Waste <- df_UK_seafoodDB_PCW_short$Purchases - df_UK_s
 # Aggregate data 
 df_UK_seafoodWaste <- aggregate(Waste ~ Year, data = df_UK_seafoodDB_PCW_short, sum)
 
+summary(df_UK_seafoodWaste)
+
 ggplot(df_UK_seafoodWaste, aes(Year, Waste)) +
   geom_bar(position = "stack", stat= "identity", color = "black") +
   scale_y_continuous(name = "Seafood waste(g/capita/week)", limits = c(0,300)) +
@@ -441,6 +461,9 @@ df_UK_seafoodProduction_LOS$SACN_f <-  factor(df_UK_seafoodProduction_LOS$SACN, 
 
 df_UK_seafoodProduction_LOSO$SACN_f <-  factor(df_UK_seafoodProduction_LOSO$SACN, levels = c("Other", "Shellfish", 
                                                                                              "Lean", "Oily"))
+
+# Calculate total domestic prodcution per year
+total_domestic <- aggregate(Production ~ Year, data = df_UK_seafoodProduction_LOSO, sum)
 
 # Plot average seafood supply (g/capita/week), to SACN level (lean and oily) between 2009 and 2018. 
 ggplot(df_UK_seafoodProduction_LOSO, aes(y = Production, x = Year, fill = SACN_f)) +
