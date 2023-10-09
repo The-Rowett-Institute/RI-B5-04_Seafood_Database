@@ -197,7 +197,7 @@ df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryClean
 df_UK_population_simp <- df_UK_population[,c("Year", "UKPOP")]
 
 # Merge seafood database with UK population data
-df_UK_seafoodDB_capita <- merge(df_UK_seafoodDB, df_UK_population_simp, by = "Year")
+df_UK_SeafoodDB_capita <- merge(df_UK_SeafoodDB, df_UK_population_simp, by = "Year")
 
 # Calculate seafood per capita per week
 df_UK_seafoodDB_capita$VolumeCapita <- (df_UK_seafoodDB_capita$Volume/ df_UK_seafoodDB_capita$UKPOP)/52
