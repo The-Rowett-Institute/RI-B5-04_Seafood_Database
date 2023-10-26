@@ -50,7 +50,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations_updated.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -209,19 +209,6 @@ df_UK_AllUKLandings_200911_long <- melt(df_UK_AllUKLandings_200911_data, id.vars
 df_UK_AllUKLandings_200918 <- rbind(df_UK_AllUKLandings_201718_long,
                               df_UK_AllUKLandings_201216_long, 
                               df_UK_AllUKLandings_200911_long)
-```
-
-
-```{r DELETE LATER}
-# Create dataframe of unique species 
-MMOSpeciesALLUKLandings <- as.data.frame(unique(df_UK_AllUKLandings_200918$Species))
-
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData/", sep = "")
-
-# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
-write.csv(MMOSpeciesALLUKLandings, file = paste(filepath,"UniqueMMOSpecies.csv", sep = ""), row.names = FALSE)
-
 ```
 
 
@@ -599,6 +586,7 @@ colnames(df_UKV_LandingUKonly_200918_long)
 ```
 
 
+
 Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. Conversion factors taken from Lofstedt et al 2021. 
 
 ```{r Apply conversion factors to calculate edible portion}
@@ -648,6 +636,17 @@ df_UKV_LandingUKonly_200918_cleaned <- df_UKV_LandingUKonly_200918_clean %>% ren
 ```
 
 
+```{r Check for duplicates}
+df_UKV_LandingUKonly_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+```
+
+
+
+
+
+
+
 ```{r Save cleaned data}
 # Change file path to "ProcessedData". Can also use setwd()
 filepath <- paste(data_dir,"ProcessedData/", sep = "")
@@ -670,7 +669,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load data (2009 to 2018)}
 # Read in .csv file 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918.csv", sep="/"), na = c(":"))
+df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200918_UPDATED.csv", sep="/"), na = c(":"))
 
 # Check for missing Volumes
 md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
@@ -739,6 +738,17 @@ colnames(df_UK_aquaculture_200918)
 df_UK_aquaculture_200918_cleaned <- df_UK_aquaculture_200918 %>% rename(Species = SeafoodSpecies)
 
 ```
+
+
+```{r Check for duplicates}
+str(df_UK_aquaculture_200918_cleaned)
+
+df_UK_aquaculture_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+
+```
+
 
 
 ```{r Save cleaned data}
