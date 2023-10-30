@@ -550,22 +550,6 @@ df_UKV_LandingUKonly_200918_long <- rbind(df_UKV_LandingUKonly_201718_long,
 
 
 
-```{r DELETE LATER}
-# Create dataframe of unique species 
-MMOSpeciesUKVesselsLandings <- as.data.frame(unique(df_UKV_LandingUKAbroad_200918_long$Species))
-
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData/", sep = "")
-
-# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
-write.csv(MMOSpeciesUKVesselsLandings, file = paste(filepath,"UniqueMMOSpeciesUKVessels.csv", sep = ""), row.names = FALSE)
-
-```
-
-
-
-
-
 Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
 
 We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
@@ -585,9 +569,7 @@ colnames(df_UKV_LandingUKonly_200918_long)
 
 ```
 
-
-
-Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. Conversion factors taken from Lofstedt et al 2021. 
+Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. 
 
 ```{r Apply conversion factors to calculate edible portion}
 # Identify unique conversion factors in the data set
@@ -636,15 +618,18 @@ df_UKV_LandingUKonly_200918_cleaned <- df_UKV_LandingUKonly_200918_clean %>% ren
 ```
 
 
-```{r Check for duplicates}
-df_UKV_LandingUKonly_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+```{r Check dataset}
+# Check for duplicates
+dulpicates_MMO <- df_UKV_LandingUKonly_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
   filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_MMO <- df_UKV_LandingUKonly_200918_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Production")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
 ```
-
-
-
-
-
 
 
 ```{r Save cleaned data}
@@ -740,14 +725,20 @@ df_UK_aquaculture_200918_cleaned <- df_UK_aquaculture_200918 %>% rename(Species 
 ```
 
 
-```{r Check for duplicates}
-str(df_UK_aquaculture_200918_cleaned)
-
-df_UK_aquaculture_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+```{r Check dataset}
+# Check for duplicates
+duplicates_Eurostat <- df_UK_aquaculture_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
   filter(n()>1) %>% mutate(n = n())
 
+# Check data transforms from long and thin to short and wide
+shape_Eurostat <- df_UK_aquaculture_200918_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Production")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
 
 ```
+
+
 
 
 
@@ -1029,6 +1020,20 @@ df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cl
 ```
 
 
+```{r Check dataset}
+# Check for duplicates
+duplicates_NDNS <- df_NDNS_seafoodintakeUK_200918_clean %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_NDNS <- df_NDNS_seafoodintakeUK_200918_clean %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Consumption")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
+
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData/", sep = "")
@@ -1127,7 +1132,7 @@ df_DEFRA_household_200915 <- subset(df_DEFRA_household_200915_data,
                            select = c("MinorFoodCode", "Units", "2009", "2010", "2011", 
                                       "2012", "2013", "2014","2015"))
 # Check for missing Volumes
-md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
+#md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
 
 ```
 
@@ -1211,7 +1216,6 @@ df_DEFRA_household_200918_aggYear$TemporalResolution <- "CalendarYear"
 df_DEFRA_household_200918_aggYear$Units <- "Grams"
 df_DEFRA_household_200918_aggYear$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
 
-
 ```
 
 
@@ -1229,6 +1233,20 @@ df_DEFRA_household_200918_aggYear_cleaned <- rename(df_DEFRA_household_200918_cl
 ```
 
 
+```{r Check dataset}
+# Check for duplicates
+duplicates_DEFRAHouse <- df_DEFRA_household_200918_aggYear_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_DEFRAHouse <- df_DEFRA_household_200918_aggYear_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Purchases")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
+
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData/", sep="")
@@ -1236,26 +1254,6 @@ write.csv(df_DEFRA_household_200918_aggYear_cleaned, file =
             paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
 
 ```
-
-
-```{r Delete later}
-# Ascertain annual seafood purchases
-#annual_purchase_201620 <- aggregate(estimate ~ Year, data = df_DEFRA_purchase_201620_data, sum)
-#annual_purchase_HH_200915 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200915_long, sum)
-#annual_purchase_EO_200915 <- aggregate(Volume ~ Year, data = df_DEFRA_eatenOut_200915_long, sum)
-
-#annual_purchases_HH_201618 <- aggregate(estimate ~ Year, data = df_DEFRA_household_201618, sum)
-#annual_purchases_EO_201618 <- aggregate(estimate ~ Year, data = df_DEFRA_eatenOut_201618, sum)
-
-# Households
-#annual_purchase_HH_200915J <- aggregate(Volume ~ Year, data = df_DEFRA_household_201915_to_join, sum)
-#annual_purchase_HH_201618J <- aggregate(Volume ~ Year, data = df_DEFRA_household_201618_to_join, sum)
-#annual_purchase_HH_200918 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200918, sum)
-
-#annual_household_200918 <- aggregate(Volume ~ Year, data = df_DEFRA_household_200918_agg, sum)
-
-```
-
 
 
 
@@ -1287,7 +1285,7 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 df_DEFRA_eatenOut_200915_data <- vroom(file = paste(filepath,"DEFRA_UK_eatenOut-200915.csv", sep="/"))
 
 # Check for missing Volumes
-md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
+#md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
 # Missing Volumes detected but not within time frame of interest
 
 # Select only years 2009 to 2015
@@ -1396,6 +1394,22 @@ df_DEFRA_eatenOut_200918_cleaned <- rename(df_DEFRA_eatenOut_200918_cleaned,
 colnames(df_DEFRA_eatenOut_200918_cleaned)
 
 ```
+
+
+
+```{r Check dataset}
+# Check for duplicates
+duplicates_DEFRAOut <- df_DEFRA_eatenOut_200918_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_DEFRAOut <- df_DEFRA_eatenOut_200918_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Purchases")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
 
 
 ```{r Save cleaned data}

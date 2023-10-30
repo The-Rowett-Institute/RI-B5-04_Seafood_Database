@@ -104,7 +104,7 @@ df_UK_seafoodDB_Pop <- merge(df_UK_seafoodDB, df_UK_population_simp, "Year")
 
 
 ```{r Changing volumne units to grams/capita/week}
-# Calcualte g/capita/week
+# Calculate g/capita/week
 df_UK_seafoodDB_PCW <- 
   df_UK_seafoodDB_Pop %>% 
   mutate(Volume = Volume/UKPOP/52, Units = "g/capita/week")
