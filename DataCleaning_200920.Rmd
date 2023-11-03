@@ -800,6 +800,11 @@ df_NDNS_foodlevel_yr10_data <-
 df_NDNS_foodlevel_yr11_data <- 
   read_sav(file = paste(filepath,"ndns_rp_yr11a_foodleveldietarydata_uk.sav", sep = "/"))
 
+# Load NDNS yrs 12
+df_NDNS_foodlevel_yr12_data <- 
+  read_sav(file = paste(filepath,"ndns_rp_19_foodleveldietarydata.sav", sep = "/"))
+
+
 ```
 
 
@@ -817,6 +822,15 @@ df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(Co
 df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>% 
   rename(Age = AgeR)
 df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+
+
+# up to here. Comparing the different NDNS data frames
+colnames(df_NDNS_foodlevel_yr11_data)
+str(df_NDNS_foodlevel_yr12_data)
+colnames(df_NDNS_foodlevel_yr12_data)
+df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(diarymth,WhoWithOther,WhereOther))
+
+
 
 # Join data frames
 NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
