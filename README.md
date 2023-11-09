@@ -1,12 +1,12 @@
-# RIB504_Mapping-UK-seafood-chains
-RI-B5-04. Mapping UK seafood supply chains
+RI-B5-04. Mapping UK seafood supply chains.
 
-The overall aim of this study is to reveal how the UK’s production and supply chains could be better aligned with consumption and dietary recommendations to bolster resilience, sustainability and safety, whilst optimising their nutritional impact, in working towards our ambition for net-zero emissions of all greenhouse gases by 2045. Production (capture and aquaculture), trade, consumption and purchasing data were sourced between 2009 and 2018.
+Transforming our diets to build a more sustainable food system is paramount to achieving net zero. Arguably, such diets will include more seafood. We mapped seafood production (capture and aquaculture), trade (imports and exports), purchases (within and out-of-home), and seafood consumption, to species level, between 2009 and 2020, for the UK. 
 
-Commodity and data suppliers
-1)	Production i) capture (MMO); ii) aquaculture (Eurostat)
-2)	Trade (HMRC) 
-3)	Apparent consumption (NDNS)
-4)	Purchases i) household fish purchases (DEFRA family food) ii) purchases made outside the household (DEFRA family food)
+The R markdown documents provided here detail how the data were cleaned and merged to create the seafood database.
 
-Data sources can be found on the R1-B5-04 shared drive.
+Commodity and data supplier:
+1)	Capture production (Marine Management Organisation)
+2)	Aquaculture production (Eurostat and CEFAS)
+3)	Imports and exports (HMRC) 
+4)	Purchases (DEFRA family food)
+5)	Consumption (National Dietary and Nutrition Survey)
