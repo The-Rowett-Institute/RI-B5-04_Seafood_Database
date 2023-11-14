@@ -314,13 +314,13 @@ df_UKV_LandingUKAbroad_201721_data <- vroom(file=paste(filepath,"MMO_UKV_landing
 md.pattern(df_UKV_LandingUKAbroad_201721_data, rotate.names = TRUE)
 
 # Select desired variables and years (2017 to 2019)
-df_UKV_LandingUKAbroad_201718_data <- df_UKV_LandingUKAbroad_201721_data[c("Species", "2017", "2018")]
+df_UKV_LandingUKAbroad_201720_data <- df_UKV_LandingUKAbroad_201721_data[c("Species", "2017", "2018", "2019", "2020")]
 ```
 
 
 ```{r Transform data set (2017 to 2018)}
 # Change structure of the data set 
-df_UKV_LandingUKAbroad_201718_long <- melt(df_UKV_LandingUKAbroad_201718_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+df_UKV_LandingUKAbroad_201720_long <- melt(df_UKV_LandingUKAbroad_201720_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 ```
 
 
@@ -364,25 +364,10 @@ df_UKV_LandingUKAbroad_200911_long <- melt(df_UKV_LandingUKAbroad_200911_data, i
 
 ```{r Combine data sets: i) 2008 to 2011; ii) 2012 to 2016; and iii) 2017 to 2019)}
 # Combine capture production data i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2020)
-df_UKV_LandingUKAbroad_200918_long <- rbind(df_UKV_LandingUKAbroad_201718_long,
+df_UKV_LandingUKAbroad_200918_long <- rbind(df_UKV_LandingUKAbroad_201720_long,
                               df_UKV_LandingUKAbroad_201216_long, 
                               df_UKV_LandingUKAbroad_200911_long)
 ```
-
-
-```{r DELETE LATER}
-# Create dataframe of unique species 
-MMOSpeciesUKVesselsLandings <- as.data.frame(unique(df_UKV_LandingUKAbroad_200918_long$Species))
-
-# Change file path to "ProcessedData". Can also use setwd()
-filepath <- paste(data_dir,"ProcessedData/", sep = "")
-
-# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
-write.csv(MMOSpeciesUKVesselsLandings, file = paste(filepath,"UniqueMMOSpeciesUKVessels.csv", sep = ""), row.names = FALSE)
-
-```
-
-
 
 
 
@@ -681,7 +666,7 @@ str(MCS_translations)
 
 
 # Merge data frame with MCS data frame by species name
-df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+#df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 
 
 ```
@@ -810,40 +795,149 @@ df_NDNS_foodlevel_yr12_data <-
 
 ```{r Combine data sets: i) years 1 to 4; ii) years 5 to 6; and iii) years 7 to 8; iv) years 9 to 11}
 # Quick clean to make data set
-df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(diarymth,WhoWithOther,WhereOther))
-df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
-df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
-df_NDNS_foodlevel_yr9data <- df_NDNS_foodlevel_yr9data %>% 
-  rename(Age = AgeR)
-df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
-df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>% 
-  rename(Age = AgeR)
-df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(CoreBoost,DiaryDate,RecipeName))
-df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>% 
-  rename(Age = AgeR)
-df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+#df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(diarymth,WhoWithOther,WhereOther))
+#df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
+#df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
+#df_NDNS_foodlevel_yr9data <- df_NDNS_foodlevel_yr9data %>% 
+#  rename(Age = AgeR)
+#df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
+#df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>% 
+#  rename(Age = AgeR)
+#df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+#df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>% 
+#  rename(Age = AgeR)
+#df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
 
 
 # up to here. Comparing the different NDNS data frames
-colnames(df_NDNS_foodlevel_yr11_data)
-str(df_NDNS_foodlevel_yr12_data)
-colnames(df_NDNS_foodlevel_yr12_data)
-df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(diarymth,WhoWithOther,WhereOther))
+#colnames(df_NDNS_foodlevel_yr11_data)
+#str(df_NDNS_foodlevel_yr12_data)
+#colnames(df_NDNS_foodlevel_yr12_data)
+#df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(diarymth,WhoWithOther,WhereOther))
 
-
-
-# Join data frames
-NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
-                             df_NDNS_foodlevel_yr5_6_data,
-                             df_NDNS_foodlevel_yr7_8_data,
-                             df_NDNS_foodlevel_yr9data, 
-                             df_NDNS_foodlevel_yr10_data,
-                             df_NDNS_foodlevel_yr11_data)
-
-# Check for missing Volumes
-#md.pattern(NDNS_UK_Yr1_11_data)
 
 ```
+
+```{r}
+#Age
+#change age to groups in Ind1to4
+AgeGrp4_1to4 <- rep(0,length(Ind_Data_1to4$age))
+for(i in 1:length(AgeGrp4_1to4)){
+  if(Ind_Data_1to4$age[i]<0){
+    AgeGrp4_1to4[i] <- NA
+    }
+  else{
+    if(Ind_Data_1to4$age[i]<=10){
+      AgeGrp4_1to4[i] <- 1
+    }
+    else{
+      if(Ind_Data_1to4$age[i]<=18){
+        AgeGrp4_1to4[i] <- 2
+      }
+      else{
+        if(Ind_Data_1to4$age[i]<=64){
+          AgeGrp4_1to4[i] <- 3
+        }
+        else{
+          AgeGrp4_1to4[i] <- 4
+        }
+      }
+    }
+  }
+}
+
+# Change age to groups in Ind5to6
+AgeGrp4_5to6 <- rep(0,length(Ind_Data_5to6$age))
+for(i in 1:length(AgeGrp4_5to6)){
+  if(Ind_Data_5to6$age[i]<0){
+    AgeGrp4_5to6[i] <- NA
+  }
+  else{
+    if(Ind_Data_5to6$age[i]<=10){
+      AgeGrp4_5to6[i] <- 1
+    }
+    else{
+      if(Ind_Data_5to6$age[i]<=18){
+        AgeGrp4_5to6[i] <- 2
+      }
+      else{
+        if(Ind_Data_5to6$age[i]<=64){
+          AgeGrp4_5to6[i] <- 3
+        }
+        else{
+          AgeGrp4_5to6[i] <- 4
+        }
+      }
+    }
+  }
+}
+#change age to groups in Ind7to8
+AgeGrp4_7to8 <- rep(0,length(Ind_Data_7to8$age))
+for(i in 1:length(AgeGrp4_7to8)){
+  if(Ind_Data_7to8$age[i]<0){
+    AgeGrp4_7to8[i] <- NA
+  }
+  else{
+    if(Ind_Data_7to8$age[i]<=10){
+      AgeGrp4_7to8[i] <- 1
+    }
+    else{
+      if(Ind_Data_7to8$age[i]<=18){
+        AgeGrp4_7to8[i] <- 2
+      }
+      else{
+        if(Ind_Data_7to8$age[i]<=64){
+          AgeGrp4_7to8[i] <- 3
+        }
+        else{
+          AgeGrp4_7to8[i] <- 4
+        }
+      }
+    }
+  }
+}
+#change age to groups in Ind9to11
+AgeGrp4_9to11 <- rep(0,length(Ind_Data_9to11$AgeR))
+for(i in 1:length(AgeGrp4_9to11)){
+  if(Ind_Data_9to11$AgeR[i]<0){
+    AgeGrp4_9to11[i] <- NA
+  }
+  else{
+    if(Ind_Data_9to11$AgeR[i]<=10){
+      AgeGrp4_9to11[i] <- 1
+    }
+    else{
+      if(Ind_Data_9to11$AgeR[i]<=18){
+        AgeGrp4_9to11[i] <- 2
+      }
+      else{
+        if(Ind_Data_9to11$AgeR[i]<=64){
+          AgeGrp4_9to11[i] <- 3
+        }
+        else{
+          AgeGrp4_9to11[i] <- 4
+        }
+      }
+    }
+  }
+}
+age <- c(AgeGrp4_1to4, AgeGrp4_5to6, AgeGrp4_7to8, AgeGrp4_9to11, Ind_Data_12$AgeGrp4)
+```
+
+
+```{r Join data frames}
+NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
+                            df_NDNS_foodlevel_yr5_6_data,
+                            df_NDNS_foodlevel_yr7_8_data,
+                            df_NDNS_foodlevel_yr9data, 
+                            df_NDNS_foodlevel_yr10_data,
+                            df_NDNS_foodlevel_yr11_data, 
+                            df_NDNS_foodlevel_yr12_data)
+
+# Check for missing Volumes
+md.pattern(NDNS_UK_Yr1_12_data)
+```
+
 
 
 Downloaded NDNS data for all food groups. Need to select just those rows related to seafood consumption. Entries numbered 33, 34 and 35 "Main food group code" column related to seafood consumption.
