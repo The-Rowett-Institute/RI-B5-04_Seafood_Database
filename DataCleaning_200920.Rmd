@@ -1,7 +1,7 @@
 ---
 title: "RI-B5-04: UK seafood supply chains. Data cleaning."
 author: "A.Lofstedt and B.Scheliga"
-date: '31/10/2023'
+date: '15/10/2023'
 output: html_document
 ---
 
@@ -50,7 +50,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations_updated.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
 
 # Check structure of the translation document
 str(MCS_translations)
@@ -544,9 +544,11 @@ We need to ensure species are spelled the same across all data sets, otherwise d
 # Duplicate species name column (allows us to check species have been renames correctly)
 df_UKV_LandingUKonly_200920_long$SpeciesRevised <- df_UKV_LandingUKonly_200920_long$Species
 
+# Subset the data frame so just MMO data only
+MMO_MCS_translations <- subset(MCS_translations, DataSupplier == "MMO")
+
 # Join data frame with MCS data frame by species name
-df_UKV_LandingUKonly_200920_long <- df_UKV_LandingUKonly_200920_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+df_UKV_LandingUKonly_200920_long <- df_UKV_LandingUKonly_200920_long %>% inner_join(., MMO_MCS_translations, by = c('SpeciesRevised' = 'Species'))
 
 # Check column names of the updated data frame
 colnames(df_UKV_LandingUKonly_200920_long)
@@ -557,10 +559,10 @@ Landings provided as whole weight. Need to apply conversion factors estimate edi
 
 ```{r Apply conversion factors to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UKV_LandingUKonly_200920_long$CF_value) # no processed data here so no 1 Volumes
+unique(df_UKV_LandingUKonly_200920_long$CFValue) # no processed data here so no 1 Volumes
 
 # Create new column and apply conversion factors Volumes
-df_UKV_LandingUKonly_200920_long$apply_CF <- df_UKV_LandingUKonly_200920_long$Volume * df_UKV_LandingUKonly_200920_long$CF_value
+df_UKV_LandingUKonly_200920_long$apply_CF <- df_UKV_LandingUKonly_200920_long$Volume * df_UKV_LandingUKonly_200920_long$CFValue
 
 ```
 
@@ -589,15 +591,12 @@ df_UKV_LandingUKonly_200920_long$FlagDescription <- "CF applied to all or part o
 colnames(df_UKV_LandingUKonly_200920_long)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UKV_LandingUKonly_200920_clean <- df_UKV_LandingUKonly_200920_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
-
-# Check column names
-colnames(df_UKV_LandingUKonly_200920_clean)
+df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column 
 #df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
 
-df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920_clean %>% rename(Species = SeafoodSpecies)
+df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920_clean %>% rename(Species = CommonSpeciesName)
 
 ```
 
@@ -659,25 +658,21 @@ df_UKFarmed_200920 <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_UKFarmed_200920$SpeciesRevised <- df_UKFarmed_200920$Species
 
-# Merge data frame with MCS data frame by species name
-df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-
-str(MCS_translations)
-
+# Subset the data frame so just MMO data only
+CEFAS_MCS_translations <- subset(MCS_translations, DataSupplier == "CEFAS")
 
 # Merge data frame with MCS data frame by species name
-#df_UKFarmed_200918 <- df_UKFarmed_200918 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-
+df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., CEFAS_MCS_translations, by = c('SpeciesRevised' = 'Species'))
 
 ```
 
 
 ```{r Apply conversion factor to calculate edible portion}
 # Identify unique conversion factors in the data set
-unique(df_UKFarmed_200920$CF_value) # no processed data here so no 1 Volumes
+unique(df_UKFarmed_200920$CFValue) # no processed data here so no 1 Volumes
 
 # Create new column and apply conversion factors Volumes
-df_UKFarmed_200920$apply_CF <- df_UKFarmed_200920$Volume * df_UKFarmed_200920$CF_value
+df_UKFarmed_200920$apply_CF <- df_UKFarmed_200920$Volume * df_UKFarmed_200920$CFValue
 
 ```
 
@@ -706,14 +701,14 @@ df_UKFarmed_200920$FlagDescription <- "CF applied to all or part of the data"
 colnames(df_UKFarmed_200920)
 
 # Select desired columns for cleaned data set
-df_UK_aquaculture_200920 <- df_UKFarmed_200920[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UK_aquaculture_200920 <- df_UKFarmed_200920[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Check column names
 colnames(df_UK_aquaculture_200920)
 
 # Rename "SeafoodSpecies" column to "Species"
 #df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, c("SeafoodSpecies" = "Species"))
-df_UK_aquaculture_200920_cleaned <- df_UK_aquaculture_200920 %>% rename(Species = SeafoodSpecies)
+df_UK_aquaculture_200920_cleaned <- df_UK_aquaculture_200920 %>% rename(Species = CommonSpeciesName)
 
 ```
 
@@ -728,6 +723,8 @@ shape_Eurostat <- df_UK_aquaculture_200920_cleaned %>%
   select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
   filter(Commodity %in% c("Production")) %>% 
   pivot_wider(names_from = Commodity, values_from = Volume)
+
+### Tout- freshwater and saltwater
 
 ```
 

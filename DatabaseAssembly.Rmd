@@ -28,7 +28,6 @@ library(reshape2) # for melting data frames i.e. short and wide to long and thin
 library(data.table) # for fread()-function
 library(mice) # md.pattern to show missing data
 library(stringr) # used to replace matched patterns in a string
-
 ```
 
 
@@ -88,7 +87,6 @@ write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="
 
 
 
-
 ## B) Nutrient compostion of seafood supplies
 
 ```{r Specify the desired file path}
@@ -130,7 +128,7 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 
 ```{r Load nutrient data}
 # Load database 
-df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientCompostion_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
 
 df_all_nutrient_clean <- df_PHE_nutrient %>% rename(Species = SeafoodSpecies)
 
@@ -169,54 +167,4 @@ source("Data_filepath.R")
 # Save datframe to "Outputs" data file
 filepath <- paste(data_dir,"Outputs/Databases", sep="")
 write.csv(df_seafoodDB_nutrientComposition, paste(filepath,"Seafood-database_composition_preliminary.csv",sep="/"), row.names = FALSE)
-```
-
-
-
-#### Below needed? 
-
-
-
-
-## c) Create seafood database (g/capita/week)
-
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"ProcessedData", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-```{r Load population data}
-# Load database 
-df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-```
-
-
-
-```{r Combine database with UK population data}
-# Subset 
-df_UK_population_simp <- df_UK_population[,c("Year", "UKPOP")]
-
-# Merge seafood database with UK population data
-df_UK_SeafoodDB_capita <- merge(df_UK_SeafoodDB, df_UK_population_simp, by = "Year")
-
-# Calculate seafood per capita per week
-df_UK_seafoodDB_capita$VolumeCapita <- (df_UK_seafoodDB_capita$Volume/ df_UK_seafoodDB_capita$UKPOP)/52
-
-# Update units
-df_UK_seafoodDB_capita$Units <- "gCapitaWeek"
-
-# Make data frame wide and short
-df_UK_seafoodDB_capita_short <- df_UK_seafoodDB_capita %>%
-  pivot_wider(names_from = Commodity, values_from = Volume)
-
-df_UK_seafoodDB_capita_short$Supplies <- (df_UK_seafoodDB_capita_short$Production + df_UK_seafoodDB_capita_short$Imports) - df_UK_seafoodDB_capita_short$Exports
-
-```
-
-
-```{r Save the seafood database}
-source("Data_filepath.R")
-# Save data frame to "Outputs" data file
-filepath <- paste(data_dir,"Outputs", sep="")
-write.csv(df_UK_seafoodDB_capita, paste(filepath,"Seafood-database-PCW_preliminary.csv",sep="/"), row.names = FALSE)
 ```
