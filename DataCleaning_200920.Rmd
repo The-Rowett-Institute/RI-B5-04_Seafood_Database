@@ -591,12 +591,12 @@ df_UKV_LandingUKonly_200920_long$FlagDescription <- "CF applied to all or part o
 colnames(df_UKV_LandingUKonly_200920_long)
 
 # Select desired columns for cleaned data set-- 16  variables
-df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_UKV_LandingUKonly_200920 <- df_UKV_LandingUKonly_200920_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column 
 #df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
 
-df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920_clean %>% rename(Species = CommonSpeciesName)
+df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920 %>% rename(Species = CommonSpeciesName)
 
 ```
 
@@ -637,19 +637,19 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 
 ```{r Load data (2009 to 2020)}
 # Read in .csv file 
-df_EUROSTAT_UK_aquaculture_data <- vroom(file=paste(filepath,"EUROSTAT_UK_aquaculture-200920.csv", sep="/"), na = c("NA"))
+df_CEFAS_UK_aquaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-200920.csv", sep="/"), na = c("NA"))
 
 # Check for missing Volumes
-md.pattern(df_EUROSTAT_UK_aquaculture_data, rotate.names = TRUE)
+md.pattern(df_CEFAS_UK_aquaculture_data, rotate.names = TRUE)
 
-colnames(df_EUROSTAT_UK_aquaculture_data)
+colnames(df_CEFAS_UK_aquaculture_data)
 
 ```
 
 
 ```{r Transform data set (2009 to 2020)}
 # Change structure of the data set. id.vars states the number of columns not to be stacked
-df_UKFarmed_200920 <- melt(df_EUROSTAT_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+df_UKFarmed_200920 <- melt(df_CEFAS_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
 
 ```
 
@@ -665,6 +665,20 @@ CEFAS_MCS_translations <- subset(MCS_translations, DataSupplier == "CEFAS")
 df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., CEFAS_MCS_translations, by = c('SpeciesRevised' = 'Species'))
 
 ```
+
+## AL check here
+```{r Aggreagate species in the data set}
+# Aggregate aquaculture species together- trout species (freshwater and saltwater duplicated)
+df_UK_aquaculture_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesRevised + DataSupplier
+                                          + Species + SACN + CFValue + SpeciesType, 
+                                          data = df_UKFarmed_200920, FUN = sum)
+
+colnames(df_UKFarmed_200920)
+
+```
+
+
+
 
 
 ```{r Apply conversion factor to calculate edible portion}
@@ -686,7 +700,7 @@ df_UKFarmed_200920$Volume <- df_UKFarmed_200920$apply_CF * 1000000
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_UKFarmed_200920$DataSupplier <- "Eurostat"
+df_UKFarmed_200920$DataSupplier <- "CEFAS"
 df_UKFarmed_200920$DataSet <- "Aquaculture excluding hatcheries and nurseries "
 df_UKFarmed_200920$Commodity <- "Production"
 df_UKFarmed_200920$Flag <- "ConV1"
@@ -715,11 +729,11 @@ df_UK_aquaculture_200920_cleaned <- df_UK_aquaculture_200920 %>% rename(Species 
 
 ```{r Check dataset}
 # Check for duplicates
-duplicates_Eurostat <- df_UK_aquaculture_200920_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+duplicates_CEFAS <- df_UK_aquaculture_200920_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
   filter(n()>1) %>% mutate(n = n())
 
 # Check data transforms from long and thin to short and wide
-shape_Eurostat <- df_UK_aquaculture_200920_cleaned %>% 
+shape_CEFAS <- df_UK_aquaculture_200920_cleaned %>% 
   select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
   filter(Commodity %in% c("Production")) %>% 
   pivot_wider(names_from = Commodity, values_from = Volume)
@@ -815,7 +829,11 @@ df_NDNS_foodlevel_yr12_data <-
 
 ```
 
+
+
 ```{r}
+colnames(df_NDNS_foodlevel_yr12_data)
+
 #Age
 #change age to groups in Ind1to4
 AgeGrp4_1to4 <- rep(0,length(Ind_Data_1to4$age))
