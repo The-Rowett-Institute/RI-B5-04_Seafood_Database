@@ -32,6 +32,8 @@ library(haven) #Read SAV files
 library(readxl)
 library(readr) # CSV file I/O, e.g. the read_csv function
 library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
 
 ```
 
@@ -831,101 +833,101 @@ df_NDNS_foodlevel_yr12_data <-
 
 
 ```{r}
-#####LIBRARIES#####
-
-library(haven) #Read SAV files
-library(readxl)
-library(readr) # CSV file I/O, e.g. the read_csv function
-library(dplyr)
-library(compareDF)#Check missing values across datasets
-library(chron)
-
 #####LOAD DATASETS#####
 
 #Individual Data
-Ind_Data_1to4<- read_sav("NDNS Datasets/ndns_rp_yr1-4a_indiv_uk.sav")
-Ind_Data_5to6<- read_sav("NDNS Datasets/ndns_rp_yr5-6a_indiv.sav")
-Ind_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_indiv.sav")
-Ind_Data_9to11 <- read_sav("NDNS Datasets/ndns_rp_yr9-11a_indiv.sav")
-Ind_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_indiv_20220401.sav")
+# Ind_Data_1to4<- read_sav("NDNS Datasets/ndns_rp_yr1-4a_indiv_uk.sav")
+# Ind_Data_5to6<- read_sav("NDNS Datasets/ndns_rp_yr5-6a_indiv.sav")
+#Ind_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_indiv.sav")
+#Ind_Data_9to11 <- read_sav("NDNS Datasets/ndns_rp_yr9-11a_indiv.sav")
+#Ind_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_indiv_20220401.sav")
 
 
-#Food level data 
-Food_Data_1to4 <- read_sav("NDNS Datasets/ndns_rp_yr1-4a_foodleveldietarydata_uk_v2.sav")
-Food_Data_5to6 <- read_sav("NDNS Datasets/ndns_rp_yr5-6a_foodleveldietarydata_v2.sav")
-Food_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_foodleveldietarydata.sav")
-Food_Data_9 <- read_sav("NDNS Datasets/ndns_rp_yr9a_foodleveldietarydata_uk.sav")
-Food_Data_10 <- read_sav("NDNS Datasets/ndns_rp_yr10a_foodleveldietarydata_uk.sav")
-Food_Data_11 <- read_sav("NDNS Datasets/ndns_rp_yr11a_foodleveldietarydata_uk.sav")
-Food_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_food-level_dietarydata_v2.sav")
+# Food level data
+# Food_Data_1to4 <- read_sav("NDNS Datasets/ndns_rp_yr1-4a_foodleveldietarydata_uk_v2.sav")
+# Food_Data_5to6 <- read_sav("NDNS Datasets/ndns_rp_yr5-6a_foodleveldietarydata_v2.sav")
+# Food_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_foodleveldietarydata.sav")
+# Food_Data_9 <- read_sav("NDNS Datasets/ndns_rp_yr9a_foodleveldietarydata_uk.sav")
+# Food_Data_10 <- read_sav("NDNS Datasets/ndns_rp_yr10a_foodleveldietarydata_uk.sav")
+# Food_Data_11 <- read_sav("NDNS Datasets/ndns_rp_yr11a_foodleveldietarydata_uk.sav")
+# Food_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_food-level_dietarydata_v2.sav")
+```
 
+
+```{r}
 #####CLEAN FOOD LEVEL DATA#####
 
 df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, 
                         select = -c(SurveyYear,Age,Sex, Country,	
-                                    diarymth,	DayofWeek,DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc,RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc,Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg,WhoWith, 
-                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
-
-
-df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(SurveyYear,Age,Sex, Country,	
-                                    diarymth,	DayofWeek,DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc,RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc,Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg,WhoWith, 
-                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
-
-df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(SurveyYear,Age,Sex, Country,	
-                                    diarymth,	DayofWeek,DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc,RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc,Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg,WhoWith, 
-                                    Where, WatchingTV, Table))
-
-df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(select = -c(SurveyYear,AgeR, Sex, Country,	
-                                    DiaryDate,	DayofWeek,DiaryDaysCompleted,	
+                                    diarymth,	DayofWeek, DiaryDaysCompleted,	
                                     MealTimeDescription, FoodName,	MainFoodGroupCode, 
                                     MainFoodGroupDesc, SubFoodGroupCode,
                                     SubFoodGroupDesc, RecipeMainFoodGroupCode,	
                                     RecipeMainFoodGroupDesc, RecipeSubFoodGroupCode,
                                     RecipeSubFoodGroupDesc, Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg, Englystfibreg, WhoWith, 
-                                    Where, WatchingTV, Table)))
+                                    Intrinsicandmilksugarsg,Englystfibreg, WhoWith, 
+                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
 
-df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(SurveyYear,AgeR,Sex, Country,	
-                                    DiaryDate,	DayofWeek,DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
+
+df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, 
+                          select = -c(SurveyYear,Age,Sex, Country,	
+                                    diarymth,	DayofWeek, DiaryDaysCompleted,	
+                                    MealTimeDescription, FoodName, MainFoodGroupCode, 
                                     MainFoodGroupDesc, SubFoodGroupCode,
                                     SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc,RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc,Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg,WhoWith, 
-                                    Where, WatchingTV, Table))
+                                    RecipeMainFoodGroupDesc, RecipeSubFoodGroupCode,
+                                    RecipeSubFoodGroupDesc, Nonmilkextrinsicsugarsg,
+                                    Intrinsicandmilksugarsg, Englystfibreg,WhoWith, 
+                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
 
-df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(SurveyYear,AgeR,Sex, Country,	
-                                    DiaryDate,	DayofWeek,DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc,RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc,Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg,WhoWith, 
-                                    Where, WatchingTV, Table))
+df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data,
+                                      select = -c(SurveyYear,Age, Sex, DiaryDaysCompleted, 
+                                                  CoreBoost, Country, DayofWeek, MealTimeDescription, 
+                                                  FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
+                                                  SubFoodGroupCode, SubFoodGroupDesc,
+                                                  RecipeMainFoodGroupCode, RecipeMainFoodGroupDesc,
+                                                  RecipeSubFoodGroupCode, RecipeSubFoodGroupDesc,
+                                                  Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
+                                                  WhoWith, Where, WatchingTV, Table, diarymth))
+
+df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, 
+                                   select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,
+                                               DiaryDate, DayofWeek, DiaryDaysCompleted,	
+                                               MealTimeDescription, FoodName,	MainFoodGroupCode, 
+                                               MainFoodGroupDesc, SubFoodGroupCode, SubFoodGroupDesc, 
+                                               RecipeName, RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
+                                               RecipeSubFoodGroupCode, RecipeSubFoodGroupDesc,
+                                               Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
+                                              WhoWith, Where, WatchingTV, Table))
+
+
+df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, 
+                                     select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,	DiaryDate, 
+                                                DayofWeek, DiaryDaysCompleted,	MealTimeDescription,
+                                                FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
+                                                SubFoodGroupCode, SubFoodGroupDesc, RecipeName,
+                                                RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
+                                                RecipeSubFoodGroupCode,	RecipeSubFoodGroupDesc,
+                                                Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
+                                                WhoWith, Where, WatchingTV, Table))
+
+
+df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, 
+                                     select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,	DiaryDate,
+                                                DayofWeek, DiaryDaysCompleted,	MealTimeDescription,
+                                                FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
+                                                SubFoodGroupCode, SubFoodGroupDesc, RecipeName,
+                                                RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
+                                                RecipeSubFoodGroupCode,	RecipeSubFoodGroupDesc,
+                                                Nonmilkextrinsicsugarsg, 
+                                                Intrinsicandmilksugarsg, Englystfibreg, 
+                                                WhoWith, Where, WatchingTV, Table))
+
 
 df_NDNS_foodlevel_yr12_data  <- df_NDNS_foodlevel_yr12_data  %>% rename("DayNo" = RecallNo,)
 
-df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(AgeGrp4,AgeGrp16,Sex, SubmissionDate,DayofWeek, 
+df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, 
+                                     select = -c(AgeGrp4,AgeGrp16,Sex, SubmissionDate,DayofWeek, 
                                                 RecallCompletionTime, MealName, MealID,FoodSource,
                                                 FoodDescription, RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
                                                 RecipeSubFoodGroupCode,RecipeSubFoodGroupDesc))
@@ -933,131 +935,21 @@ df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(Ag
 #####CREATE FOOD DATA FRAME#####
 Food_Data <- rbind(df_NDNS_foodlevel_yr1_4_data, df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr7_8_data, df_NDNS_foodlevel_yr9data, df_NDNS_foodlevel_yr10_data, df_NDNS_foodlevel_yr11_data)
 
-```
+df_NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data, df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr7_8_data, df_NDNS_foodlevel_yr9data, df_NDNS_foodlevel_yr10_data, df_NDNS_foodlevel_yr11_data, df_NDNS_foodlevel_yr12_data)
 
+head(df_NDNS_foodlevel_yr12_data)
 
-
-
-
-
-
-```{r}
-colnames(df_NDNS_foodlevel_yr12_data)
-
-#Age
-#change age to groups in Ind1to4
-AgeGrp4_1to4 <- rep(0,length(Ind_Data_1to4$age))
-for(i in 1:length(AgeGrp4_1to4)){
-  if(Ind_Data_1to4$age[i]<0){
-    AgeGrp4_1to4[i] <- NA
-    }
-  else{
-    if(Ind_Data_1to4$age[i]<=10){
-      AgeGrp4_1to4[i] <- 1
-    }
-    else{
-      if(Ind_Data_1to4$age[i]<=18){
-        AgeGrp4_1to4[i] <- 2
-      }
-      else{
-        if(Ind_Data_1to4$age[i]<=64){
-          AgeGrp4_1to4[i] <- 3
-        }
-        else{
-          AgeGrp4_1to4[i] <- 4
-        }
-      }
-    }
-  }
-}
-
-# Change age to groups in Ind5to6
-AgeGrp4_5to6 <- rep(0,length(Ind_Data_5to6$age))
-for(i in 1:length(AgeGrp4_5to6)){
-  if(Ind_Data_5to6$age[i]<0){
-    AgeGrp4_5to6[i] <- NA
-  }
-  else{
-    if(Ind_Data_5to6$age[i]<=10){
-      AgeGrp4_5to6[i] <- 1
-    }
-    else{
-      if(Ind_Data_5to6$age[i]<=18){
-        AgeGrp4_5to6[i] <- 2
-      }
-      else{
-        if(Ind_Data_5to6$age[i]<=64){
-          AgeGrp4_5to6[i] <- 3
-        }
-        else{
-          AgeGrp4_5to6[i] <- 4
-        }
-      }
-    }
-  }
-}
-#change age to groups in Ind7to8
-AgeGrp4_7to8 <- rep(0,length(Ind_Data_7to8$age))
-for(i in 1:length(AgeGrp4_7to8)){
-  if(Ind_Data_7to8$age[i]<0){
-    AgeGrp4_7to8[i] <- NA
-  }
-  else{
-    if(Ind_Data_7to8$age[i]<=10){
-      AgeGrp4_7to8[i] <- 1
-    }
-    else{
-      if(Ind_Data_7to8$age[i]<=18){
-        AgeGrp4_7to8[i] <- 2
-      }
-      else{
-        if(Ind_Data_7to8$age[i]<=64){
-          AgeGrp4_7to8[i] <- 3
-        }
-        else{
-          AgeGrp4_7to8[i] <- 4
-        }
-      }
-    }
-  }
-}
-#change age to groups in Ind9to11
-AgeGrp4_9to11 <- rep(0,length(Ind_Data_9to11$AgeR))
-for(i in 1:length(AgeGrp4_9to11)){
-  if(Ind_Data_9to11$AgeR[i]<0){
-    AgeGrp4_9to11[i] <- NA
-  }
-  else{
-    if(Ind_Data_9to11$AgeR[i]<=10){
-      AgeGrp4_9to11[i] <- 1
-    }
-    else{
-      if(Ind_Data_9to11$AgeR[i]<=18){
-        AgeGrp4_9to11[i] <- 2
-      }
-      else{
-        if(Ind_Data_9to11$AgeR[i]<=64){
-          AgeGrp4_9to11[i] <- 3
-        }
-        else{
-          AgeGrp4_9to11[i] <- 4
-        }
-      }
-    }
-  }
-}
-age <- c(AgeGrp4_1to4, AgeGrp4_5to6, AgeGrp4_7to8, AgeGrp4_9to11, Ind_Data_12$AgeGrp4)
 ```
 
 
 ```{r Join data frames}
-NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
-                            df_NDNS_foodlevel_yr5_6_data,
-                            df_NDNS_foodlevel_yr7_8_data,
-                            df_NDNS_foodlevel_yr9data, 
-                            df_NDNS_foodlevel_yr10_data,
-                            df_NDNS_foodlevel_yr11_data, 
-                            df_NDNS_foodlevel_yr12_data)
+# NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
+#                             df_NDNS_foodlevel_yr5_6_data,
+#                             df_NDNS_foodlevel_yr7_8_data,
+#                             df_NDNS_foodlevel_yr9data, 
+#                             df_NDNS_foodlevel_yr10_data,
+#                             df_NDNS_foodlevel_yr11_data, 
+#                             df_NDNS_foodlevel_yr12_data)
 
 # Check for missing Volumes
 md.pattern(NDNS_UK_Yr1_12_data)
@@ -1069,7 +961,7 @@ Downloaded NDNS data for all food groups. Need to select just those rows related
 
 ```{r Subset seafood products from consumption data}
 # Identify unique main food groups
-unique(NDNS_UK_Yr1_11_data$MainFoodGroupCode)
+unique(NDNS_UK_Yr1_12_data$MainFoodGroupCode)
 
 # Subset seafood commodities. Seafood commodities identified as Volumes: 33, 34 and 35 in "main food group code" column
 df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupCode == 33 | NDNS_UK_Yr1_11_data$MainFoodGroupCode == 34| NDNS_UK_Yr1_11_data$MainFoodGroupCode == 35)
