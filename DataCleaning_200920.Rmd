@@ -1100,8 +1100,11 @@ Before merging with population data need to change survey Volumes.
 ```{r Allocate numerical Volumes to survey years}
 # Create new data frame with survey years and corresponding numerical Volumes
 SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7","NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
-#NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819)  
-Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018) 
+#NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819) 
+# 1.5 years. Choose starting or finishing year.
+#Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018) 
+
+Year <- c(2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020) 
 
 # Create data frame with survey year and corresponding calendar year 
 df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
