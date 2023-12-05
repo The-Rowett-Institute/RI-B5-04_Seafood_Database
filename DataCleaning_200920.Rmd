@@ -943,7 +943,8 @@ head(df_NDNS_foodlevel_yr12_data)
 
 
 ```{r Join data frames}
-# NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
+# Join data frames
+# df_NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
 #                             df_NDNS_foodlevel_yr5_6_data,
 #                             df_NDNS_foodlevel_yr7_8_data,
 #                             df_NDNS_foodlevel_yr9data, 
@@ -961,13 +962,10 @@ Downloaded NDNS data for all food groups. Need to select just those rows related
 
 ```{r Subset seafood products from consumption data}
 # Identify unique main food groups
-unique(NDNS_UK_Yr1_12_data$MainFoodGroupCode)
+unique(df_NDNS_UK_Yr1_11_data$MainFoodGroupCode)
 
 # Subset seafood commodities. Seafood commodities identified as Volumes: 33, 34 and 35 in "main food group code" column
-df_NDNS_seafood_consumption_Yr1_11 <- subset(NDNS_UK_Yr1_11_data, MainFoodGroupCode == 33 | NDNS_UK_Yr1_11_data$MainFoodGroupCode == 34| NDNS_UK_Yr1_11_data$MainFoodGroupCode == 35)
-
-# Identify unique seafood species 
-#write.csv(unique(df_NDNS_seafood_consumption_Yr1_11), file = paste(filepath,"NDNS_IndiSeafood.csv", sep = ""), row.names = FALSE)
+df_NDNS_seafood_consumption_Yr1_11 <- subset(df_NDNS_UK_Yr1_11_data, MainFoodGroupCode == 33 | df_NDNS_UK_Yr1_11_data$MainFoodGroupCode == 34| df_NDNS_UK_Yr1_11_data$MainFoodGroupCode == 35)
 
 ```
 
@@ -977,6 +975,11 @@ Calculate total grams of seafood consumed. Seafood intakes are spread across 4 c
 ```{r Calculate total grams of seafood consummed}
 # Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
 df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
+
+
+# Deal with NDNS year 12 separately 
+df_NDNS_seafood_consumption_Yr12$totfishperprod <- df_NDNS_seafood_consumption_Yr12$WhiteFishg + df_NDNS_seafood_consumption_Yr12$OilyFishg + df_NDNS_seafood_consumption_Yr12$CannedTunag + df_NDNS_seafood_consumption_Yr12$Shellfishg
+
 
 ```
 
@@ -989,7 +992,26 @@ df_NDNS_seafood_consumption_Yr1_11$SpeciesRevised <- df_NDNS_seafood_consumption
 # Join data frame with MCS data frame by species name
 df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+
+# Deal with year 12 seperatly 
+# Food name from NDNS data
+df_NDNS_seafood_consumption_Yr12$SpeciesRevised <- df_NDNS_seafood_consumption_Yr12$FoodName
+
+# Join data frame with MCS data frame by species name
+df_NDNS_seafood_consumption_Yr12 <- df_NDNS_seafood_consumption_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
 ```
+
+
+
+```{r Combine NDNS years 1 to 11 with year 12}
+
+
+
+```
+
 
 
 Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year. So aggregate seafood consumption data, per species, per year. 
