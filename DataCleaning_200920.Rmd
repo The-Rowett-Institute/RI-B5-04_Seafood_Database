@@ -746,8 +746,6 @@ shape_CEFAS <- df_UK_aquaculture_200920_cleaned %>%
 
 
 
-
-
 ```{r Save cleaned data}
 # Change file path to "ProcessedData"
 filepath <- paste(data_dir,"ProcessedData/", sep = "")
