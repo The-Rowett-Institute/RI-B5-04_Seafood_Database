@@ -1,0 +1,115 @@
+---
+title: "Cleaning_Population-data_ONS"
+author: "AL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a Volume 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+
+## UK population data (ONS) 
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (1971 to 2020)}
+# Load data (1971 to 2020)
+df_UK_ONS_population_data <- vroom(file= paste(filepath,"ONS_UK_population-19712020.csv", sep = "/"))
+
+str(df_UK_ONS_population_data)
+
+```
+
+
+```{r Subset data for desired years}
+# Subset UK population data between 2009 and 2018
+df_UK_pop_200920 <- subset(df_UK_ONS_population_data, 
+                      CDID > 2008, select= c(CDID, UKPOP))
+
+# Check years
+unique(df_UK_pop_200920$CDID)
+
+```
+
+
+```{r Add additional variables to data set}
+# Rename the "CDID" column to "Year"
+names(df_UK_pop_200920)[names(df_UK_pop_200920)=="CDID"] <- "Year"
+#names(df_UK_pop_200918)[names(df_UK_pop_200918)=="UKPOP"] <- "Year"
+
+# Create "cleaned" data frame, defining units and data source 
+df_UK_pop_200920$DataSupplier <- "ONS"
+df_UK_pop_200920$DataSet <- "TotalUKPopulation"
+df_UK_pop_200920$Commodity <- "Population"
+df_UK_pop_200920$Flag <- "NA"
+df_UK_pop_200920$FlagDescription <- "NA"
+df_UK_pop_200920$Units <- "Capita"
+df_UK_pop_200920$TemporalResolution <- "CalendarYear"
+
+# Identify column names
+colnames(df_UK_pop_200920)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+write.csv(df_UK_pop_200920, file = paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
+```
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+```
+
+
+```{r Load UK population data (2009 to 2020)}
+# UK population data 2009 to 2018
+# Read in .csv file
+df_UK_population_200920 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c(".."))
+
+```
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+

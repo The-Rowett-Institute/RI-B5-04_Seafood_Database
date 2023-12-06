@@ -1,0 +1,157 @@
+---
+title: "Cleaning_Aquaculture-data_CEFAS"
+author: "AL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a Volume 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (2009 to 2020)}
+# Read in .csv file 
+df_CEFAS_UK_aquaculture_data <- vroom(file=paste(filepath,"CEFAS_UK_aquaculture-200920.csv", sep="/"), na = c("NA"))
+
+# Check for missing Volumes
+md.pattern(df_CEFAS_UK_aquaculture_data, rotate.names = TRUE)
+
+```
+
+
+```{r Transform data set (2009 to 2020)}
+# Change structure of the data set. id.vars states the number of columns not to be stacked
+df_UKFarmed_200920 <- melt(df_CEFAS_UK_aquaculture_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+
+```
+
+
+```{r Join data frame with translation document}
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_UKFarmed_200920$SpeciesRevised <- df_UKFarmed_200920$Species
+
+# Subset the data frame so just MMO data only
+CEFAS_MCS_translations <- subset(MCS_translations, DataSupplier == "CEFAS")
+
+# Merge data frame with MCS data frame by species name
+df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., CEFAS_MCS_translations, by = c('SpeciesRevised' = 'Species'))
+
+```
+
+## AL check here
+```{r Aggreagate species in the data set}
+# Aggregate aquaculture species together- trout species (freshwater and saltwater duplicated)
+df_UK_aquaculture_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesRevised + DataSupplier
+                                          + Species + SACN + CFValue + SpeciesType, 
+                                          data = df_UKFarmed_200920, FUN = sum)
+
+```
+
+
+```{r Apply conversion factor to calculate edible portion}
+# Identify unique conversion factors in the data set
+unique(df_UKFarmed_200920$CFValue) # no processed data here so no 1 Volumes
+
+# Create new column and apply conversion factors Volumes
+df_UKFarmed_200920$apply_CF <- df_UKFarmed_200920$Volume * df_UKFarmed_200920$CFValue
+
+```
+
+
+```{r Convert from tonnes to grams}
+# Convert raw Volume from tonnes to grams 
+df_UKFarmed_200920$Volume <- df_UKFarmed_200920$apply_CF * 1000000
+
+```
+
+
+```{r Add additional variables to data set}
+# Create "cleaned" data frame, defining units and data source 
+df_UKFarmed_200920$DataSupplier <- "CEFAS"
+df_UKFarmed_200920$DataSet <- "Aquaculture excluding hatcheries and nurseries "
+df_UKFarmed_200920$Commodity <- "Production"
+df_UKFarmed_200920$Flag <- "ConV1"
+df_UKFarmed_200920$Units <- "Grams"
+df_UKFarmed_200920$TemporalResolution <- "CalendarYear"
+df_UKFarmed_200920$FlagDescription <- "CF applied to all or part of the data"
+```
+
+
+```{r Select desired variables for the data set}
+# Identify column names
+colnames(df_UKFarmed_200920)
+
+# Select desired columns for cleaned data set
+df_UK_aquaculture_200920 <- df_UKFarmed_200920[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Check column names
+colnames(df_UK_aquaculture_200920)
+
+# Rename "SeafoodSpecies" column to "Species"
+#df_UK_aquaculture_200918_cleaned <- rename(df_UK_aquaculture_200918, c("SeafoodSpecies" = "Species"))
+df_UK_aquaculture_200920_cleaned <- df_UK_aquaculture_200920 %>% rename(Species = CommonSpeciesName)
+
+```
+
+
+```{r Check dataset transformed correctly}
+# Check for duplicates
+duplicates_CEFAS <- df_UK_aquaculture_200920_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_CEFAS <- df_UK_aquaculture_200920_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Production")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+### Tout- freshwater and saltwater
+
+```
+
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+write.csv(df_UK_aquaculture_200920_cleaned, file = 
+            paste(filepath,"AquacultureData_CEFAS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
+```
+
+
