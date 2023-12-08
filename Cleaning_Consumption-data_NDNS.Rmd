@@ -38,6 +38,20 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+
+# Check structure of the translation document
+str(MCS_translations)
+```
+
 
 ## Consumption (NDNS) UK seafood cosnumption to food level
 
@@ -102,42 +116,11 @@ df_NDNS_foodlevel_yr12_data <-
 #  rename(Age = AgeR)
 #df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
 
-
-# up to here. Comparing the different NDNS data frames
-#colnames(df_NDNS_foodlevel_yr11_data)
-#str(df_NDNS_foodlevel_yr12_data)
-#colnames(df_NDNS_foodlevel_yr12_data)
-#df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, select = -c(diarymth,WhoWithOther,WhereOther))
-
-
 ```
 
 
-```{r}
-#####LOAD DATASETS#####
 
-#Individual Data
-# Ind_Data_1to4<- read_sav("NDNS Datasets/ndns_rp_yr1-4a_indiv_uk.sav")
-# Ind_Data_5to6<- read_sav("NDNS Datasets/ndns_rp_yr5-6a_indiv.sav")
-#Ind_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_indiv.sav")
-#Ind_Data_9to11 <- read_sav("NDNS Datasets/ndns_rp_yr9-11a_indiv.sav")
-#Ind_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_indiv_20220401.sav")
-
-
-# Food level data
-# Food_Data_1to4 <- read_sav("NDNS Datasets/ndns_rp_yr1-4a_foodleveldietarydata_uk_v2.sav")
-# Food_Data_5to6 <- read_sav("NDNS Datasets/ndns_rp_yr5-6a_foodleveldietarydata_v2.sav")
-# Food_Data_7to8 <- read_sav("NDNS Datasets/ndns_rp_yr7-8a_foodleveldietarydata.sav")
-# Food_Data_9 <- read_sav("NDNS Datasets/ndns_rp_yr9a_foodleveldietarydata_uk.sav")
-# Food_Data_10 <- read_sav("NDNS Datasets/ndns_rp_yr10a_foodleveldietarydata_uk.sav")
-# Food_Data_11 <- read_sav("NDNS Datasets/ndns_rp_yr11a_foodleveldietarydata_uk.sav")
-# Food_Data_12 <- read_sav("NDNS Datasets/ndnsdnac19_food-level_dietarydata_v2.sav")
-```
-
-
-```{r}
-#####CLEAN FOOD LEVEL DATA#####
-
+```{r Pre-clean food level data}
 df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, 
                         select = -c(SurveyYear,Age,Sex, Country,	
                                     diarymth,	DayofWeek, DiaryDaysCompleted,	
@@ -148,7 +131,6 @@ df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data,
                                     RecipeSubFoodGroupDesc, Nonmilkextrinsicsugarsg,
                                     Intrinsicandmilksugarsg,Englystfibreg, WhoWith, 
                                     WhoWithOther, Where, WhereOther, WatchingTV, Table))
-
 
 df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, 
                           select = -c(SurveyYear,Age,Sex, Country,	
@@ -171,7 +153,7 @@ df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data,
                                                   Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
                                                   WhoWith, Where, WatchingTV, Table, diarymth))
 
-df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, 
+df_NDNS_foodlevel_yr9_data = subset(df_NDNS_foodlevel_yr9data, 
                                    select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,
                                                DiaryDate, DayofWeek, DiaryDaysCompleted,	
                                                MealTimeDescription, FoodName,	MainFoodGroupCode, 
@@ -206,35 +188,25 @@ df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data,
 
 
 df_NDNS_foodlevel_yr12_data  <- df_NDNS_foodlevel_yr12_data  %>% rename("DayNo" = RecallNo,)
-
 df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, 
                                      select = -c(AgeGrp4,AgeGrp16,Sex, SubmissionDate,DayofWeek, 
                                                 RecallCompletionTime, MealName, MealID,FoodSource,
                                                 FoodDescription, RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
                                                 RecipeSubFoodGroupCode,RecipeSubFoodGroupDesc))
-
-#####CREATE FOOD DATA FRAME#####
-Food_Data <- rbind(df_NDNS_foodlevel_yr1_4_data, df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr7_8_data, df_NDNS_foodlevel_yr9data, df_NDNS_foodlevel_yr10_data, df_NDNS_foodlevel_yr11_data)
-
-df_NDNS_UK_Yr1_12_data <- rbind(df_NDNS_foodlevel_yr1_4_data, df_NDNS_foodlevel_yr5_6_data, df_NDNS_foodlevel_yr7_8_data, df_NDNS_foodlevel_yr9data, df_NDNS_foodlevel_yr10_data, df_NDNS_foodlevel_yr11_data, df_NDNS_foodlevel_yr12_data)
-
-head(df_NDNS_foodlevel_yr12_data)
-
 ```
 
 
 ```{r Join data frames}
 # Join data frames
-# df_NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
-#                             df_NDNS_foodlevel_yr5_6_data,
-#                             df_NDNS_foodlevel_yr7_8_data,
-#                             df_NDNS_foodlevel_yr9data, 
-#                             df_NDNS_foodlevel_yr10_data,
-#                             df_NDNS_foodlevel_yr11_data, 
-#                             df_NDNS_foodlevel_yr12_data)
+df_NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_data,
+                            df_NDNS_foodlevel_yr5_6_data,
+                            df_NDNS_foodlevel_yr7_8_data,
+                            df_NDNS_foodlevel_yr9_data,
+                            df_NDNS_foodlevel_yr10_data,
+                            df_NDNS_foodlevel_yr11_data)
 
 # Check for missing Volumes
-md.pattern(NDNS_UK_Yr1_12_data)
+md.pattern(df_NDNS_UK_Yr1_11_data)
 ```
 
 
@@ -259,7 +231,9 @@ df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption
 
 
 # Deal with NDNS year 12 separately 
-df_NDNS_seafood_consumption_Yr12$totfishperprod <- df_NDNS_seafood_consumption_Yr12$WhiteFishg + df_NDNS_seafood_consumption_Yr12$OilyFishg + df_NDNS_seafood_consumption_Yr12$CannedTunag + df_NDNS_seafood_consumption_Yr12$Shellfishg
+df_NDNS_foodlevel_yr12_data$totfishperprod <- df_NDNS_foodlevel_yr12_data$WhiteFishg +
+  df_NDNS_foodlevel_yr12_data$OilyFishg + df_NDNS_foodlevel_yr12_data$CannedTunag + 
+  df_NDNS_foodlevel_yr12_data$Shellfishg
 
 
 ```
@@ -267,7 +241,6 @@ df_NDNS_seafood_consumption_Yr12$totfishperprod <- df_NDNS_seafood_consumption_Y
 
 ```{r Join data frame with translation document}
 # Duplicate species name column (allows us to check species have been renames correctly)
-# Food name from NDNS data
 df_NDNS_seafood_consumption_Yr1_11$SpeciesRevised <- df_NDNS_seafood_consumption_Yr1_11$FoodName
 
 # Join data frame with MCS data frame by species name
@@ -275,16 +248,18 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inn
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 
-# Deal with year 12 seperatly 
-# Food name from NDNS data
-df_NDNS_seafood_consumption_Yr12$SpeciesRevised <- df_NDNS_seafood_consumption_Yr12$FoodName
+
+# Deal with year 12 separately 
+df_NDNS_foodlevel_yr12_data$SpeciesRevised <- df_NDNS_foodlevel_yr12_data$FoodName
+str(df_NDNS_foodlevel_yr12_data)
+
+str(MCS_translations)
 
 # Join data frame with MCS data frame by species name
-df_NDNS_seafood_consumption_Yr12 <- df_NDNS_seafood_consumption_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
-# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+df_NDNS_foodlevel_yr12_data <- df_NDNS_foodlevel_yr12_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species'))
+# "Species" column is the unique spelling of the species in all data sets.
 
 ```
-
 
 
 ```{r Combine NDNS years 1 to 11 with year 12}
