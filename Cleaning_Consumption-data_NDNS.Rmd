@@ -102,97 +102,20 @@ df_NDNS_foodlevel_yr12_data <-
 
 
 ```{r Combine data sets: i) years 1 to 4; ii) years 5 to 6; and iii) years 7 to 8; iv) years 9 to 11}
-# Quick clean to make data set
-#df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(diarymth,WhoWithOther,WhereOther))
-#df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
-#df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
-#df_NDNS_foodlevel_yr9data <- df_NDNS_foodlevel_yr9data %>% 
-#  rename(Age = AgeR)
-#df_NDNS_foodlevel_yr9data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
-#df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>% 
-#  rename(Age = AgeR)
-#df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(CoreBoost,DiaryDate,RecipeName))
-#df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>% 
-#  rename(Age = AgeR)
-#df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+# Clean data 1- 11 NDNS
+df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, select = -c(diarymth,WhoWithOther,WhereOther))
+df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, select = -c(diarymth,WhoWithOther,WhereOther))
+df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data, select = -c(CoreBoost,diarymth))
+df_NDNS_foodlevel_yr9_data <- df_NDNS_foodlevel_yr9data %>%
+ rename(Age = AgeR)
+df_NDNS_foodlevel_yr9_data = subset(df_NDNS_foodlevel_yr9data, select = -c(CoreBoost,DiaryDate,RecipeName))
+df_NDNS_foodlevel_yr10_data <- df_NDNS_foodlevel_yr10_data %>%
+ rename(Age = AgeR)
+df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, select = -c(CoreBoost,DiaryDate,RecipeName))
+df_NDNS_foodlevel_yr11_data <- df_NDNS_foodlevel_yr11_data %>%
+ rename(Age = AgeR)
+df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, select = -c(CoreBoost,DiaryDate,RecipeName))
 
-```
-
-
-
-```{r Pre-clean food level data}
-df_NDNS_foodlevel_yr1_4_data = subset(df_NDNS_foodlevel_yr1_4_data, 
-                        select = -c(SurveyYear,Age,Sex, Country,	
-                                    diarymth,	DayofWeek, DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc, RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc, Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg,Englystfibreg, WhoWith, 
-                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
-
-df_NDNS_foodlevel_yr5_6_data = subset(df_NDNS_foodlevel_yr5_6_data, 
-                          select = -c(SurveyYear,Age,Sex, Country,	
-                                    diarymth,	DayofWeek, DiaryDaysCompleted,	
-                                    MealTimeDescription, FoodName, MainFoodGroupCode, 
-                                    MainFoodGroupDesc, SubFoodGroupCode,
-                                    SubFoodGroupDesc, RecipeMainFoodGroupCode,	
-                                    RecipeMainFoodGroupDesc, RecipeSubFoodGroupCode,
-                                    RecipeSubFoodGroupDesc, Nonmilkextrinsicsugarsg,
-                                    Intrinsicandmilksugarsg, Englystfibreg,WhoWith, 
-                                    WhoWithOther, Where, WhereOther, WatchingTV, Table))
-
-df_NDNS_foodlevel_yr7_8_data = subset(df_NDNS_foodlevel_yr7_8_data,
-                                      select = -c(SurveyYear,Age, Sex, DiaryDaysCompleted, 
-                                                  CoreBoost, Country, DayofWeek, MealTimeDescription, 
-                                                  FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
-                                                  SubFoodGroupCode, SubFoodGroupDesc,
-                                                  RecipeMainFoodGroupCode, RecipeMainFoodGroupDesc,
-                                                  RecipeSubFoodGroupCode, RecipeSubFoodGroupDesc,
-                                                  Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
-                                                  WhoWith, Where, WatchingTV, Table, diarymth))
-
-df_NDNS_foodlevel_yr9_data = subset(df_NDNS_foodlevel_yr9data, 
-                                   select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,
-                                               DiaryDate, DayofWeek, DiaryDaysCompleted,	
-                                               MealTimeDescription, FoodName,	MainFoodGroupCode, 
-                                               MainFoodGroupDesc, SubFoodGroupCode, SubFoodGroupDesc, 
-                                               RecipeName, RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
-                                               RecipeSubFoodGroupCode, RecipeSubFoodGroupDesc,
-                                               Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
-                                              WhoWith, Where, WatchingTV, Table))
-
-
-df_NDNS_foodlevel_yr10_data = subset(df_NDNS_foodlevel_yr10_data, 
-                                     select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,	DiaryDate, 
-                                                DayofWeek, DiaryDaysCompleted,	MealTimeDescription,
-                                                FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
-                                                SubFoodGroupCode, SubFoodGroupDesc, RecipeName,
-                                                RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
-                                                RecipeSubFoodGroupCode,	RecipeSubFoodGroupDesc,
-                                                Nonmilkextrinsicsugarsg, Intrinsicandmilksugarsg, Englystfibreg, 
-                                                WhoWith, Where, WatchingTV, Table))
-
-
-df_NDNS_foodlevel_yr11_data = subset(df_NDNS_foodlevel_yr11_data, 
-                                     select = -c(SurveyYear,AgeR, Sex, CoreBoost,Country,	DiaryDate,
-                                                DayofWeek, DiaryDaysCompleted,	MealTimeDescription,
-                                                FoodName,	MainFoodGroupCode, MainFoodGroupDesc, 
-                                                SubFoodGroupCode, SubFoodGroupDesc, RecipeName,
-                                                RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
-                                                RecipeSubFoodGroupCode,	RecipeSubFoodGroupDesc,
-                                                Nonmilkextrinsicsugarsg, 
-                                                Intrinsicandmilksugarsg, Englystfibreg, 
-                                                WhoWith, Where, WatchingTV, Table))
-
-
-df_NDNS_foodlevel_yr12_data  <- df_NDNS_foodlevel_yr12_data  %>% rename("DayNo" = RecallNo,)
-df_NDNS_foodlevel_yr12_data = subset(df_NDNS_foodlevel_yr12_data, 
-                                     select = -c(AgeGrp4,AgeGrp16,Sex, SubmissionDate,DayofWeek, 
-                                                RecallCompletionTime, MealName, MealID,FoodSource,
-                                                FoodDescription, RecipeMainFoodGroupCode,	RecipeMainFoodGroupDesc,
-                                                RecipeSubFoodGroupCode,RecipeSubFoodGroupDesc))
 ```
 
 
@@ -228,13 +151,16 @@ Calculate total grams of seafood consumed. Seafood intakes are spread across 4 c
 ```{r Calculate total grams of seafood consummed}
 # Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
 df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
+```
 
 
-# Deal with NDNS year 12 separately 
-df_NDNS_foodlevel_yr12_data$totfishperprod <- df_NDNS_foodlevel_yr12_data$WhiteFishg +
-  df_NDNS_foodlevel_yr12_data$OilyFishg + df_NDNS_foodlevel_yr12_data$CannedTunag + 
-  df_NDNS_foodlevel_yr12_data$Shellfishg
+```{r Deal with NDNS year 12 separately}
+# Identify unique food numbers
+foodnumberfish <- unique(df_NDNS_seafood_consumption_Yr1_11$FoodNumber)
 
+sub_year12 <- df_NDNS_foodlevel_yr12_data[df_NDNS_foodlevel_yr12_data$FoodNumber %in% foodnumberfish,]
+
+sub_year12$totfishperprod <- sub_year12$WhiteFishg + sub_year12$OilyFishg + sub_year12$CannedTunag + sub_year12$Shellfishg
 
 ```
 
@@ -246,28 +172,19 @@ df_NDNS_seafood_consumption_Yr1_11$SpeciesRevised <- df_NDNS_seafood_consumption
 # Join data frame with MCS data frame by species name
 df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+```
 
 
-
+```{r Join data frame with translation document}
 # Deal with year 12 separately 
-df_NDNS_foodlevel_yr12_data$SpeciesRevised <- df_NDNS_foodlevel_yr12_data$FoodName
-str(df_NDNS_foodlevel_yr12_data)
-
-str(MCS_translations)
+# NDNS year 12 does not provide species name so use food description.
+df_NDNS_sub_year12$SpeciesRevised <- df_NDNS_sub_year12$FoodDescription
 
 # Join data frame with MCS data frame by species name
-df_NDNS_foodlevel_yr12_data <- df_NDNS_foodlevel_yr12_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species'))
+df_NDNS_sub_year12 <- df_NDNS_sub_year12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species'))
 # "Species" column is the unique spelling of the species in all data sets.
 
 ```
-
-
-```{r Combine NDNS years 1 to 11 with year 12}
-
-
-
-```
-
 
 
 Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year. So aggregate seafood consumption data, per species, per year. 
@@ -279,9 +196,36 @@ df_NDNS_seafood_consumption_Yr1_11$gDay  <- df_NDNS_seafood_consumption_Yr1_11$t
 ```
 
 
+```{r Year 12: Calucaulte daily fish intake per reported seafood consumer}
+# In the new NDNS DiaryDays completed is registered as RecallNo so summarise by seriali and get the max(RecallNo), 
+# which is the same as DiaryDaysCompleted. However, in year 12, not all the included individuals have 3 or 4 days 
+# like previous years.
+
+DiaryDaysCompleted <- sub_year12 %>% 
+  group_by(seriali) %>%
+  summarise(DiaryDaysCompleted = max(RecallNo)) 
+
+# Merge DiaryDaysCompleted with the original data 
+sub_year12 <- merge(sub_year12, DiaryDaysCompleted, by = "seriali")
+
+# Now you can divide
+sub_year12$gDay  <- sub_year12$totfishperprod/ sub_year12$DiaryDaysCompleted
+
+```
+
+
+
+
+
+
 ```{r Sum daily seafood consumption per by species}
 # Sum seafood consumption per species per year- some respondents consumed fish more than once over the four days
 df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ SeafoodSpecies + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
+
+
+sub_year12_aggregated <- aggregate(gDay ~ SeafoodSpecies + SurveyYear + SpeciesType 
+                                                     + SACN, data = sub_year12, sum)
+
 
 ```
 
@@ -307,69 +251,35 @@ df_NDNS_seafoodReported_Yr1_11$avgUKWeeklyIntake <- df_NDNS_seafoodReported_Yr1_
 ```
 
 
-```{r Delete later}
-df_plot_dailyIntakePerYear <- aggregate(avgUKWeeklyIntake ~ SurveyYear, data = df_NDNS_seafoodReported_Yr1_11, sum)
+```{r}
+# Add a column indicating it is year 12 to year 12
+sub_year12$SurveyYear =  "Survey Year 12"
+# Count serialis in year 12
+respondersYear12 <- df_NDNS_foodlevel_yr12_data %>% 
+  summarise(count = n_distinct(seriali)) 
+# Add the count of 930 to a column
+sub_year12$count = respondersYear12$count
+# Calculate avgUK intake
+sub_year12$avgUKdailyIntake <- sub_year12$gDay / sub_year12$count
+# Calculate weekly UK seafood consumption 
+sub_year12$avgUKWeeklyIntake <- sub_year12$avgUKdailyIntake * 7  
 
-ggplot(df_plot_dailyIntakePerYear, aes(x = SurveyYear, y = avgUKWeeklyIntake)) +
-  geom_point()
-
-```
-
-```{r Calculate the annual seafood intake per species}
-# Divide summed seafood consumption diary days entered (Total diary days completed changes per person)
-#df_NDNS_seafood_aggregate_person_Yr1_11$gDay  <- df_NDNS_seafood_aggregate_person_Yr1_11$totfishperprod/ df_NDNS_seafood_aggregate_person_Yr1_11$DiaryDaysCompleted
-
-# Calculate annual seafood intake by multiplying daily consumption by 365
-#df_NDNS_seafood_aggregate_person_Yr1_11$gYear <- df_NDNS_seafood_aggregate_person_Yr1_11$gDay * 365
-
-# Calculate weekly seafood intake by multiplying daily consumption by 7
-#df_NDNS_seafood_aggregate_person_Yr1_11$gWeek <- df_NDNS_seafood_aggregate_person_Yr1_11$gDay * 7
-```
-
-
-```{r Calculate seafood consumption (including non-fish eaters) from food diaries}
-# Create data frame with NDNS survey year respondents 
-#unique(NDNS_UK_Yr1_11_data$SurveyYear) 
-
-# NA, 37 and 54 entries explored- no serial number so removed from data set
-#NDNS_UK_Yr1_11_data_check <- subset(NDNS_UK_Yr1_11_data, SurveyYear == "NDNS Year 1" | SurveyYear == "NDNS Year 2" |
-#                               SurveyYear == "NDNS Year 3" | SurveyYear == "NDNS Year 4" | 
-#                               SurveyYear ==  "NDNS Year 5" | SurveyYear ==  "NDNS Year 6" | 
-#                               SurveyYear ==  "NDNS Year 7" | SurveyYear ==  "NDNS Year 8" | 
-#                               SurveyYear ==  "NDNS Year 9"  | SurveyYear == "NDNS Year 10" | 
-#                               SurveyYear ==  "NDNS Year 11")
-
-#respondersPerYear <- NDNS_UK_Yr1_11_data %>%
-#    group_by(SurveyYear) %>%
-#    summarise(Count = n())  
-#colnames(NDNS_UK_Yr1_11_data_check)
-#unique(NDNS_UK_Yr1_11_data_check$SurveyYear)
-
-# Estimate total number of participants per year
-#respondersPerYear <- NDNS_UK_Yr1_11_data %>% 
- # group_by(SurveyYear) %>%
-#    summarise(count = n_distinct(seriali)) 
-
-# Estimate total number of fish reporters  per year
-#reportedConsumersPerYear <- df_NDNS_seafood_consumption_Yr1_11 %>% 
-#  group_by(SurveyYear) %>%
-#    summarise(count = n_distinct(seriali)) 
-
-# Merge NDNS respondents with fish intake reporters
-#df_NDNS_reporters_Yr1_11 <- merge(respondersPerYear, reportedConsumersPerYear, by = "SurveyYear")
-
-# Calculate the ratio
-#df_NDNS_reporters_Yr1_11$ratio <- df_NDNS_reporters_Yr1_11$count.x / df_NDNS_reporters_Yr1_11$count.y
-
-# Merge NDNS responses with consumption data 
-#df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_aggregate_person_Yr1_11, df_NDNS_reporters_Yr1_11, by = "SurveyYear")
-
-# Divide seafood consumption by NDNS respondents 
-#df_NDNS_seafoodReported_Yr1_11$avgYearIntakeNDNS <- df_NDNS_seafood_aggregate_person_Yr1_11$gYear / df_NDNS_seafoodReported_Yr1_11$count
-
-#df_NDNS_seafoodReported_Yr1_11$avgWeekIntakeNDNS <- df_NDNS_seafood_aggregate_person_Yr1_11$gWeek / df_NDNS_seafoodReported_Yr1_11$count
+# Combination
+subset1_11 = df_NDNS_seafoodReported_Yr1_11 %>% select(seriali,SurveyYear,DayNo,DiaryDaysCompleted,
+                                                       FoodNumber,FoodName,totfishperprod,gDay,
+                                                       count,avgUKdailyIntake,avgUKWeeklyIntake)
+subset12 = sub_year12 %>% select(seriali,SurveyYear,RecallNo,DiaryDaysCompleted,
+                                FoodNumber,FoodDescription,totfishperprod,gDay,
+                                count,avgUKdailyIntake,avgUKWeeklyIntake)
+subset12 = subset12 %>% 
+  rename(
+    DayNo = RecallNo,
+    FoodName = FoodDescription)
+final <- rbind(subset1_11,subset12)
 
 ```
+
+
 
 
 
@@ -398,7 +308,6 @@ df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818,
 
 
 
-### ATTENTION ANNELI. NEED TO UPDATE NDNS
 
 ```{r Calcaulte seafood intake for whole of UK}
 # Scale up NDNS consumption data with UK population data
