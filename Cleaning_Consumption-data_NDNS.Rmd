@@ -46,11 +46,30 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+#MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_12JAN2024.csv", sep="/"))
 
 # Check structure of the translation document
-str(MCS_translations)
+#str(MCS_translations)
 ```
+
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load UK population data}
+# Load master spreadsheet with species names and revised species names
+#MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+df_UK_population_200920 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"))
+
+# Check structure of the translation document
+str(df_UK_population_200920)
+```
+
 
 
 ## Consumption (NDNS) UK seafood cosnumption to food level
@@ -101,7 +120,7 @@ df_NDNS_foodlevel_yr12_data <-
 ```
 
 
-```{r Combine data sets: i) years 1 to 4; ii) years 5 to 6; and iii) years 7 to 8; iv) years 9 to 11}
+```{r Clean and combine data sets (Year 1 - 11) }
 # Clean data 1- 11 NDNS
 df_NDNS_foodlevel_yr1_4_short <- subset(df_NDNS_foodlevel_yr1_4_data, 
                                        select = -c(diarymth,WhoWithOther,WhereOther))
@@ -144,7 +163,7 @@ df_NDNS_UK_Yr1_11_data <- rbind(df_NDNS_foodlevel_yr1_4_short,
 Downloaded NDNS data for all food groups. Need to select just those rows related to seafood consumption. Entries numbered 33, 34 and 35 "Main food group code" column related to seafood consumption.
 
 
-```{r Subset seafood products from consumption data}
+```{r Subset seafood products from consumption data (Year 1 - 11)}
 # Identify unique main food groups
 unique(df_NDNS_UK_Yr1_11_data$MainFoodGroupCode)
 
@@ -156,21 +175,28 @@ df_NDNS_seafood_consumption_Yr1_11 <- subset(df_NDNS_UK_Yr1_11_data, MainFoodGro
 
 Calculate total grams of seafood consumed. Seafood intakes are spread across 4 columns. 
 
-```{r Calculate total grams of seafood consummed}
+```{r Calculate total grams of seafood consummed (Year 1 - 11)}
 # Calculate total seafood consumption. Sum columns"WhiteFishg","OilyFishg", "CannedTunag" and "Shellfishg"
 df_NDNS_seafood_consumption_Yr1_11$totfishperprod <- df_NDNS_seafood_consumption_Yr1_11$WhiteFishg + df_NDNS_seafood_consumption_Yr1_11$OilyFishg + df_NDNS_seafood_consumption_Yr1_11$CannedTunag + df_NDNS_seafood_consumption_Yr1_11$Shellfishg
 ```
 
-# check here
 
-```{r Deal with NDNS year 12 separately}
+```{r Subset seafood products from consumption data (Year 12)}
 # Identify unique food numbers
 df_fishFoodnumber <- unique(df_NDNS_seafood_consumption_Yr1_11$FoodNumber)
 
-# Subset fish products from NDNS data
+# Subset fish products, using "food number" variable, from NDNS year 12 dataset
 df_NDNS_sub_Yr12 <- df_NDNS_foodlevel_yr12_data[df_NDNS_foodlevel_yr12_data$FoodNumber %in% df_fishFoodnumber,]
+```
 
+
+```{r Calculate total grams of seafood consummed (Year 12)}
+# Calcualte total grams of seafood consummed
 df_NDNS_sub_Yr12$totfishperprod <- df_NDNS_sub_Yr12$WhiteFishg + df_NDNS_sub_Yr12$OilyFishg + df_NDNS_sub_Yr12$CannedTunag + df_NDNS_sub_Yr12$Shellfishg
+
+
+#filepath <- paste(data_dir,"ProcessedData/", sep = "")
+#write.csv(uniqueFishProductNames, file = paste(filepath,"NDNS_UniqueFishProd.csv", sep = ""), row.names = FALSE)
 
 ```
 
@@ -191,11 +217,8 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>%
 # NDNS year 12 does not provide species name so use food description.
 df_NDNS_sub_Yr12$SpeciesRevised <- df_NDNS_sub_Yr12$FoodDescription
 
-unique(df_NDNS_sub_Yr12$SpeciesRevised)
-
 # Join data frame with MCS data frame by species name
-df_NDNS_sub_Yr12 <- df_NDNS_sub_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species'))
-# "Species" column is the unique spelling of the species in all data sets.
+df_NDNS_sub_Yr12 <- df_NDNS_sub_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species')) # "Species" column is the unique spelling of the species in all data sets.
 
 ```
 
@@ -203,58 +226,53 @@ df_NDNS_sub_Yr12 <- df_NDNS_sub_Yr12 %>% inner_join(., MCS_translations, by = c(
 Now all species are in a separate column. Some species are duplicated per year i.e. salmon fillet/ salmon pate/ smoked salmon now all called salmon so need to aggregate (add) salmon consumption each reported year. So aggregate seafood consumption data, per species, per year. 
 
 
-```{r Calucaulte daily fish intake per reported seafood consumer}
+```{r Calculate daily fish intake per reported seafood consumer (Year 1 - 11)}
 # Divide seafood consumption by diary days entered (total diary days completed changes per person)
-df_NDNS_seafood_consumption_Yr1_11$gDay  <- df_NDNS_seafood_consumption_Yr1_11$totfishperprod/ df_NDNS_seafood_consumption_Yr1_11$DiaryDaysCompleted
+df_NDNS_seafood_consumption_Yr1_11$gDay <- df_NDNS_seafood_consumption_Yr1_11$totfishperprod/ df_NDNS_seafood_consumption_Yr1_11$DiaryDaysCompleted
 ```
 
 
-```{r Year 12: Calucaulte daily fish intake per reported seafood consumer}
-# In the new NDNS DiaryDays completed is registered as RecallNo so summarise by seriali and get the max(RecallNo), 
-# which is the same as DiaryDaysCompleted. However, in year 12, not all the included individuals have 3 or 4 days 
-# like previous years.
+```{r Calculate daily fish intake per reported seafood consumer (Year 12)}
+# In the new NDNS data DiaryDays completed is registered as RecallNo so summarise by seriali and get the max(RecallNo)- same as DiaryDaysCompleted. However, in year 12, not all the included individuals have 3 or 4 days unlike previous years.
 
-DiaryDaysCompleted <- sub_year12 %>% 
+DiaryDaysCompleted <- df_NDNS_sub_Yr12 %>% 
   group_by(seriali) %>%
   summarise(DiaryDaysCompleted = max(RecallNo)) 
 
 # Merge DiaryDaysCompleted with the original data 
-sub_year12 <- merge(sub_year12, DiaryDaysCompleted, by = "seriali")
+df_NDNS_sub_Yr12 <- merge(df_NDNS_sub_Yr12, DiaryDaysCompleted, by = "seriali")
 
 # Now you can divide
-sub_year12$gDay  <- sub_year12$totfishperprod/ sub_year12$DiaryDaysCompleted
+df_NDNS_sub_Yr12$gDay <- df_NDNS_sub_Yr12$totfishperprod/ df_NDNS_sub_Yr12$DiaryDaysCompleted
 
 ```
 
 
-
-
-
-
-```{r Sum daily seafood consumption per by species}
+```{r Sum daily seafood consumption per by species (both)}
 # Sum seafood consumption per species per year- some respondents consumed fish more than once over the four days
-df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ SeafoodSpecies + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
 
+#df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ CommonSpeciesName + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum) # inclues species type
 
-sub_year12_aggregated <- aggregate(gDay ~ SeafoodSpecies + SurveyYear + SpeciesType 
-                                                     + SACN, data = sub_year12, sum)
+df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ CommonSpeciesName + SurveyYear + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
 
+df_NDNS_seafood_UKReportedIntake_Yr12 <- aggregate(gDay ~ CommonSpeciesName
+                                                     + SACN, data = df_NDNS_sub_Yr12, sum)
 
 ```
 
 
-```{r Calucaulte total number of NDNS participants per year}
+```{r Calucaulte total number of NDNS participants per year (Year 1- 11)}
 # Estimate total number of NDNS participants per year
-respondersPerYear <- NDNS_UK_Yr1_11_data %>% 
+respondersPerYear <- df_NDNS_UK_Yr1_11_data %>% 
   group_by(SurveyYear) %>%
     summarise(count = n_distinct(seriali)) 
 
-# Merge NDNS responses with consumption data 
+# Merge NDNS participants with consumption data 
 df_NDNS_seafoodReported_Yr1_11 <- merge(df_NDNS_seafood_UKReportedIntake_Yr1_11, respondersPerYear, by = "SurveyYear")
 ```
 
 
-```{r Calucaulte daily and weekly UK seafood consumption}
+```{r Calucaulte daily and weekly UK seafood consumption (Year 1 - 11)}
 # Divide seafood consumption by NDNS respondents 
 df_NDNS_seafoodReported_Yr1_11$avgUKdailyIntake <- df_NDNS_seafoodReported_Yr1_11$gDay / df_NDNS_seafoodReported_Yr1_11$count
 
@@ -264,43 +282,60 @@ df_NDNS_seafoodReported_Yr1_11$avgUKWeeklyIntake <- df_NDNS_seafoodReported_Yr1_
 ```
 
 
-```{r}
+```{r Calucaulte total number of NDNS participants per year (Year 12)}
 # Add a column indicating it is year 12 to year 12
-sub_year12$SurveyYear =  "Survey Year 12"
+df_NDNS_seafood_UKReportedIntake_Yr12$SurveyYear <- "NDNS Year 12"
 # Count serialis in year 12
 respondersYear12 <- df_NDNS_foodlevel_yr12_data %>% 
   summarise(count = n_distinct(seriali)) 
-# Add the count of 930 to a column
-sub_year12$count = respondersYear12$count
-# Calculate avgUK intake
-sub_year12$avgUKdailyIntake <- sub_year12$gDay / sub_year12$count
+# Estimate total number of NDNS participants per year
+df_NDNS_seafood_UKReportedIntake_Yr12$count = respondersYear12$count
+```
+
+
+```{r Calucaulte daily and weekly UK seafood consumption (Year 12)}
+# Divide seafood consumption by NDNS respondents 
+df_NDNS_seafood_UKReportedIntake_Yr12$avgUKdailyIntake <- df_NDNS_seafood_UKReportedIntake_Yr12$gDay / df_NDNS_seafood_UKReportedIntake_Yr12$count
 # Calculate weekly UK seafood consumption 
-sub_year12$avgUKWeeklyIntake <- sub_year12$avgUKdailyIntake * 7  
-
-# Combination
-subset1_11 = df_NDNS_seafoodReported_Yr1_11 %>% select(seriali,SurveyYear,DayNo,DiaryDaysCompleted,
-                                                       FoodNumber,FoodName,totfishperprod,gDay,
-                                                       count,avgUKdailyIntake,avgUKWeeklyIntake)
-subset12 = sub_year12 %>% select(seriali,SurveyYear,RecallNo,DiaryDaysCompleted,
-                                FoodNumber,FoodDescription,totfishperprod,gDay,
-                                count,avgUKdailyIntake,avgUKWeeklyIntake)
-subset12 = subset12 %>% 
-  rename(
-    DayNo = RecallNo,
-    FoodName = FoodDescription)
-final <- rbind(subset1_11,subset12)
-
+df_NDNS_seafood_UKReportedIntake_Yr12$avgUKWeeklyIntake <- df_NDNS_seafood_UKReportedIntake_Yr12$avgUKdailyIntake * 7
 ```
 
 
 
+```{r Merge data sets}
+# Select desired columns
+# NDNS years 1 to 11
+df_NDNS_seafoodReported_Yr1_11_short <- df_NDNS_seafoodReported_Yr1_11 %>%
+  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN)
+
+# Can add in species type here
+
+#colnames(df_NDNS_seafoodReported_Yr1_11)
+#colnames(df_NDNS_seafoodReported_Yr1_11_short)
+
+# NDNS year 12
+df_NDNS_seafoodReported_Yr12_short <- df_NDNS_seafood_UKReportedIntake_Yr12 %>%
+  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN)
+
+head(df_NDNS_seafoodReported_Yr12_short)
+
+## Rename column
+#df_NDNS_seafoodReported_Yr12_short <- df_NDNS_seafoodReported_Yr12_shorter %>% 
+#  rename(
+#    DayNo = RecallNo,
+#    FoodName = FoodDescription)
+
+# Combine years
+df_NDNS_seafoodReported_Yr1_12 <- rbind(df_NDNS_seafoodReported_Yr1_11_short, df_NDNS_seafoodReported_Yr12_short)
+
+```
 
 
 Before merging with population data need to change survey Volumes. 
 
 ```{r Allocate numerical Volumes to survey years}
 # Create new data frame with survey years and corresponding numerical Volumes
-SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7","NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11")
+SurveyYear <- c("NDNS Year 1", "NDNS Year 2", "NDNS Year 3","NDNS Year 4","NDNS Year 5", "NDNS Year 6", "NDNS Year 7","NDNS Year 8","NDNS Year 9", "NDNS Year 10", "NDNS Year 11", "NDNS Year 12")
 #NDNSYear <- c(200809, 200910, 201011, 201112, 201213, 201314, 201415, 201516, 201617, 201718, 201819) 
 # 1.5 years. Choose starting or finishing year.
 #Year <- c(2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018) 
@@ -312,60 +347,73 @@ df_NDNSYearData <- as.data.frame(cbind(SurveyYear, Year))
 df_NDNSYearData$Year <- as.numeric(as.character(df_NDNSYearData$Year))
 
 # Create new data frame allocate numerical Volumes by merging data frames
-df_NDNS_seafood_consumption_200818 <- merge(df_NDNS_seafoodReported_Yr1_11, df_NDNSYearData, by = "SurveyYear")
+#df_NDNS_seafood_consumption_200818 <- merge(df_NDNS_seafoodReported_Yr1_11, df_NDNSYearData, by = "SurveyYear")
 
 # Omit year 1 i.e. 2008
-df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818, Year > 2008)
+#df_NDNS_seafood_consumption_200918 <- subset(df_NDNS_seafood_consumption_200818, Year > 2008)
+
+
+
+# Create new data frame allocate numerical Volumes by merging data frames
+df_NDNS_seafood_consumption_200920 <- merge(df_NDNS_seafoodReported_Yr1_12, df_NDNSYearData, by = "SurveyYear")
+
+# Omit year 1 i.e. 2008
+#df_NDNS_seafood_consumption_200920 <- subset(df_NDNS_seafood_consumption_200818, Year > 2008)
+
+#unique(df_NDNS_seafood_consumption_200920$Year)
 
 ```
-
 
 
 
 ```{r Calcaulte seafood intake for whole of UK}
 # Scale up NDNS consumption data with UK population data
 # Join seafood consumption with population data by year
-df_NDNS_seafoodintakeUK_200918 <- merge(df_NDNS_seafood_consumption_200918, df_UK_population_200918, by = "Year")
+df_NDNS_seafoodintakeUK_200920 <- merge(df_NDNS_seafood_consumption_200920, df_UK_population_200920, by = "Year")
 
 # Multiply by the number of people in the country
-df_NDNS_seafoodintakeUK_200918$Volume <- (df_NDNS_seafoodintakeUK_200918$avgUKdailyIntake * 365) * df_NDNS_seafoodintakeUK_200918$UKPOP
+df_NDNS_seafoodintakeUK_200920$Volume <- (df_NDNS_seafoodintakeUK_200920$avgUKdailyIntake * 365) * df_NDNS_seafoodintakeUK_200920$UKPOP
 
 ```
 
 
 ```{r Add additional variables to data set}
 # Create "cleaned" data frame, defining units and data source 
-df_NDNS_seafoodintakeUK_200918$DataSupplier <- "NDNS"
-df_NDNS_seafoodintakeUK_200918$DataSet <- "Food Diaries"
-df_NDNS_seafoodintakeUK_200918$Commodity <- "Consumption"
-df_NDNS_seafoodintakeUK_200918$Flag <- "ConV2"
-df_NDNS_seafoodintakeUK_200918$TemporalResolution <- "CalendarYear"
-df_NDNS_seafoodintakeUK_200918$Units <- "Grams"
-df_NDNS_seafoodintakeUK_200918$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
+df_NDNS_seafoodintakeUK_200920$DataSupplier <- "NDNS"
+df_NDNS_seafoodintakeUK_200920$DataSet <- "Food Diaries"
+df_NDNS_seafoodintakeUK_200920$Commodity <- "Consumption"
+df_NDNS_seafoodintakeUK_200920$Flag <- "ConV2"
+df_NDNS_seafoodintakeUK_200920$TemporalResolution <- "CalendarYear"
+df_NDNS_seafoodintakeUK_200920$Units <- "Grams"
+df_NDNS_seafoodintakeUK_200920$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
 
 ```
 
 
 ```{r Select desired variables for the data set}
 # Identify columns in data frame
-colnames(df_NDNS_seafoodintakeUK_200918)
+colnames(df_NDNS_seafoodintakeUK_200920)
 
 # Select desired columns for cleaned data set
-df_NDNS_seafoodintakeUK_200918_cleaned <- df_NDNS_seafoodintakeUK_200918[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+#df_NDNS_seafoodintakeUK_200920_cleaned <- df_NDNS_seafoodintakeUK_200920[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+df_NDNS_seafoodintakeUK_200920_cleaned <- df_NDNS_seafoodintakeUK_200920[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column 
-df_NDNS_seafoodintakeUK_200918_clean <- rename(df_NDNS_seafoodintakeUK_200918_cleaned, Species = SeafoodSpecies)
+df_NDNS_seafoodintakeUK_200920_clean <- rename(df_NDNS_seafoodintakeUK_200920_cleaned, Species = SeafoodSpecies)
+
+df_NDNS_seafoodintakeUK_200920_clean <- rename(df_NDNS_seafoodintakeUK_200920_cleaned, Species = CommonSpeciesName)
 
 ```
 
 
 ```{r Check dataset}
 # Check for duplicates
-duplicates_NDNS <- df_NDNS_seafoodintakeUK_200918_clean %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+duplicates_NDNS <- df_NDNS_seafoodintakeUK_200920_clean %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
   filter(n()>1) %>% mutate(n = n())
 
 # Check data transforms from long and thin to short and wide
-shape_NDNS <- df_NDNS_seafoodintakeUK_200918_clean %>% 
+shape_NDNS <- df_NDNS_seafoodintakeUK_200920_clean %>% 
   select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
   filter(Commodity %in% c("Consumption")) %>% 
   pivot_wider(names_from = Commodity, values_from = Volume)
@@ -376,6 +424,6 @@ shape_NDNS <- df_NDNS_seafoodintakeUK_200918_clean %>%
 ```{r Save cleaned data}
 # Save cleaned data as .csv
 filepath <- paste(data_dir,"ProcessedData/", sep = "")
-write.csv(df_NDNS_seafoodintakeUK_200918_clean, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+write.csv(df_NDNS_seafoodintakeUK_200920_clean, file = paste(filepath,"ConsumptionData_NDNS_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
 
 ```
