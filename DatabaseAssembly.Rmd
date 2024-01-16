@@ -66,12 +66,15 @@ rm(i)
 names(df_TradeD)[names(df_TradeD) == 'Value'] <- 'Volume'
 
 # Bind datasets
-df_Seafood_DB <- rbind(df_TradeD, df_OnlyUK) # dataset combined properly 
+df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # dataset combined properly 
 df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 
+
+colnames(df_Consum)
+colnames(df_Aquacu)
 # Check the structure
 str(df_Seafood_DB)
 

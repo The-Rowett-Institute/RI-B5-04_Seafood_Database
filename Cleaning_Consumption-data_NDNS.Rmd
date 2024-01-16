@@ -46,8 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-#MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
-MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_12JAN2024.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
 
 # Check structure of the translation document
 #str(MCS_translations)
@@ -207,7 +206,7 @@ df_NDNS_seafood_consumption_Yr1_11$SpeciesRevised <- df_NDNS_seafood_consumption
 
 # Join data frame with MCS data frame by species name
 df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>% 
-  inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species'))
+  inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 
 # MSC (DO NOT TOUCH)/ Species is the unique spelling of the species in all data sets.
 ```
@@ -218,7 +217,7 @@ df_NDNS_seafood_consumption_Yr1_11 <- df_NDNS_seafood_consumption_Yr1_11 %>%
 df_NDNS_sub_Yr12$SpeciesRevised <- df_NDNS_sub_Yr12$FoodDescription
 
 # Join data frame with MCS data frame by species name
-df_NDNS_sub_Yr12 <- df_NDNS_sub_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'Species')) # "Species" column is the unique spelling of the species in all data sets.
+df_NDNS_sub_Yr12 <- df_NDNS_sub_Yr12 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies')) # "Species" column is the unique spelling of the species in all data sets.
 
 ```
 

@@ -39,6 +39,23 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 
 
 ```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+
+# Check structure of the translation document
+#str(MCS_translations)
+```
+
+
+
+
+```{r Specify the desired file path}
 # Select file path with raw data
 filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
 ```
@@ -69,17 +86,23 @@ df_UKFarmed_200920$SpeciesRevised <- df_UKFarmed_200920$Species
 CEFAS_MCS_translations <- subset(MCS_translations, DataSupplier == "CEFAS")
 
 # Merge data frame with MCS data frame by species name
-df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., CEFAS_MCS_translations, by = c('SpeciesRevised' = 'Species'))
+df_UKFarmed_200920 <- df_UKFarmed_200920 %>% inner_join(., CEFAS_MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 
 ```
 
-## AL check here
+
 ```{r Aggreagate species in the data set}
 # Aggregate aquaculture species together- trout species (freshwater and saltwater duplicated)
-df_UK_aquaculture_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesRevised + DataSupplier
-                                          + Species + SACN + CFValue + SpeciesType, 
-                                          data = df_UKFarmed_200920, FUN = sum)
+#df_UK_aquaculture_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + 
+#                                            SpeciesRevised + DataSupplier +
+#                                            Species + SACN + CFValue + SpeciesType, 
+#                                          data = df_UKFarmed_200920, FUN = sum)
+# Need species revised here?
 
+df_UK_aquaculture_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + 
+                                            DataSupplier +
+                                            SACN + CFValue + SpeciesType, 
+                                          data = df_UKFarmed_200920, FUN = sum)
 ```
 
 
