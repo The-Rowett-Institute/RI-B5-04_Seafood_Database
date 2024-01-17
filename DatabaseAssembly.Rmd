@@ -72,9 +72,6 @@ df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
 df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
 
-
-colnames(df_Consum)
-colnames(df_Aquacu)
 # Check the structure
 str(df_Seafood_DB)
 
@@ -131,12 +128,8 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 
 ```{r Load nutrient data}
 # Load database 
-df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientCompostion_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
-
-df_all_nutrient_clean <- df_PHE_nutrient %>% rename(Species = SeafoodSpecies)
-
-# Commands override rename function 
-
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", 
+                                    sep = "/"), na = c("NA"))
 ```
 
 

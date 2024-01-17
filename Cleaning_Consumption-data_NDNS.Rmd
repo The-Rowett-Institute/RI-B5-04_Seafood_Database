@@ -252,10 +252,13 @@ df_NDNS_sub_Yr12$gDay <- df_NDNS_sub_Yr12$totfishperprod/ df_NDNS_sub_Yr12$Diary
 
 #df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ CommonSpeciesName + SurveyYear + SpeciesType + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum) # inclues species type
 
-df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ CommonSpeciesName + SurveyYear + SACN, data = df_NDNS_seafood_consumption_Yr1_11, sum)
+df_NDNS_seafood_UKReportedIntake_Yr1_11 <- aggregate(gDay ~ CommonSpeciesName + SurveyYear + 
+                                                       SACN + SpeciesType, data =
+                                                       df_NDNS_seafood_consumption_Yr1_11, sum)
 
-df_NDNS_seafood_UKReportedIntake_Yr12 <- aggregate(gDay ~ CommonSpeciesName
-                                                     + SACN, data = df_NDNS_sub_Yr12, sum)
+df_NDNS_seafood_UKReportedIntake_Yr12 <- aggregate(gDay ~ CommonSpeciesName + 
+                                                     SACN + SpeciesType, data = 
+                                                     df_NDNS_sub_Yr12, sum)
 
 ```
 
@@ -305,7 +308,7 @@ df_NDNS_seafood_UKReportedIntake_Yr12$avgUKWeeklyIntake <- df_NDNS_seafood_UKRep
 # Select desired columns
 # NDNS years 1 to 11
 df_NDNS_seafoodReported_Yr1_11_short <- df_NDNS_seafoodReported_Yr1_11 %>%
-  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN)
+  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN, SpeciesType)
 
 # Can add in species type here
 
@@ -314,7 +317,7 @@ df_NDNS_seafoodReported_Yr1_11_short <- df_NDNS_seafoodReported_Yr1_11 %>%
 
 # NDNS year 12
 df_NDNS_seafoodReported_Yr12_short <- df_NDNS_seafood_UKReportedIntake_Yr12 %>%
-  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN)
+  select(SurveyYear,CommonSpeciesName, avgUKdailyIntake, avgUKWeeklyIntake, SACN, SpeciesType)
 
 head(df_NDNS_seafoodReported_Yr12_short)
 
@@ -396,13 +399,13 @@ colnames(df_NDNS_seafoodintakeUK_200920)
 # Select desired columns for cleaned data set
 #df_NDNS_seafoodintakeUK_200920_cleaned <- df_NDNS_seafoodintakeUK_200920[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
-df_NDNS_seafoodintakeUK_200920_cleaned <- df_NDNS_seafoodintakeUK_200920[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_NDNS_seafoodintakeUK_200920_cleaned <- df_NDNS_seafoodintakeUK_200920[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SACN", "SpeciesType", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename "SeafoodSpecies" column 
-df_NDNS_seafoodintakeUK_200920_clean <- rename(df_NDNS_seafoodintakeUK_200920_cleaned, Species = SeafoodSpecies)
-
 df_NDNS_seafoodintakeUK_200920_clean <- rename(df_NDNS_seafoodintakeUK_200920_cleaned, Species = CommonSpeciesName)
 
+
+colnames(df_NDNS_seafoodintakeUK_200920_clean)
 ```
 
 
