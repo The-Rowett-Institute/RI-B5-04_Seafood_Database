@@ -39,6 +39,37 @@ source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you
 ```
 
 
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+
+# Check structure of the translation document
+#str(MCS_translations)
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load UK population data}
+# Load master spreadsheet with species names and revised species names
+#MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+df_UK_population_200920 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"))
+
+# Check structure of the translation document
+str(df_UK_population_200920)
+```
+
+
 
 ## Purchases (DEFRA family food) UK seafood purchases
 
@@ -82,7 +113,7 @@ Need to join seafood purchasing data with the seafood translation document befor
 df_DEFRA_purchase_201620_data$SpeciesRevised <- df_DEFRA_purchase_201620_data$codeDESCRIPTION
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_purchase_201620_data <- df_DEFRA_purchase_201620_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_purchase_201620_data <- df_DEFRA_purchase_201620_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
@@ -168,7 +199,7 @@ df_DEFRA_household_200920 <- rbind(df_DEFRA_household_201915_to_join, df_DEFRA_h
 df_DEFRA_household_200920$SpeciesRevised <- df_DEFRA_household_200920$FoodProduct
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_household_200920 <- df_DEFRA_household_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_household_200920 <- df_DEFRA_household_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Observations in the data frame will be less as original table included "sum" of some species. 
@@ -181,7 +212,7 @@ colnames(df_DEFRA_household_200920)
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_household_200920_agg <- aggregate(Volume ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
+df_DEFRA_household_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_household_200920, sum)
 
 ```
@@ -220,11 +251,11 @@ df_DEFRA_household_200920_aggYear$FlagDescription <- "Unit converted from g/capi
 colnames(df_DEFRA_household_200920_aggYear)
 
 # Select desired columns for cleaned data set
-df_DEFRA_household_200920_cleaned <- df_DEFRA_household_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_household_200920_cleaned <- df_DEFRA_household_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename some variables
 df_DEFRA_household_200920_aggYear_cleaned <- rename(df_DEFRA_household_200920_cleaned, 
-                                                    Species = SeafoodSpecies, Volume = totUK)
+                                                    Species = CommonSpeciesName, Volume = totUK)
 
 ```
 
@@ -330,7 +361,7 @@ df_DEFRA_eatenOut_200920 <- rbind(df_DEFRA_eatenOut_201915_to_join, df_DEFRA_eat
 df_DEFRA_eatenOut_200920$SpeciesRevised <- df_DEFRA_eatenOut_200920$FoodProduct
 
 # Join data frame with MCS data frame by species name
-df_DEFRA_eatenOut_200920 <- df_DEFRA_eatenOut_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_DEFRA_eatenOut_200920 <- df_DEFRA_eatenOut_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
 
 # Check column names of the updated data frame
@@ -341,7 +372,7 @@ colnames(df_DEFRA_eatenOut_200920)
 
 ```{r Seafood consumption (g/capita/week), by species}
 # Sum seafood consumption per person per species
-df_DEFRA_eatenOut_200920_agg <- aggregate(Volume ~ SeafoodSpecies + Year + SpeciesType + SACN, data =
+df_DEFRA_eatenOut_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_eatenOut_200920, sum)
 
 ```
@@ -380,11 +411,11 @@ df_DEFRA_eatenOut_200920_aggYear$FlagDescription <- "Unit converted from g/capit
 colnames(df_DEFRA_eatenOut_200920_aggYear)
 
 # Select desired columns for cleaned data set
-df_DEFRA_eatenOut_200920_cleaned <- df_DEFRA_eatenOut_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_DEFRA_eatenOut_200920_cleaned <- df_DEFRA_eatenOut_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename some variables
 df_DEFRA_eatenOut_200920_cleaned <- rename(df_DEFRA_eatenOut_200920_cleaned, 
-                                                    Species = SeafoodSpecies, Volume = totUK)
+                                                    Species = CommonSpeciesName, Volume = totUK)
 
 colnames(df_DEFRA_eatenOut_200920_cleaned)
 
