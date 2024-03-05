@@ -128,32 +128,27 @@ df_all_nutrient_long <- melt(df_all_nutrientComp, id.vars = c("FoodItem"), varia
 
 ```
 
-
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification/SeafoodNutrientComposition", sep = "") 
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
 
 
-```{r Load translation document}
-# Load database 
-df_seafoodCompKey <- vroom(file=paste(filepath,"SeafoodComposition_translationKey.csv", sep="/"), na = c("NA"))
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
 
-str(df_seafoodCompKey)
 ```
-
-
 
 ```{r Join data with translation document}
 # Join data frame with translation document- ensures consistent spelling across data sets
-
 # Duplicate species name column (allows us to check species have been renames correctly)
 df_all_nutrient_long$SpeciesRevised <- df_all_nutrient_long$FoodItem  
 
 str(df_all_nutrient_long)
 
 # Join data frame with MCS data frame by species name
-df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., df_seafoodCompKey, by = c('SpeciesRevised' = 'MCS (DO NOT TOUCH)'))
+df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 # MSC (DO NOT TOUCH) column is the unique spelling of the species in all data
 
 ```
@@ -176,16 +171,11 @@ df_all_nutrient_long$Year <- "NA"
 colnames(df_all_nutrient_long)
 
 # Select desired columns for cleaned data set
-df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Commodity", "SeafoodSpecies", "SpeciesType", "SACN", "Nutrient", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Nutrient", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
 
 # Rename variable
 df_all_nutrient_clean <- rename(df_all_nutrient_cleaned, 
-                                                    Species = SeafoodSpecies)
-
-str(df_all_nutrient_clean)
-#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("Species" == "SeafoodSpecies")
-#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("SeafoodSpecies" == "Species")
-#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename(SeafoodSpecies = Species)
+                                                    Species = CommonSpeciesName)
 
 ```
 

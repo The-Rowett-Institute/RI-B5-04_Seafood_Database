@@ -73,7 +73,7 @@ str(df_UK_population_200920)
 
 ## Purchases (DEFRA family food) UK seafood purchases
 
-Load  UK seafood purchasing data. Purchasing data between 2016 and 2018 is composed of purchases at a household and eaten out level. The two data sets need to be separated. 
+Load  UK seafood purchasing data. Purchasing data between 2016 and 2020 is composed of purchases at a household and eaten out level. The two data sets need to be separated. 
 
 
 ```{r Specify the desired file path}
@@ -133,10 +133,10 @@ df_DEFRA_eatenOut_201620 <- subset(df_DEFRA_purchase_201620_data, DataSupplier =
 Household and eaten-out purchase data are now separated.
 
 
-### ii) Household data (2016 to 2018)
+### ii) Household data (2016 to 2020)
 
-```{r Transform data (household 2016 to 2018)}
-# Select only years 2016 to 2018
+```{r Transform data (household 2016 to 2020)}
+# Select only years 2016 to 2020
 df_DEFRA_household_201620_short <- subset(df_DEFRA_purchase_201620_data, 
                            select = c("Year", "codeDESCRIPTION", "estimate"))
 unique(df_DEFRA_household_201620_short$codeDESCRIPTION)
@@ -172,7 +172,7 @@ df_DEFRA_household_200915_long <- melt(df_DEFRA_household_200915, id.vars = c("M
 
 Now combine the data sets. 
 
-```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2018}
+```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2020}
 # Check data frame structure  
 colnames(df_DEFRA_household_201620_short)
 colnames(df_DEFRA_household_200915_long)
@@ -191,6 +191,14 @@ df_DEFRA_household_201620_to_join$Year <- as.numeric(as.character(df_DEFRA_house
 
 # Combine data frames
 df_DEFRA_household_200920 <- rbind(df_DEFRA_household_201915_to_join, df_DEFRA_household_201620_to_join)
+```
+
+
+```{r Delete Later: volumes purchased per household}
+str(df_DEFRA_household_200920)
+df_DEFRA_household_200920_short <- aggregate(Volume ~ Year, data = df_DEFRA_household_200920, sum)
+plot(Volume ~ Year, data = df_DEFRA_household_200920_short)
+
 ```
 
 
@@ -284,17 +292,24 @@ write.csv(df_DEFRA_household_200920_aggYear_cleaned, file =
 
 
 
-### iii) Eating out (2016 to 2018)
+### iii) Eating out (2016 to 2020)
 
 
-```{r Transform data (household 2016 to 2018)}
-# Select only years 2016 to 2018
+```{r Transform data (household 2016 to 2020)}
+# Select only years 2016 to 2020
 df_DEFRA_eatenOut_201620_short <- subset(df_DEFRA_eatenOut_201620, 
                            select = c("Year", "codeDESCRIPTION", "estimate"))
 
 # Allocate units
 df_DEFRA_eatenOut_201620_short$Units <- "g/capita/week"
 
+```
+
+
+```{r Delete Later: purchases eaten out}
+str(df_DEFRA_eatenOut_201620_short)
+df_DEFRA_eatenOut_201620_short_shorter <- aggregate(estimate ~ Year, data = df_DEFRA_eatenOut_201620_short, sum)
+plot(estimate ~ Year, data = df_DEFRA_eatenOut_201620_short_shorter)
 ```
 
 
@@ -331,7 +346,7 @@ df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("EO_
 
 
 
-```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2018}
+```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2020}
 # Check data frame structure  
 colnames(df_DEFRA_eatenOut_200915_long)
 colnames(df_DEFRA_eatenOut_201620_short)

@@ -308,7 +308,7 @@ df_UKV_LandingUKonly_200920_long$SpeciesRevised <- df_UKV_LandingUKonly_200920_l
 MMO_MCS_translations <- subset(MCS_translations, DataSupplier == "MMO")
 
 # Join data frame with MCS data frame by species name
-df_UKV_LandingUKonly_200920_long <- df_UKV_LandingUKonly_200920_long %>% inner_join(., MMO_MCS_translations, by = c('SpeciesRevised' = 'Species'))
+df_UKV_LandingUKonly_200920_long <- df_UKV_LandingUKonly_200920_long %>% inner_join(., MMO_MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
 
 # Check column names of the updated data frame
 colnames(df_UKV_LandingUKonly_200920_long)
