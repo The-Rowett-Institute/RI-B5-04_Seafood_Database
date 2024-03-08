@@ -86,22 +86,24 @@ filepath <- paste(data_dir,"RawData/csv-files", sep = "")
 # *Error in raw data in 2015, so data from 2016 onwards used
 
 # read DEFRA purchasing (household and eating out) data (.csv)
-df_DEFRA_purchase_201620_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201620.csv", sep="/"))
+df_DEFRA_purchase_201621_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201621.csv", sep="/"))
 
 # Check for missing Volumes
-md.pattern(df_DEFRA_purchase_201620_data)
+md.pattern(df_DEFRA_purchase_201621_data)
 
 # State full calendar year date
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==15] <- 2015
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==16] <- 2016
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==17] <- 2017
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==18] <- 2018
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==19] <- 2019
-df_DEFRA_purchase_201620_data$Year[df_DEFRA_purchase_201620_data$Year==20] <- 2020
-unique(df_DEFRA_purchase_201620_data$Year)
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==15] <- 2015
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==16] <- 2016
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==17] <- 2017
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==18] <- 2018
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==19] <- 2019
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==20] <- 2020
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==21] <- 2021
+unique(df_DEFRA_purchase_201621_data$Year)
 
 # Subset years 2016 to 2020
-df_DEFRA_purchase_201620_data <- subset(df_DEFRA_purchase_201620_data,  Year > 2015)
+df_DEFRA_purchase_201620_data <- subset(df_DEFRA_purchase_201621_data,  Year > 2015 & Year < 2021)
+
 unique(df_DEFRA_purchase_201620_data$Year)
 ```
 
