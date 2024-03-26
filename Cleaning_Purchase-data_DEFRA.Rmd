@@ -217,9 +217,12 @@ colnames(df_DEFRA_household_200920)
 # Sum seafood consumption per person per species
 df_DEFRA_household_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesType + SACN, data =
                                                 df_DEFRA_household_200920, sum)
-#Check raw values
+# Check raw values
 df_DEFRA_household_200920_agggg <- aggregate(Volume ~ Year, data =
                                                 df_DEFRA_household_200920, sum)
+
+summary(df_DEFRA_household_200920_agggg) # avg amount of fish purchased at household level
+
 ```
 
 
@@ -384,6 +387,8 @@ df_DEFRA_eatenOut_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + Sp
 #Check raw values
 df_DEFRA_eatenOut_200920_agggg <- aggregate(Volume ~ Year, data =
                                                 df_DEFRA_eatenOut_200920, sum)
+
+summary(df_DEFRA_eatenOut_200920_agggg) # avg amount of fish purchased at eaten out level
 
 ```
 
