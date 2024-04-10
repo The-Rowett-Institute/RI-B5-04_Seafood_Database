@@ -36,14 +36,14 @@ library(chron)
 ```{r Load data, echo=TRUE}
 # Loading file path to the data into a Volume 
 source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+
 ```
 
 
 ```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+filepath <- paste(data_dir,"/Methods/SpeciesTypeClassification", sep = "") 
 # note we are able to change this to another file e.g. saving the output
 ```
-
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
