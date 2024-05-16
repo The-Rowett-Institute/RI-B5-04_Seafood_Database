@@ -1,7 +1,7 @@
 ---
-title: "RI-B5-04: UK seafood supply chains. Database assembly."
-author: "B. Scheliga and A.Lofstedt"
-date: "`r Sys.Date()`"
+title: "SeafoodDatabaseAssembly"
+author: "A.Lofstedt and B.Scheliga"
+date: "2024-05-16"
 output: html_document
 ---
 
@@ -81,10 +81,9 @@ str(df_Seafood_DB)
 ```{r Save the seafood database}
 source("Data_filepath.R")
 # Save datframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs/Databases", sep = "")
-write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep = "/"), row.names = FALSE)
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
 ```
-
 
 
 
@@ -100,7 +99,7 @@ filepath <- paste(data_dir,"ProcessedData", sep = "")
 df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
 
 # Simplify population data
-df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")] 
+df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
 
 ```
 
@@ -122,15 +121,19 @@ str(df_seafoodDB_pop_short)
 ```
 
 
+
 ```{r Specify the desired file path}
 filepath <- paste(data_dir,"ProcessedData", sep = "") 
 ```
 
 ```{r Load nutrient data}
 # Load database 
-df_PHE_nutrient <- vroom(file = paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", 
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", 
                                     sep = "/"), na = c("NA"))
 
+str(df_PHE_nutrient)
+
+colnames(df_PHE_nutrient)
 ```
 
 
@@ -145,6 +148,7 @@ df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
 df_nutrient_short <- df_PHE_nutrient_simp %>%
   pivot_wider(names_from = Nutrient, values_from = Volume)
 
+str(df_nutrient_short)
 ```
 
 
@@ -152,12 +156,16 @@ df_nutrient_short <- df_PHE_nutrient_simp %>%
 # Merge nutrient data with seafood database
 df_seafoodDB_nutrientComposition <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species") 
 
+# Only use this dataframe when looking at nutrients as all fish are not included
+#str(df_seafoodDB_nutrientComposition)
+
 ```
 
 
 ```{r Save the seafood database}
-# Save dataframe to "Outputs" data file
-filepath <- paste(data_dir,"Outputs/Databases", sep = "")
-# Save as .csv
-write.csv(df_seafoodDB_nutrientComposition, paste(filepath,"Seafood-database_composition_preliminary.csv", sep = "/"), row.names = FALSE)
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
+write.csv(df_seafoodDB_nutrientComposition, paste(filepath,"Seafood-database_composition_preliminary.csv",sep="/"), row.names = FALSE)
 ```
+

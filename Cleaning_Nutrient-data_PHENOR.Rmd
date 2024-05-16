@@ -1,10 +1,9 @@
 ---
-title: "Cleaning_NutrientComp-data_PHENOR"
-author: "AL"
-date: "`r Sys.Date()`"
+title: "Cleaning_Nutrients_PHENOR"
+author: "A.Lofstedt and B.Scheliga"
+date: "2024-05-16"
 output: html_document
 ---
-
 
 ```{r setup, include=FALSE}
 # sets options for entire document in the first chunk
@@ -142,45 +141,20 @@ df_all_nutrient_long <- melt(df_all_nutrientComp, id.vars = c("FoodItem"), varia
 
 ```
 
-<<<<<<< HEAD
 
 ```{r Join data with translation document}
 # Join data frame with translation document- ensures consistent spelling across data sets
 
 # Duplicate species name column (duplicated column entries to be duplicated)
 df_all_nutrient_long$SpeciesRevised <- df_all_nutrient_long$FoodItem 
-=======
-```{r Specify the desired file path}
-filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
-# note we are able to change this to another file e.g. saving the output
-```
-
-
-```{r Load spreadsheet with unique seafood species translations}
-# Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
-
-```
-
-```{r Join data with translation document}
-# Join data frame with translation document- ensures consistent spelling across data sets
-# Duplicate species name column (allows us to check species have been renames correctly)
-df_all_nutrient_long$SpeciesRevised <- df_all_nutrient_long$FoodItem  
->>>>>>> d1ce6d494d31eda66c9a1aa7f3b5467ae9d5f6e4
 
 # Subset the data frame so just MMO data only
 PHE_MCS_translations <- subset(MCS_translations, DataSupplier == "PHE" | DataSupplier == "Norwegian_FC")
 
-<<<<<<< HEAD
 unique(PHE_MCS_translations$DataSupplier)
 
 # Merge data frame with MCS data frame by species name
 df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., PHE_MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
-=======
-# Join data frame with MCS data frame by species name
-df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
-# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data
->>>>>>> d1ce6d494d31eda66c9a1aa7f3b5467ae9d5f6e4
 
 ```
 
@@ -207,14 +181,11 @@ df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Co
 # Rename variable
 df_all_nutrient_clean <- rename(df_all_nutrient_cleaned, 
                                                     Species = CommonSpeciesName)
-<<<<<<< HEAD
 
 str(df_all_nutrient_clean)
 #df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("Species" == "SeafoodSpecies")
 #df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("SeafoodSpecies" == "Species")
 #df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename(SeafoodSpecies = Species)
-=======
->>>>>>> d1ce6d494d31eda66c9a1aa7f3b5467ae9d5f6e4
 
 ```
 
