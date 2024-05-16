@@ -1,17 +1,21 @@
 # RIB504_Mapping-UK-seafood-chains
-RI-B5-04. Mapping UK seafood supply chains.
 
-Transforming our diets to build a more sustainable food system is paramount to achieving net zero. Arguably, such diets will include more seafood. We mapped seafood production (capture and aquaculture), trade (imports and exports), purchases (within and out-of-home), and seafood consumption, to species level, between 2009 and 2020, for the UK.
+We wanted to understand how our consumption of seafood relates to food supply chains - what is being produced, what is imported and exported, and how does this relate to what we eat and what we should be eating for optimal health.
 
-The R markdown documents provided here detail how the data were cleaned and merged to create the seafood database.
+This unique database harmonises secondary datasets across the whole seafood supply chain, to species level, between 2009 and 2020 (the most up-to-date data available) for the United Kingdom (UK). Datasets include seafood production (capture and aquaculture), trade (imports and exports), purchases (within and out-of-home), and human consumption.
+
+This repository holds the R markdown documents created to clean the secondary datasets and details how the data were merged to create the seafood database.
 
 Commodity and data supplier:
+- Capture production (Marine Management Organisation)
+- Aquaculture production (CEFAS)
+- Imports and exports (HMRC)
+- Purchases (DEFRA family food)
+- Consumption (National Dietary and Nutrition Survey)
+- Nutrient composition (PHE and Norwegian Food Compotion Tables)
 
-Capture production (Marine Management Organisation)
-Aquaculture production (CEFAS)
-Imports and exports (HMRC)
-Purchases (DEFRA family food)
-Consumption (National Dietary and Nutrition Survey)
+Funding: This research was funded by the Rural and Environment Science and Analytical Services Division (RESAS) of the Scottish Government, project RI-B5-04.
 
-The database will be located in the UK Data Archive but is currently located on the R1-B5-04 shared drive.
-The code and dashboard is shared on GitHub.
+Data Availability: The database created will be made publicly available on the UK Data Archive.
+
+Code Availability: The code will be made publicly available on GitHub (Rowett Repository).
