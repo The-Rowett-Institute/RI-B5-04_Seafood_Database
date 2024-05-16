@@ -237,8 +237,6 @@ df_DEFRA_household_200920_aggYear$PerYear <- df_DEFRA_household_200920_aggYear$V
 # Create new column multiplying by population size
 df_DEFRA_household_200920_aggYear$totUK <- df_DEFRA_household_200920_aggYear$PerYear * df_DEFRA_household_200920_aggYear$UKPOP
 
-str(df_DEFRA_household_200920_aggYear)
-
 ```
 
 
@@ -403,8 +401,6 @@ df_DEFRA_eatenOut_200920_aggYear$PerYear <- df_DEFRA_eatenOut_200920_aggYear$Vol
 # Create new column multiplying by population size
 df_DEFRA_eatenOut_200920_aggYear$totUK <- df_DEFRA_eatenOut_200920_aggYear$PerYear * df_DEFRA_eatenOut_200920_aggYear$UKPOP
 
-str(df_DEFRA_eatenOut_200920_aggYear)
-
 ```
 
 
@@ -431,8 +427,6 @@ df_DEFRA_eatenOut_200920_cleaned <- df_DEFRA_eatenOut_200920_aggYear[c("DataSupp
 # Rename some variables
 df_DEFRA_eatenOut_200920_cleaned <- rename(df_DEFRA_eatenOut_200920_cleaned, 
                                                     Species = CommonSpeciesName, Volume = totUK)
-
-colnames(df_DEFRA_eatenOut_200920_cleaned)
 
 ```
 
