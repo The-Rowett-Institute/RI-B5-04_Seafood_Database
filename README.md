@@ -1,9 +1,10 @@
-**'RI-B5-04. Mapping UK seafood supply chains**'
+#**RI-B5-04. Mapping UK seafood supply chains**
 
-<ins>Introduction</ins>
+<ins>**Introduction**</ins>
+
 Transforming our diets to build a more sustainable food system is paramount to achieving net zero. Arguably, such diets will include more seafood. We created a high-resolution database off the United Kingdon (UK) seafood supply chain, with data collected between 2009 to 2020 from publicly available datasets. The database combines secondary data on production (capture and aquaculture), trade (import and export), purchases ((within and out-of-home), and seafood consumption, for up to 73 seafood species. This repository contains the code and methodology used to clean and merge the secondary data sets used to create the seafood database.
 
-**'Data sources'** 
+**Data sources** 
 1)	Capture production (Marine Management Organisation)
 2)	Aquaculture production (CEFAS)
 3)	Imports and exports (HMRC) 
@@ -12,15 +13,15 @@ Transforming our diets to build a more sustainable food system is paramount to a
 7)	Population (Office of National Statistics)
 8)	Nutrients (Public Health England supplemented with Norwegian data)
 
-**'Edible factions'**
+**Edible factions**
 Conversiton factors (Hilborn et al 2018) were applied to convert the live weight (whole fish) to edible proportions.
 
-**'Data dictionary'**
+**Data dictionary**
 
-Raw data files
+*Raw data*
 
-MMO_UKV_landingUKAbroad-200913.csv : A local copy of the capture production data
-MMO_UKV_landingUKAbroad-201216.csv : A local copy of the capture production data
+'MMO_UKV_landingUKAbroad-200913.csv' : A local copy of the capture production data
+'MMO_UKV_landingUKAbroad-201216.csv' : A local copy of the capture production data
 MMO_UKV_landingUKAbroad-201721.csv  : A local copy of the capture production data
 
 CEFAS_UK_aquaculture-200920.csv : A local copy of the aqauculture data set
