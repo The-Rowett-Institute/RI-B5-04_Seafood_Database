@@ -35,7 +35,7 @@ HMRC_trade-201617.csv : A local copy of the trade data (2016 and 2017)
 HMRC_trade-201819.csv : A local copy of the trade data (2018 and 2019)  
 HMRC_trade-2020.csv : A local copy of the trade data (2020)  
 
-DEFRA_UK_purchases-201620,csv : A local copy of UK seafood purchase, including within and out-of-home (2016 to 2020)  
+DEFRA_UK_purchases-201620.csv : A local copy of UK seafood purchase, including within and out-of-home (2016 to 2020)  
 DEFRA_UK_household-200915.csv : A local copy of UK seafood purchase data, purchased within home (2009 to 2015)  
 DEFRA_UK_eatenOut-200915.csv : A local copy of UK seafood purchase data, purchased out-of-home (2009 to 2015)  
 
