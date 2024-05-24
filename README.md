@@ -14,17 +14,18 @@ Transforming our diets to build a more sustainable food system is paramount to a
 8)	Nutrients (Public Health England supplemented with Norwegian data)
 
 <ins>**Edible factions**</ins>
+
 Conversiton factors (Hilborn et al 2018) were applied to convert the live weight (whole fish) to edible proportions.
 
 <ins>**Data dictionary**</ins>
 
 *Raw data*
+ 
+'MMO_UKV_landingUKAbroad-200913.csv' : A local copy of the capture production data (2009 and 2013)  
+MMO_UKV_landingUKAbroad-201216.csv : A local copy of the capture production data (2012 and 2016)  
+MMO_UKV_landingUKAbroad-201721.csv  : A local copy of the capture production data (2017 and 2021)  
 
-*MMO_UKV_landingUKAbroad-200913.csv : A local copy of the capture production data
-*MMO_UKV_landingUKAbroad-201216.csv : A local copy of the capture production data
-*MMO_UKV_landingUKAbroad-201721.csv  : A local copy of the capture production data
-
-*CEFAS_UK_aquaculture-200920.csv : A local copy of the aqauculture data set
+CEFAS_UK_aquaculture-200920.csv : A local copy of the aqauculture data set   
 
 HMRC_trade-2009.csv : A local copy of the trade data (2009)  
 HMRC_trade-201011.csv : A local copy of the trade data (2010 and 2011)  
