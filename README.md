@@ -15,13 +15,13 @@ Transforming our diets to build a more sustainable food system is paramount to a
 
 <ins>**Edible factions**</ins>
 
-Conversiton factors (Hilborn et al 2018) were applied to convert the live weight (whole fish) to edible proportions.
+Conversion factors ([Hilborn et al 2018]) (https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/fee.1822) were applied to convert the live weight (whole fish) to edible proportions.
 
 <ins>**Data dictionary**</ins>
 
 *Raw data*
  
-'MMO_UKV_landingUKAbroad-200913.csv' : A local copy of the capture production data (2009 and 2013)  
+MMO_UKV_landingUKAbroad-200913.csv : A local copy of the capture production data (2009 and 2013)  
 MMO_UKV_landingUKAbroad-201216.csv : A local copy of the capture production data (2012 and 2016)  
 MMO_UKV_landingUKAbroad-201721.csv  : A local copy of the capture production data (2017 and 2021)  
 
