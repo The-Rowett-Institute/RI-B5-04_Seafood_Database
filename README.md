@@ -26,28 +26,28 @@ Conversiton factors (Hilborn et al 2018) were applied to convert the live weight
 
 *CEFAS_UK_aquaculture-200920.csv : A local copy of the aqauculture data set
 
-*HMRC_trade-2009.csv : A local copy of the trade data (2009)
-*HMRC_trade-201011.csv : A local copy of the trade data (2010 and 2011)
-*HMRC_trade-201213.csv : A local copy of the trade data (2012 and 2013)
-*HMRC_trade-201415.csv : A local copy of the trade data (2014 and 2015)
-*HMRC_trade-201617.csv : A local copy of the trade data (2016 and 2017)
-*HMRC_trade-201819.csv : A local copy of the trade data (2018 and 2019)
-*HMRC_trade-2020.csv : A local copy of the trade data (2020)
+HMRC_trade-2009.csv : A local copy of the trade data (2009)  
+HMRC_trade-201011.csv : A local copy of the trade data (2010 and 2011)  
+HMRC_trade-201213.csv : A local copy of the trade data (2012 and 2013)  
+HMRC_trade-201415.csv : A local copy of the trade data (2014 and 2015)  
+HMRC_trade-201617.csv : A local copy of the trade data (2016 and 2017)  
+HMRC_trade-201819.csv : A local copy of the trade data (2018 and 2019)  
+HMRC_trade-2020.csv : A local copy of the trade data (2020)  
 
-*DEFRA_UK_purchases-201620,csv : A local copy of UK seafood purchase, including within and out-of-home (2016 to 2020)
-*DEFRA_UK_household-200915.csv : A local copy of UK seafood purchase data, purchased within home (2009 to 2015)
-*DEFRA_UK_eatenOut-200915.csv : A local copy of UK seafood purchase data, purchased out-of-home (2009 to 2015)
+DEFRA_UK_purchases-201620,csv : A local copy of UK seafood purchase, including within and out-of-home (2016 to 2020)  
+DEFRA_UK_household-200915.csv : A local copy of UK seafood purchase data, purchased within home (2009 to 2015)  
+DEFRA_UK_eatenOut-200915.csv : A local copy of UK seafood purchase data, purchased out-of-home (2009 to 2015)  
 
-*ndns_rp_19_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 19)
-*ndns_rp_yr1-4a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 1 to 4)
-*ndns_rp_yr5-6a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 5 and 6)
-*ndns_rp_yr2-8a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 8)
-*ndns_rp_yr9a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 9)
-*ndns_rp_yr10a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 10)
-*ndns_rp_yr11a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 11)
+ndns_rp_19_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 19)  
+ndns_rp_yr1-4a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 1 to 4)  
+ndns_rp_yr5-6a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 5 and 6)  
+ndns_rp_yr2-8a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 8)  
+ndns_rp_yr9a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 9)  
+ndns_rp_yr10a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 10)  
+ndns_rp_yr11a_foodleveldietarydata.sav : A local copy of consumption data (NDNS year 11)  
 
-*ONS_UK_population-19712020.csv: A local copy of UK population data
+ONS_UK_population-19712020.csv: A local copy of UK population data  
 
-*PHE_seafoodNutrientContent.csv : A local copy of UK seafood compostion tables
-*PHE_seafoodFAContent.csv : A local copy of UK seafood fatty acids compostion tables
-*Norwegian_seafoodNutrientContent.csv : A local copy of Norwegian seafood compostion tables
+PHE_seafoodNutrientContent.csv : A local copy of UK seafood compostion tables  
+PHE_seafoodFAContent.csv : A local copy of UK seafood fatty acids compostion tables  
+Norwegian_seafoodNutrientContent.csv : A local copy of Norwegian seafood compostion tables  
