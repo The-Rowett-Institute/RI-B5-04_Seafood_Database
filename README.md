@@ -15,7 +15,7 @@ Transforming our diets to build a more sustainable food system is paramount to a
 
 <ins>**Edible factions**</ins>
 
-Conversion factors ([Hilborn et al 2018])(https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/fee.1822) were applied to convert the live weight (whole fish) to edible proportions.
+Conversion factors [(Hilborn et al 2018)](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/fee.1822) were applied to convert the live weight (whole fish) to edible proportions.
 
 <ins>**Data dictionary**</ins>
 
