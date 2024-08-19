@@ -100,9 +100,9 @@ df_EUMOFA_CN8 <- vroom(file=paste(filepath,"EUMOFA_CN-8-values.csv", sep="/"))
 df_EUMOFA_CN8_MCS_CG <- vroom(file=paste(filepath,"EUMOFA_Annex4.csv", sep="/"))
 
 # loading Species classification - translation from EUMOFA MCS & CG to the classification we want to use.
-df_Species_Class <- vroom(file=paste(filepath,"AllMainCommercialSpecies_translations.csv", sep=""))
+df_Species_Class <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_raw.csv", sep=""))
 
-df_Species_Class$CF_value <- as.numeric(df_Species_Class$CF_value) # forcing numeric-class for calculation later and to turn the NoData values into NA 
+df_Species_Class$CFValue <- as.numeric(df_Species_Class$CFValue) # forcing numeric-class for calculation later and to turn the NoData values into NA 
 
 ```
 
@@ -168,7 +168,7 @@ df_HMRC_inner <- df_HRMC_2009_to_2020 %>% select('Net Mass (Kg)', 'Flow Type', '
 
 ```{r Calculating annual sum based on CN8 code / Species}
 # calculating annual sum, selecting needed columns and converting to Net Mass from kg to 1000 tonnes
-df_HRMC.sum <- df_HMRC_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year, Commodity =`Flow Type`, CF) %>% summarise(`Net Mass (g)`= sum(`Net Mass (Kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (Kg)`))
+df_HRMC.sum <- df_HMRC_inner %>% group_by(CN8 = Subset_aid_CN8,`Product name` =`CN-8 product name`, Year = Year, Commodity =`Flow Type`, CF) %>% summarise(`Net Mass (g)`= sum(`Net Mass (Kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (Kg)`)) %>% ungroup()
 
 rm(df_HMRC_inner)
 
@@ -184,17 +184,21 @@ df_HMRC_4DB <-df_HRMC.sum
 df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_EUMOFA_CN8_MCS_CG, by = c('CN8' = 'CN8 code', 'Year'))
 
 # Mapping our desired Species Species Type classification
-df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'MCS (DO NOT TOUCH)'))
+df_HMRC_4DB <- df_HMRC_4DB %>% inner_join(., df_Species_Class, by = c('MCS_descr' = 'UniqueSpecies'))
 
 ## converting the whole fishing weight into its edible weight
 ## When "CF == 1", then it is the whole fish
-df_HMRC_4DB$`Net Mass (g)` <- ifelse(df_HMRC_4DB$CF==1,df_HMRC_4DB$`Net Mass (g)`*df_HMRC_4DB$CF_value,df_HMRC_4DB$`Net Mass (g)`)
+df_HMRC_4DB$`Net Mass (g)` <- ifelse(df_HMRC_4DB$CF==1,df_HMRC_4DB$`Net Mass (g)`*df_HMRC_4DB$CFValue,df_HMRC_4DB$`Net Mass (g)`)
 
 # We will now need to aggregated the weight values for some species again. As we have aggregate some some of the species and species type e.g. atlantic & pacific salmon as just salmon
 
-df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = SeafoodSpecies, SpeciesType, Year, Commodity, SACN) %>% summarise(`Net Mass (g)`= sum(`Net Mass (kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
+df_HRMC.sum <- df_HMRC_4DB %>% group_by(Species = CommonSpeciesName, SpeciesType, Year, Commodity, SACN) %>% summarise(`Net Mass (g)`= sum(`Net Mass (kg)`)*1000,`Net Mass (kg)`= sum(`Net Mass (kg)`))
 
 df_HMRC_4DB <- df_HRMC.sum
+
+
+# removing unwanted entries
+df_HMRC_4DB <- df_HMRC_4DB %>% filter(SpeciesType != "Remove")
 
 ```
 
