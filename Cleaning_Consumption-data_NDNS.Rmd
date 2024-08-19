@@ -46,7 +46,7 @@ filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "")
 
 ```{r Load spreadsheet with unique seafood species translations}
 # Load master spreadsheet with species names and revised species names
-MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_raw.csv", sep="/"))
 
 # Check structure of the translation document
 #str(MCS_translations)
