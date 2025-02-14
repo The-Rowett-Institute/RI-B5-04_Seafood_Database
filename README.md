@@ -70,5 +70,5 @@ Norwegian_seafoodNutrientContent.csv : A local copy of Norwegian seafood composi
 
 Funding: This research was funded by the Rural and Environment Science and Analytical Services Division (RESAS) of the Scottish Government, project RI-B5-04.
 
-Data Availability: The database is publicly available on the [(UK Data Archive)](https://esajournals.onlinelibrary.wiley.com/doi/full/10.1002/fee.1822)
+Data Availability: The database is publicly available on the [(UK Data Archive)](https://reshare.ukdataservice.ac.uk/856955/)
 
