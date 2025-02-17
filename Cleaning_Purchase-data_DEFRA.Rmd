@@ -1,0 +1,458 @@
+---
+title: "Cleaning_Purchase-data_DEFRA"
+author: "AL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a Volume 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"/Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_raw.csv", sep="/"))
+
+# Check structure of the translation document
+#str(MCS_translations)
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load UK population data}
+# Load master spreadsheet with species names and revised species names
+#MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames.csv", sep="/"))
+df_UK_population_200920 <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"))
+
+# Check structure of the translation document
+str(df_UK_population_200920)
+```
+
+
+
+## Purchases (DEFRA family food) UK seafood purchases
+
+Load  UK seafood purchasing data. Purchasing data between 2016 and 2020 is composed of purchases at a household and eaten out level. The two data sets need to be separated. 
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (2016 to 2020)} 
+# *Error in raw data in 2015, so data from 2016 onwards used
+
+# read DEFRA purchasing (household and eating out) data (.csv)
+df_DEFRA_purchase_201621_data <- vroom(file=paste(filepath,"DEFRA_UK_purchases-201621.csv", sep="/"))
+
+# Check for missing Volumes
+md.pattern(df_DEFRA_purchase_201621_data)
+
+# State full calendar year date
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==15] <- 2015
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==16] <- 2016
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==17] <- 2017
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==18] <- 2018
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==19] <- 2019
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==20] <- 2020
+df_DEFRA_purchase_201621_data$Year[df_DEFRA_purchase_201621_data$Year==21] <- 2021
+unique(df_DEFRA_purchase_201621_data$Year)
+
+# Subset years 2016 to 2020
+df_DEFRA_purchase_201620_data <- subset(df_DEFRA_purchase_201621_data,  Year > 2015 & Year < 2021)
+
+unique(df_DEFRA_purchase_201620_data$Year)
+```
+
+
+Need to join seafood purchasing data with the seafood translation document before subsetting- can then subset data by data set name.
+
+```{r Join data frame with translation document. Subsetting purposes only}
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_DEFRA_purchase_201620_data$SpeciesRevised <- df_DEFRA_purchase_201620_data$codecat # codecat changed
+
+# Join data frame with MCS data frame by species name
+df_DEFRA_purchase_201620_data <- df_DEFRA_purchase_201620_data %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+# Check column names of the updated data frame
+colnames(df_DEFRA_purchase_201620_data)
+unique(df_DEFRA_purchase_201620_data$codecat) #codecat changed
+
+```
+
+
+```{r Subset purchasing data} 
+# Subset purchasing data for household and eating out purposes based on data set name
+df_DEFRA_household_201620 <- subset(df_DEFRA_purchase_201620_data, DataSupplier == "DEFRA_household") 
+df_DEFRA_eatenOut_201620 <- subset(df_DEFRA_purchase_201620_data, DataSupplier == "DEFRA_eatenOut") 
+
+```
+
+
+Household and eaten-out purchase data are now separated.
+
+### ii) Household data (2016 to 2020)
+
+```{r Transform data (household 2016 to 2020)}
+# Select only years 2016 to 2020
+df_DEFRA_household_201620_short <- subset(df_DEFRA_household_201620, 
+                           select = c("Year", "codecat", "estimate"))
+unique(df_DEFRA_household_201620_short$codecat)
+
+df_DEFRA_household_201620_short$Units <- "g"
+
+```
+
+
+### iii) Household data (2009 to 2015)
+
+Load household purchases between 2009 and 2015. Note that the structures are different between the data sets. 
+
+```{r Load data (household 2009 to 2015)}
+# read DEFRA household data set (.csv)
+df_DEFRA_household_200915_data <- vroom(file=paste(filepath,"DEFRA_UK_household-200915.csv", sep="/"))
+str(df_DEFRA_household_200915_data)
+
+# Select only years 2009 to 2015
+df_DEFRA_household_200915 <- subset(df_DEFRA_household_200915_data, 
+                           select = c("Code", "Units", "2009", "2010", "2011", 
+                                      "2012", "2013", "2014","2015"))
+# Check for missing Volumes
+#md.pattern(df_DEFRA_household_200915, rotate.names = TRUE)
+
+```
+
+
+```{r Transform data set (2009 to 2015)}
+# Change structure of the data set 
+df_DEFRA_household_200915_long <- melt(df_DEFRA_household_200915, id.vars = c("Code", "Units"), variable.name ="Year", value.name = "Volume")
+```
+
+
+Now combine the data sets. 
+
+```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2020}
+# Check data frame structure  
+colnames(df_DEFRA_household_201620_short)
+colnames(df_DEFRA_household_200915_long)
+
+# Rename variables to allow data frames to merge
+# Rename codeDescription and estimate column
+df_DEFRA_household_201620_to_join <- rename(df_DEFRA_household_201620_short, 
+                                            FoodProduct = codecat, Volume = estimate)
+
+# Rename minor food code column
+df_DEFRA_household_201915_to_join <- rename(df_DEFRA_household_200915_long, FoodProduct = Code)
+
+# Ensure "Year" column is a numerical Volume. Convert to character first, then numeric
+df_DEFRA_household_201915_to_join$Year <- as.numeric(as.character(df_DEFRA_household_201915_to_join$Year))
+df_DEFRA_household_201620_to_join$Year <- as.numeric(as.character(df_DEFRA_household_201620_to_join$Year))
+
+# Combine data frames
+df_DEFRA_household_200920 <- rbind(df_DEFRA_household_201915_to_join, df_DEFRA_household_201620_to_join)
+```
+
+
+```{r Join data frame with translation document}
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_DEFRA_household_200920$SpeciesRevised <- df_DEFRA_household_200920$FoodProduct
+
+# Join data frame with MCS data frame by species name
+df_DEFRA_household_200920 <- df_DEFRA_household_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+# Observations in the data frame will be less as original table included "sum" of some species. 
+
+# Check column names
+colnames(df_DEFRA_household_200920)
+
+```
+
+
+```{r Seafood consumption (g/capita/week), by species}
+# Sum seafood consumption per person per species
+df_DEFRA_household_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesType + SACN, data =
+                                                df_DEFRA_household_200920, sum)
+# Check raw values
+df_DEFRA_household_200920_agggg <- aggregate(Volume ~ Year, data =
+                                                df_DEFRA_household_200920, sum)
+
+summary(df_DEFRA_household_200920_agggg) # avg amount of fish purchased at household level
+
+```
+
+
+
+```{r Convert g/capita/week to g/country/year}
+# Merge household purchasing data with population data 
+df_DEFRA_household_200920_aggYear <- merge(df_DEFRA_household_200920_agg, df_UK_population_200920, "Year")
+
+# Multiply Volume data by 52 (convert grams from week to year)
+df_DEFRA_household_200920_aggYear$PerYear <- df_DEFRA_household_200920_aggYear$Volume * 52
+
+# Create new column multiplying by population size
+df_DEFRA_household_200920_aggYear$totUK <- df_DEFRA_household_200920_aggYear$PerYear * df_DEFRA_household_200920_aggYear$UKPOP
+
+```
+
+
+```{r Add additional variables to data set}
+# Add additional variables
+df_DEFRA_household_200920_aggYear$DataSupplier <- "DEFRA"
+df_DEFRA_household_200920_aggYear$DataSet <- "Family Foods Household"
+df_DEFRA_household_200920_aggYear$Commodity <- "Purchases"
+df_DEFRA_household_200920_aggYear$Flag <- "ConV2"
+df_DEFRA_household_200920_aggYear$TemporalResolution <- "CalendarYear"
+df_DEFRA_household_200920_aggYear$Units <- "Grams"
+df_DEFRA_household_200920_aggYear$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
+
+```
+
+
+```{r Select desired variables for the data set}
+# Identify columns in data frame
+colnames(df_DEFRA_household_200920_aggYear)
+
+# Select desired columns for cleaned data set
+df_DEFRA_household_200920_cleaned <- df_DEFRA_household_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename some variables
+df_DEFRA_household_200920_aggYear_cleaned <- rename(df_DEFRA_household_200920_cleaned, 
+                                                    Species = CommonSpeciesName, Volume = totUK)
+
+```
+
+
+```{r Check dataset}
+# Check for duplicates
+duplicates_DEFRAHouse <- df_DEFRA_household_200920_aggYear_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_DEFRAHouse <- df_DEFRA_household_200920_aggYear_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Purchases")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+filepath <- paste(data_dir,"ProcessedData/", sep="")
+write.csv(df_DEFRA_household_200920_aggYear_cleaned, file =
+            paste(filepath,"HouseholdPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
+
+```
+
+
+
+### iii) Eating out (2016 to 2020)
+
+
+```{r Transform data (household 2016 to 2020)}
+# Select only years 2016 to 2020
+df_DEFRA_eatenOut_201620_short <- subset(df_DEFRA_eatenOut_201620, 
+                           select = c("Year", "codecat", "estimate"))
+
+# Allocate units
+df_DEFRA_eatenOut_201620_short$Units <- "g/capita/week"
+
+```
+
+
+### iv) Eating out (2009 to 2015)
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (2009 to 2015)}
+# read DEFRA eaten out data set
+df_DEFRA_eatenOut_200915_data <- vroom(file = paste(filepath,"DEFRA_UK_eatenOut-200915.csv", sep="/"))
+
+# Check for missing Volumes
+#md.pattern(df_DEFRA_eatenOut_200915_data, rotate.names = T)
+# Missing Volumes detected but not within time frame of interest
+
+# Select only years 2009 to 2015
+df_DEFRA_eatenOut_200915 <- subset(df_DEFRA_eatenOut_200915_data, 
+                           select = c("Code", "Units", "2009", "2010", "2011",
+                                      "2012", "2013","2014", "2015"))
+
+```
+
+
+```{r Transform data set (2009 to 2015)}
+# Change structure of the data set 
+df_DEFRA_eatenOut_200915_long <- melt(df_DEFRA_eatenOut_200915, id.vars = c("Code", "Units"), variable.name = "Year", value.name = "Volume")
+
+```
+
+
+
+```{r Combine DEFRA household purchaing data i) 2019 to 2015 ii) 2016 to 2020}
+# Check data frame structure  
+colnames(df_DEFRA_eatenOut_200915_long)
+colnames(df_DEFRA_eatenOut_201620_short)
+
+# Rename variables to allow data frames to merge
+# Rename codeDescription and estimate column
+df_DEFRA_eatenOut_201620_to_join <- rename(df_DEFRA_eatenOut_201620_short, 
+                                            FoodProduct = codecat, Volume = estimate)
+
+# Rename minor food code column
+df_DEFRA_eatenOut_201915_to_join <- rename(df_DEFRA_eatenOut_200915_long, FoodProduct = Code)
+
+# Ensure "Year" column is a numerical Volume. Convert to character first, then numeric
+df_DEFRA_eatenOut_201915_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201915_to_join$Year))
+df_DEFRA_eatenOut_201620_to_join$Year <- as.numeric(as.character(df_DEFRA_eatenOut_201620_to_join$Year))
+
+# Combine data frames
+df_DEFRA_eatenOut_200920 <- rbind(df_DEFRA_eatenOut_201915_to_join, df_DEFRA_eatenOut_201620_to_join)
+
+```
+
+
+
+
+```{r Join data frame with translation document}
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_DEFRA_eatenOut_200920$SpeciesRevised <- df_DEFRA_eatenOut_200920$FoodProduct
+
+# Join data frame with MCS data frame by species name
+df_DEFRA_eatenOut_200920 <- df_DEFRA_eatenOut_200920 %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+# Check column names of the updated data frame
+colnames(df_DEFRA_eatenOut_200920)
+
+```
+
+
+```{r Seafood consumption (g/capita/week), by species}
+# Sum seafood consumption per person per species
+df_DEFRA_eatenOut_200920_agg <- aggregate(Volume ~ CommonSpeciesName + Year + SpeciesType + SACN, data =
+                                                df_DEFRA_eatenOut_200920, sum)
+
+#Check raw values
+df_DEFRA_eatenOut_200920_agggg <- aggregate(Volume ~ Year, data =
+                                                df_DEFRA_eatenOut_200920, sum)
+
+summary(df_DEFRA_eatenOut_200920_agggg) # avg amount of fish purchased at eaten out level
+
+```
+
+
+```{r Convert g/capita/week to g/country/year}
+# Merge household purchasing data with population data 
+df_DEFRA_eatenOut_200920_aggYear <- merge(df_DEFRA_eatenOut_200920_agg, df_UK_population_200920, "Year")
+
+# Multiply Volume data by 52 (convert grams from week to year)
+df_DEFRA_eatenOut_200920_aggYear$PerYear <- df_DEFRA_eatenOut_200920_aggYear$Volume * 52
+
+# Create new column multiplying by population size
+df_DEFRA_eatenOut_200920_aggYear$totUK <- df_DEFRA_eatenOut_200920_aggYear$PerYear * df_DEFRA_eatenOut_200920_aggYear$UKPOP
+
+```
+
+
+```{r Add additional variables to data set}
+# Add additional variables
+df_DEFRA_eatenOut_200920_aggYear$DataSupplier <- "DEFRA"
+df_DEFRA_eatenOut_200920_aggYear$DataSet <- "Family Foods Eaten Out"
+df_DEFRA_eatenOut_200920_aggYear$Commodity <- "Purchases"
+df_DEFRA_eatenOut_200920_aggYear$Flag <- "ConV2"
+df_DEFRA_eatenOut_200920_aggYear$TemporalResolution <- "CalendarYear"
+df_DEFRA_eatenOut_200920_aggYear$Units <- "Grams"
+df_DEFRA_eatenOut_200920_aggYear$FlagDescription <- "Unit converted from g/capita/week to g/country/year"
+
+```
+
+
+```{r Select desired variables for the data set}
+# Identify columns in data frame
+colnames(df_DEFRA_eatenOut_200920_aggYear)
+
+# Select desired columns for cleaned data set
+df_DEFRA_eatenOut_200920_cleaned <- df_DEFRA_eatenOut_200920_aggYear[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "totUK", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename some variables
+df_DEFRA_eatenOut_200920_cleaned <- rename(df_DEFRA_eatenOut_200920_cleaned, 
+                                                    Species = CommonSpeciesName, Volume = totUK)
+
+```
+
+
+
+```{r Check dataset}
+# Check for duplicates
+duplicates_DEFRAOut <- df_DEFRA_eatenOut_200920_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_DEFRAOut <- df_DEFRA_eatenOut_200920_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Purchases")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+filepath <- paste(data_dir,"ProcessedData/", sep="")
+write.csv(df_DEFRA_eatenOut_200920_cleaned, file =
+            paste(filepath,"EatenOutPurchases_DEFRA_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
+
+```
+
+

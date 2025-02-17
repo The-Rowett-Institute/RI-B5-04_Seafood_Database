@@ -1,0 +1,199 @@
+---
+title: "Cleaning_Nutrients_PHENOR"
+author: "A.Lofstedt and B.Scheliga"
+date: "2024-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a Volume 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_raw.csv", sep="/"))
+
+# Check structure of the translation document
+#str(MCS_translations)
+```
+
+
+
+
+## Nutrient composition data (Public Health England)
+
+Next we downloaded seafood nutrient composition data from Public Health England (PHE). This data includes the nutrient content (macro and micro nutrients) of commonly consumed fish in the UK. Composition analyses were conducted on raw and cooked fish samples.
+
+Composition analyses were conducted in 2004. Temporal changes in nutrient composition is unlikely.
+
+Note that .csv file is saved as a UT8 (otherwise an error appears. Check with Bernhard the differences in the file types)
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load PHE data (2004)}
+# Read in .csv file 
+df_PHE_nutreintComp <- vroom(file=paste(filepath,"PHE_seafoodNutrientContent.csv", sep="/"), na = c("N/A", "Tr")) 
+# Both N/A and Tr different 
+
+# Check for missing Volumes
+#md.pattern(df_PHE_nutreintComp, rotate.names = TRUE)
+
+# Identify column names
+colnames(df_PHE_nutreintComp)
+
+# Read in fatty acid data
+df_PHE_FAComp <- vroom(file=paste(filepath,"PHE_seafoodFAContent.csv", sep="/"), na = c("N/A", "Tr")) 
+
+# Create new column for omega-3 (sum EPA and DHA)
+df_PHE_FAComp$Omega3_EPADHA_g100g <- df_PHE_FAComp$`cis n-3 C20:5_EPA` + df_PHE_FAComp$`cis n-3 C22:6_DHA`
+
+# Join PHE nutrient composition data frame with fatty acid data frame 
+df_PHE_nutreintCompFA <- df_PHE_nutreintComp %>% right_join(., df_PHE_FAComp, by = c('SampleDescription' = 'FoodGroup'))
+
+```
+
+
+```{r Load Norwegian data}
+# Read in .csv file 
+df_Norwegian_nutreintComp <- vroom(file=paste(filepath,"Norwegian_seafoodNutrientContent.csv", sep="/"), na = c("M", ""))
+
+# Check for missing Volumes
+#md.pattern(df_Norwegian_nutreintComp, rotate.names = TRUE)
+
+# Identify column names
+colnames(df_Norwegian_nutreintComp)
+
+# Create new column for omega-3 (sum EPA and DHA)
+df_Norwegian_nutreintComp$Omega3_EPADHA_g <- df_Norwegian_nutreintComp$`C20:5n-3_EPA_g` + df_Norwegian_nutreintComp$`C22:6n-3_DHA_g`
+
+```
+
+
+Select main nutrients. Both PHE and Norwegian datasets in g/100g.
+
+```{r Select desired variables from both datasets}
+# Select desired variables
+df_PHE_nutreintComp_short <- df_PHE_nutreintCompFA[c("SampleDescription", "Protein-g100g", "Omega3_EPADHA_g100g", "VitaminA-µg100g", "VitaminD-µg100g", "VitaminB12-µg100g", "Zinc-mg100g", "Iron-mg100g", "Calcium-mg100g", "Selenium-µg100g", "Iodine-µg100g" )]
+
+# Select desired variables
+df_Norwegian_nutreintComp_short <- df_Norwegian_nutreintComp[c("FoodItem", "Protein_g", "Omega3_EPADHA_g", "VitaminA_RAE", "VitaminD_µg", "VitaminB12_µg", "Zinc_mg", "Iron_mg", "Calcium_mg", "Selenium_µg", "Iodine_µg")]
+
+```
+
+
+```{r Rename variables and join datasets}
+# Rename variables
+names(df_PHE_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "Omega3_DHAEPA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
+
+names(df_Norwegian_nutreintComp_short) <- c("FoodItem", "Protein_g100g", "Omega3_DHAEPA_g100g", "VitaminA_µg100g", "VitaminD_µg100g", "VitaminB12_µg100g", "Zinc_mg100g", "Iron_mg100g", "Calcium_mg100g", "Selenium_µg100g", "Iodine_µg100g")
+
+# Combine data frames
+df_all_nutrientComp <- rbind(df_PHE_nutreintComp_short,
+                              df_Norwegian_nutreintComp_short) 
+
+str(df_all_nutrientComp)
+```
+
+
+```{r Transform dataset}
+#Change structure of the data set 
+df_all_nutrient_long <- melt(df_all_nutrientComp, id.vars = c("FoodItem"), variable.name ="Nutrient", value.name = "Volume")
+
+```
+
+
+```{r Join data with translation document}
+# Join data frame with translation document- ensures consistent spelling across data sets
+
+# Duplicate species name column (duplicated column entries to be duplicated)
+df_all_nutrient_long$SpeciesRevised <- df_all_nutrient_long$FoodItem 
+
+# Subset the data frame so just MMO data only
+PHE_MCS_translations <- subset(MCS_translations, DataSupplier == "PHE" | DataSupplier == "Norwegian_FC")
+
+unique(PHE_MCS_translations$DataSupplier)
+
+# Merge data frame with MCS data frame by species name
+df_all_nutrient_long <- df_all_nutrient_long %>% inner_join(., PHE_MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+
+```
+
+
+```{r Add additional variables to data set}
+# Add additional variables
+df_all_nutrient_long$DataSet <- "NutrientAnalysis"
+df_all_nutrient_long$Commodity <- "NutrientComposition"
+df_all_nutrient_long$Flag <- "NA"
+df_all_nutrient_long$FlagDescription <- "NA"
+df_all_nutrient_long$TemporalResolution <- "NA"
+df_all_nutrient_long$Units <- "weight/100g"
+df_all_nutrient_long$Year <- "NA"
+```
+
+
+```{r Select desired variables for the data set}
+# Identify columns in data frame
+colnames(df_all_nutrient_long)
+
+# Select desired columns for cleaned data set
+df_all_nutrient_cleaned <- df_all_nutrient_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Nutrient", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename variable
+df_all_nutrient_clean <- rename(df_all_nutrient_cleaned, 
+                                                    Species = CommonSpeciesName)
+
+str(df_all_nutrient_clean)
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("Species" == "SeafoodSpecies")
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename("SeafoodSpecies" == "Species")
+#df_all_nutrient_clean <- df_all_nutrient_cleaned %>% rename(SeafoodSpecies = Species)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData"
+filepath <- paste(data_dir,"ProcessedData/", sep="")
+write.csv(df_all_nutrient_cleaned, file =
+            paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", sep=""), row.names = FALSE)
+
+```

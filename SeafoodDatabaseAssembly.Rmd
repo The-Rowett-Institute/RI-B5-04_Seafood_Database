@@ -1,0 +1,171 @@
+---
+title: "SeafoodDatabaseAssembly"
+author: "A.Lofstedt and B.Scheliga"
+date: "2024-05-16"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This is a document describes the data used to create the UK seafood supply  database, linking  
+production (both capture and aquaculture), trade, purchases and consumption data between 2009 and 2018.
+
+Two data sets were created: a) seafood database and seafood database with composition data
+
+
+## Preparation
+
+```{r Load libraries}
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+```
+
+
+```{r Load cleaned data}
+# loading filepath to the project folder on the University storage
+source("Data_filepath.R")
+
+# Only selecting the cleaned dataset, which are annotate with the "_cleaned_sfdb". There might be other processed files in the folder, which we don't want
+filepath <- paste(data_dir,"ProcessedData/", sep="")# we are storing the file path here, because we'll need it later
+vec_filenames_sfdb <- list.files(filepath, pattern = "Cleaned.csv", full.names = TRUE)
+
+
+print("The following files were loaded:")
+i = 1
+# Loading the cleaned dataset
+for(f in vec_filenames_sfdb){
+    temp <- fread(f) # storing the data in a temporary 
+    assign(paste("df_",substr(sub(paste(".*",filepath,sep=""),"",f),1,6),sep=""),temp) # assigning the df a name based on input dataset
+    print(paste(i,". ",sub(paste(".*",filepath,sep=""),"",f),sep="")) # print out which dataset files had been used
+    i = i+1
+    rm(temp)# removing temp object
+}
+rm(i)
+
+```
+
+
+## A) Create seafood database
+
+```{r rbind all cleaned datasets}
+# df_AllLan: UK and foreign vessels landing in the UK
+# df_UKVess: UK vessels landing into the UK and abroad
+# df_OnlyUK: UK vessels landing into the UK 
+
+# Rename "value" column in trade database
+names(df_TradeD)[names(df_TradeD) == 'Value'] <- 'Volume'
+
+# Bind datasets
+df_Seafood_DB <- rbind(df_TradeD, df_UKVess) # dataset combined properly 
+df_Seafood_DB <- rbind(df_Seafood_DB, df_Aquacu)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Consum)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_EatenO)
+df_Seafood_DB <- rbind(df_Seafood_DB,df_Househ)
+
+# Check the structure
+str(df_Seafood_DB)
+
+```
+
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
+write.csv(df_Seafood_DB, paste(filepath,"Seafood-database_preliminary.csv",sep="/"), row.names = FALSE)
+```
+
+
+
+## B) Nutrient compostion of seafood supplies
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+```
+
+
+```{r Load population data}
+# Load database 
+df_UK_population <- vroom(file=paste(filepath,"UKPopulation_ONS_PreliminaryCleaned.csv", sep="/"), na = c("NA"))
+
+# Simplify population data
+df_UK_population_simp <- df_UK_population[c("Year", "UKPOP")]
+
+```
+
+
+```{r Change structure of the seafood database}
+# Aggregate value by commodity, year and species (production data composed of aquaculture and wild capture)
+df_UK_SeafoodDB_simp_agg <- aggregate(Volume ~ Commodity + Year + Species + SpeciesType + SACN, data = df_Seafood_DB, sum)
+
+# Need to unstack database to calculate seafood supplied. Change structure of the data frame- convert to wide and short
+df_UK_SeafoodDB_short <- df_UK_SeafoodDB_simp_agg %>%
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+# Check structure
+str(df_UK_SeafoodDB_short)
+
+# Merge seafood data frame with population data
+df_seafoodDB_pop_short <- merge(df_UK_SeafoodDB_short, df_UK_population_simp, "Year")
+str(df_seafoodDB_pop_short)
+```
+
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"ProcessedData", sep = "") 
+```
+
+```{r Load nutrient data}
+# Load database 
+df_PHE_nutrient <- vroom(file=paste(filepath,"NutrientComp_PHENor_PreliminaryCleaned.csv", 
+                                    sep = "/"), na = c("NA"))
+
+str(df_PHE_nutrient)
+
+colnames(df_PHE_nutrient)
+```
+
+
+```{r Simplify nutrient dataframe and unstack}
+# Rename 
+df_PHE_nutrient <- df_PHE_nutrient %>% rename(Species = CommonSpeciesName)
+
+# Subset desired columns
+df_PHE_nutrient_simp <- df_PHE_nutrient[,c("Species", "Nutrient", "Volume")]
+
+# Unstack nutrients data. Make data frame wide and short
+df_nutrient_short <- df_PHE_nutrient_simp %>%
+  pivot_wider(names_from = Nutrient, values_from = Volume)
+
+str(df_nutrient_short)
+```
+
+
+```{r Change structure of the dataframes}
+# Merge nutrient data with seafood database
+df_seafoodDB_nutrientComposition <- merge(df_seafoodDB_pop_short, df_nutrient_short, "Species") 
+
+# Only use this dataframe when looking at nutrients as all fish are not included
+#str(df_seafoodDB_nutrientComposition)
+
+```
+
+
+```{r Save the seafood database}
+source("Data_filepath.R")
+# Save datframe to "Outputs" data file
+filepath <- paste(data_dir,"Outputs/Databases", sep="")
+write.csv(df_seafoodDB_nutrientComposition, paste(filepath,"Seafood-database_composition_preliminary.csv",sep="/"), row.names = FALSE)
+```
+

@@ -1,0 +1,386 @@
+---
+title: "Cleaning_Production-data_MMO"
+author: "AL"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+# sets options for entire document in the first chunk
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Preparation
+
+```{r Load libraries, include=FALSE}
+# Load packages
+library(tidyr) # for tidying data
+library(dplyr) # base R alternative but neater
+library(vroom) # for loading and transforming data
+library(tidyverse) # data exploration 
+library(reshape2) # for melting data frames i.e. short and wide to long and thin
+library(data.table) # for fread()-function
+library(mice) # md.pattern to show missing data
+library(stringr) # used to replace matched patterns in a string
+library(haven) #Read SAV files
+library(readxl)
+library(readr) # CSV file I/O, e.g. the read_csv function
+library(sjlabelled)
+library(compareDF)#Check missing values across datasets
+library(chron)
+
+```
+
+
+```{r Load data, echo=TRUE}
+# Loading file path to the data into a Volume 
+source("Data_filepath.R")# Data_filepath.R is listed in .gitignore-file. So, you will need to create that file yourself and provide your respected filepath using "data_dir <- [enter your here]"
+```
+
+
+```{r Specify the desired file path}
+filepath <- paste(data_dir,"Methods/SpeciesTypeClassification", sep = "") 
+# note we are able to change this to another file e.g. saving the output
+```
+
+
+```{r Load spreadsheet with unique seafood species translations}
+# Load master spreadsheet with species names and revised species names
+MCS_translations <- vroom(file=paste(filepath,"SeafoodSpeciesCommonNames_raw.csv", sep="/"))
+
+# Check structure of the translation document
+#str(MCS_translations)
+```
+
+
+
+### A) ii) Capture fisheries (MMO) UK vessels landing into the UK and abroad
+
+Load production data on landings into the UK by UK and foreign vessels. 
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+```{r Load data (2017 to 2020)}
+# i) Landings into the UK by UK and foreign vessels: 2017 to 2021
+# Read in .csv file
+df_UKV_LandingUKAbroad_201721_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201721.csv", sep="/"), na = c(".."))
+ 
+# Check for missing Volumes. Right column summed to be total number of rows in the data set
+md.pattern(df_UKV_LandingUKAbroad_201721_data, rotate.names = TRUE)
+
+# Select desired variables and years (2017 to 2020)
+df_UKV_LandingUKAbroad_201720_data <- df_UKV_LandingUKAbroad_201721_data[c("Species", "2017", "2018", "2019", "2020")]
+```
+
+
+```{r Transform data set (2017 to 2020)}
+# Change structure of the data set 
+df_UKV_LandingUKAbroad_201720_long <- melt(df_UKV_LandingUKAbroad_201720_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+```
+
+
+```{r Load data (2012 to 2016)}
+# ii) Landings into the UK by UK and foreign vessels: 2012 to 2016 
+# Read in .csv file
+df_UKV_LandingUKAbroad_201216_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-201216.csv", sep="/"), na = c(".."))
+
+# Check for missing Volumes
+md.pattern(df_UKV_LandingUKAbroad_201216_data, rotate.names = TRUE)
+
+```
+
+
+```{r Transform data set (2012 to 2016)}
+# Change structure of the data set 
+df_UKV_LandingUKAbroad_201216_long <- melt(df_UKV_LandingUKAbroad_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+```
+
+
+```{r Load data (2008 to 2011)}
+# iii) Landings into the UK by UK and foreign vessels: 2008 to 2012 but select years 2009 to 2011. Always best to use the most recent data set.
+# Read in .csv file
+df_UKV_LandingUKAbroad_200913_data <- vroom(file=paste(filepath,"MMO_UKV_landingUKAbroad-200913.csv", sep="/"), na = c(".."))
+
+# Check for missing Volumes
+md.pattern(df_UKV_LandingUKAbroad_200913_data, rotate.names = TRUE)
+
+# Select desired variables and years (2017 to 2019)
+df_UKV_LandingUKAbroad_200911_data <- df_UKV_LandingUKAbroad_200913_data[c("Species", "2009", "2010","2011")]
+
+```
+
+
+```{r Transform data set (2009 to 2011)}
+# Change structure of the data set 
+df_UKV_LandingUKAbroad_200911_long <- melt(df_UKV_LandingUKAbroad_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+
+```
+
+
+```{r Combine data sets: i) 2008 to 2011; ii) 2012 to 2016; and iii) 2017 to 2019)}
+# Combine capture production data i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2020)
+df_UKV_LandingUKAbroad_200920_long <- rbind(df_UKV_LandingUKAbroad_201720_long,
+                              df_UKV_LandingUKAbroad_201216_long, 
+                              df_UKV_LandingUKAbroad_200911_long)
+```
+
+
+
+Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
+
+We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
+
+
+```{r Join data frame with translation document}
+# Join data frame with translation document- ensures consistent spelling across data sets
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_UKV_LandingUKAbroad_200920_long$SpeciesRevised <- df_UKV_LandingUKAbroad_200920_long$Species
+
+# Join data frame with MCS data frame by species name
+df_UKV_LandingUKAbroad_200920_long <- df_UKV_LandingUKAbroad_200920_long %>% inner_join(., MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+# MSC (DO NOT TOUCH) column is the unique spelling of the species in all data sets.
+
+# Check column names of the updated data frame
+colnames(df_UKV_LandingUKAbroad_200920_long)
+
+```
+
+
+Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. 
+
+```{r Apply conversion factors to calculate edible portion}
+# Identify unique conversion factors in the data set
+unique(df_UKV_LandingUKAbroad_200920_long$CFValue) # no processed data here so no 1 Volumes
+
+# Create new column and apply conversion factors Volumes
+df_UKV_LandingUKAbroad_200920_long$apply_CF <- df_UKV_LandingUKAbroad_200920_long$Volume * df_UKV_LandingUKAbroad_200920_long$CFValue
+
+```
+
+
+```{r Convert from 1000 tonnes to grams}
+# Convert raw Volume from 000's tonnes to grams 
+df_UKV_LandingUKAbroad_200920_long$Volume <- (df_UKV_LandingUKAbroad_200920_long$apply_CF * 1000) * 1000000
+```
+
+
+```{r Add additional variables to data set}
+# Create "cleaned" data frame, defining units and data source 
+df_UKV_LandingUKAbroad_200920_long$Units <- "Grams"
+df_UKV_LandingUKAbroad_200920_long$DataSupplier <- "MMO"
+df_UKV_LandingUKAbroad_200920_long$DataSet <- "Sea Fisheries Statistics"
+df_UKV_LandingUKAbroad_200920_long$Commodity <- "Production"
+df_UKV_LandingUKAbroad_200920_long$Flag <- "ConV1"
+df_UKV_LandingUKAbroad_200920_long$TemporalResolution <- "CalendarYear"
+df_UKV_LandingUKAbroad_200920_long$FlagDescription <- "CF applied to all or part of the data"
+
+```
+
+
+```{r Select desired variables for the cleaned data set}
+# Identify column names
+colnames(df_UKV_LandingUKAbroad_200920_long)
+
+# Select desired columns for cleaned data set-- 16  variables
+df_UKV_LandingUKAbroad_200920_clean <- df_UKV_LandingUKAbroad_200920_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Check column names
+colnames(df_UKV_LandingUKAbroad_200920_clean)
+
+# Rename "SeafoodSpecies" column 
+#df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
+
+df_UKV_LandingUKAbroad_200920_cleaned <- df_UKV_LandingUKAbroad_200920_clean %>% rename(Species = CommonSpeciesName)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+
+# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
+write.csv(df_UKV_LandingUKAbroad_200920_cleaned, file = paste(filepath,"UKVessLandingUKAbroad_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
+```
+
+
+
+
+### A) iii) Capture fisheries (MMO) UK vessels landing in to the UK only
+
+Here we load landings data on landings into the UK by UK vessels. Multiple data sets are loaded to accommodate for the time period.
+
+
+```{r Specify the desired file path}
+# Select file path with raw data
+filepath <- paste(data_dir,"RawData/csv-files", sep = "") 
+```
+
+
+
+```{r Load data (2017 to 2019)}
+# i) Landings into the UK by UK and foreign vessels: 2017 to 2021
+# Read in .csv file
+df_UKV_LandingUKonly_201721_data <- vroom(file=paste(filepath,"MMO_UKVLandingUKOnly-201721.csv", sep="/"), na = c(".."))
+ 
+# Check for missing Volumes. Right column summed to be total number of rows in the data set
+md.pattern(df_UKV_LandingUKonly_201721_data, rotate.names = TRUE)
+
+# Select desired variables and years (2017 to 2020)
+df_UKV_LandingUKonly_201720_data <- df_UKV_LandingUKonly_201721_data[c("Species", "2017", "2018", "2019", "2020")]
+
+```
+
+
+```{r Transform data set (2017 to 2020)}
+# Change structure of the data set 
+df_UKV_LandingUKonly_201720_long <- melt(df_UKV_LandingUKonly_201720_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+```
+
+
+```{r Load data (2012 to 2016)}
+# ii) Landings into the UK by UK and foreign vessels: 2012 to 2016 
+# Read in .csv file
+df_UKV_LandingUKonly_201216_data <- vroom(file=paste(filepath,"MMO_UKVLandingUKOnly-201216.csv", sep="/"), na = c(".."))
+
+# Check for missing Volumes
+md.pattern(df_UKV_LandingUKonly_201216_data, rotate.names = TRUE)
+
+# Select desired variables and years (2012 to 2016)
+df_UKV_LandingUKonly_201216_data <- df_UKV_LandingUKonly_201216_data[c("Species", "2012", "2013", "2014", "2015", "2016")]
+
+```
+
+
+```{r Transform data set (2012 to 2016)}
+# Change structure of the data set 
+df_UKV_LandingUKonly_201216_long <- melt(df_UKV_LandingUKonly_201216_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+```
+
+
+```{r Load data (2008 to 2011)}
+# iii) Landings into the UK by UK and foreign vessels: 2008 to 2012 but select years 2009 to 2011. Always best to use the most recent data set.
+# Read in .csv file
+df_UKV_LandingUKonly_200812_data <- vroom(file=paste(filepath,"MMO_UKVLandingUKOnly-200812.csv", sep="/"), na = c(".."))
+
+# Check for missing Volumes
+md.pattern(df_UKV_LandingUKonly_200812_data, rotate.names = TRUE)
+
+# Select desired variables and years (2017 to 2019)
+df_UKV_LandingUKonly_200911_data <- df_UKV_LandingUKonly_200812_data[c("Species", "2009", "2010","2011")]
+
+```
+
+
+```{r Transform data set (2009 to 2011)}
+# Change structure of the data set 
+df_UKV_LandingUKonly_200911_long <- melt(df_UKV_LandingUKonly_200911_data, id.vars = c("Species"), variable.name = "Year", value.name = "Volume")
+
+```
+
+
+```{r Combine data sets: i) 2008 to 2011; ii) 2012 to 2016; and iii) 2017 to 2020)}
+# Combine capture production data i) 2009 to 2011; ii) 2012 to 2016; and iii) 2017 to 2020)
+df_UKV_LandingUKonly_200920_long <- rbind(df_UKV_LandingUKonly_201720_long,
+                              df_UKV_LandingUKonly_201216_long, 
+                              df_UKV_LandingUKonly_200911_long)
+```
+
+
+
+Capture fisheries data are now all in one data frame. Data frame is composed of four columns: SpeciesType, Species, Year and Volume. 
+
+We need to ensure species are spelled the same across all data sets, otherwise data sets cannot be merged, for instance "Blue whiting" v.s. "Blue Whiting or "Crab" v.s. "Crabs". We created an excel document listing the unique spellings of all species in all data sets used. In the cleaning process, the data sheets are joined to the "translation" document by the unique species name. In the final cleaned version, the correct species name column is selected. The translation document also provides various species type classifications as per published peer-reviewed papers.
+
+
+```{r Join data frame with translation document}
+# Join data frame with translation document- ensures consistent spelling across data sets
+# Duplicate species name column (allows us to check species have been renames correctly)
+df_UKV_LandingUKonly_200920_long$SpeciesRevised <- df_UKV_LandingUKonly_200920_long$Species
+
+# Subset the data frame so just MMO data only
+MMO_MCS_translations <- subset(MCS_translations, DataSupplier == "MMO")
+
+# Join data frame with MCS data frame by species name
+df_UKV_LandingUKonly_200920_long <- df_UKV_LandingUKonly_200920_long %>% inner_join(., MMO_MCS_translations, by = c('SpeciesRevised' = 'UniqueSpecies'))
+
+# Check column names of the updated data frame
+colnames(df_UKV_LandingUKonly_200920_long)
+
+```
+
+Landings provided as whole weight. Need to apply conversion factors estimate edible portion of the seafood. 
+
+```{r Apply conversion factors to calculate edible portion}
+# Identify unique conversion factors in the data set
+unique(df_UKV_LandingUKonly_200920_long$CFValue) # no processed data here so no 1 Volumes
+
+# Create new column and apply conversion factors Volumes
+df_UKV_LandingUKonly_200920_long$apply_CF <- df_UKV_LandingUKonly_200920_long$Volume * df_UKV_LandingUKonly_200920_long$CFValue
+
+```
+
+
+```{r Convert from 1000 tonnes to grams}
+# Convert raw Volume from 000's tonnes to grams 
+df_UKV_LandingUKonly_200920_long$Volume <- (df_UKV_LandingUKonly_200920_long$apply_CF * 1000) * 1000000
+```
+
+
+```{r Add additional variables to data set}
+# Create "cleaned" data frame, defining units and data source 
+df_UKV_LandingUKonly_200920_long$Units <- "Grams"
+df_UKV_LandingUKonly_200920_long$DataSupplier <- "MMO"
+df_UKV_LandingUKonly_200920_long$DataSet <- "Sea Fisheries Statistics"
+df_UKV_LandingUKonly_200920_long$Commodity <- "Production"
+df_UKV_LandingUKonly_200920_long$Flag <- "ConV1"
+df_UKV_LandingUKonly_200920_long$TemporalResolution <- "CalendarYear"
+df_UKV_LandingUKonly_200920_long$FlagDescription <- "CF applied to all or part of the data"
+
+```
+
+
+```{r Select desired variables for the cleaned data set}
+# Identify column names
+colnames(df_UKV_LandingUKonly_200920_long)
+
+# Select desired columns for cleaned data set-- 16  variables
+df_UKV_LandingUKonly_200920 <- df_UKV_LandingUKonly_200920_long[c("DataSupplier", "DataSet", "Commodity", "CommonSpeciesName", "SpeciesType", "SACN", "Volume", "Units", "Year", "TemporalResolution", "Flag", "FlagDescription")]
+
+# Rename "SeafoodSpecies" column 
+#df_UKV_LandingUKAbroad_200918_cleaned <- rename(df_UKV_LandingUKAbroad_200918_clean, c("SeafoodSpecies" = "Species"))
+
+df_UKV_LandingUKonly_200920_cleaned <- df_UKV_LandingUKonly_200920 %>% rename(Species = CommonSpeciesName)
+
+```
+
+
+```{r Check dataset}
+# Check for duplicates
+dulpicates_MMO <- df_UKV_LandingUKonly_200920_cleaned %>% select(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% group_by(DataSupplier, DataSet, Commodity, Species, Year, Volume, Units) %>% 
+  filter(n()>1) %>% mutate(n = n())
+
+# Check data transforms from long and thin to short and wide
+shape_MMO <- df_UKV_LandingUKonly_200920_cleaned %>% 
+  select(DataSupplier, DataSet, Commodity, Species, SACN, Year, Volume, Units) %>% 
+  filter(Commodity %in% c("Production")) %>% 
+  pivot_wider(names_from = Commodity, values_from = Volume)
+
+```
+
+
+```{r Save cleaned data}
+# Change file path to "ProcessedData". Can also use setwd()
+filepath <- paste(data_dir,"ProcessedData/", sep = "")
+
+# Stating row.names = FALSE removes the initial column of the new .csv file where the rows are numbered
+write.csv(df_UKV_LandingUKonly_200920_cleaned, file = paste(filepath,"OnlyUKVessels_LandingUK_MMO_PreliminaryCleaned.csv", sep = ""), row.names = FALSE)
+
+```
+
