@@ -4,7 +4,9 @@
 
 Transforming our diets to build a more sustainable food system is paramount to achieving net zero. Arguably, such diets will include more seafood. Here, we provide a high-resolution perspective on United Kingdom (UK) seafood supplies and nutrient flows at species level. We mapped seafood production (capture and aquaculture), trade (imports and exports), purchases (within and out-of-home), and seafood consumption, between 2009 and 2020, for up to 73 seafood species. This repository contains the code used to clean and merge the secondary data sets used to create the seafood database.
 
-Related publication: [Seafood supply mapping reveals production and consumption mismatches and large dietary nutrient losses through exports in the United Kingdom](https://www.nature.com/articles/s43016-024-01102-x)
+*Related publications*:
+- [Seafood supply mapping reveals production and consumption mismatches and large dietary nutrient losses through exports in the United Kingdom](https://www.nature.com/articles/s43016-024-01102-x)
+- [Behind the Paper](https://communities.springernature.com/posts/mapping-of-uk-seafood-supplies-reveals-mismatches-between-production-and-consumption-and-large-losses-of-dietary-nutrients-through-exports)
 
 <ins>**Data sources**</ins>
 1)	Capture production (Marine Management Organisation)
@@ -70,7 +72,7 @@ PHE_seafoodFAContent.csv : A local copy of UK seafood fatty acids composition ta
 Norwegian_seafoodNutrientContent.csv : A local copy of Norwegian seafood composition tables  
 
 
-*Funding*: This research was funded by the Rural and Environment Science and Analytical Services Division (RESAS) of the Scottish Government, project RI-B5-04.
+<ins>**Funding**</ins>: This research was funded by the Rural and Environment Science and Analytical Services Division (RESAS) of the Scottish Government, project RI-B5-04.
 
-*Data Availability*: The database is publicly available on the [(UK Data Archive)](https://reshare.ukdataservice.ac.uk/856955/)
+<ins>**Data Availability**</ins>: The database is publicly available on the [(UK Data Archive)](https://reshare.ukdataservice.ac.uk/856955/)
 
